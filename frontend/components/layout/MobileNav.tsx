@@ -49,10 +49,13 @@ export default function MobileNav() {
           {/* Logo */}
           <Link 
             href="/" 
-            className="text-lg sm:text-xl lg:text-2xl font-light tracking-tight text-gray-900 hover:text-gray-700"
+            className="flex items-center hover:opacity-80 transition-opacity"
           >
-            <span className="hidden sm:inline">Lake Powell Water Data</span>
-            <span className="sm:hidden">Lake Powell</span>
+            <img 
+              src="/logo.svg" 
+              alt="Lake Powell Data" 
+              className="h-8 sm:h-10 lg:h-12 w-auto"
+            />
           </Link>
           
           {/* Desktop Navigation */}
