@@ -223,6 +223,19 @@ export default function OutflowSimulator({
                 </div>
                 <div className="text-xs text-gray-400">acre-feet</div>
               </div>
+              
+              {/* Spillway (only shown if there was any) */}
+              {simulationResult.summary.totalSpillway > 0 && (
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-light">
+                    Spillway
+                  </div>
+                  <div className="text-xl sm:text-2xl font-light text-blue-600">
+                    {formatNumber(simulationResult.summary.totalSpillway)}
+                  </div>
+                  <div className="text-xs text-gray-400">acre-feet (at full pool)</div>
+                </div>
+              )}
             </div>
             
             {/* Period Info */}
@@ -270,6 +283,7 @@ export default function OutflowSimulator({
           </ol>
           <p className="mt-4 text-xs text-gray-500 font-light">
             The simulation accounts for actual inflows, adjusted outflows, and monthly evaporation rates based on lake surface area.
+            When the lake reaches full pool (3,700 ft / 24.3M acre-feet), excess water is treated as spillway releases.
           </p>
         </div>
       )}

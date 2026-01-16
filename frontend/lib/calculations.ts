@@ -704,6 +704,7 @@ export interface SimulationDayResult {
   simulatedContent: number
   adjustedOutflow: number
   evaporation: number
+  spillway: number // Forced releases when at full pool capacity
 }
 
 /**
@@ -723,6 +724,7 @@ export interface SimulationSummary {
   totalSimulatedOutflow: number
   outflowDifference: number
   totalEvaporation: number
+  totalSpillway: number // Total forced releases when at full pool capacity
 }
 
 /**
@@ -748,6 +750,9 @@ export function simulateOutflow(
   measurements: WaterMeasurement[],
   storageCapacity: ElevationStorageCapacity[]
 ): SimulationResult | null {
+  // Full pool capacity - any excess above this is spilled
+  const FULL_POOL_CAPACITY = 24322000 // acre-feet at 3700 ft
+  
   // Filter measurements from startDate onwards
   const filtered = measurements
     .filter(m => m.date >= startDate)
@@ -757,27 +762,36 @@ export function simulateOutflow(
     return null
   }
   
-  // Initialize simulation with first day's values
+  // Initialize simulation with first day's values (capped at full pool)
   const firstDay = filtered[0]
-  let simulatedContent = firstDay.content || 0
+  let simulatedContent = Math.min(firstDay.content || 0, FULL_POOL_CAPACITY)
   
   const dailyData: SimulationDayResult[] = []
   let totalActualOutflow = 0
   let totalSimulatedOutflow = 0
   let totalEvaporation = 0
+  let totalSpillway = 0 // Track forced spillway releases when at full pool
   
   // First day: record as-is, no changes applied
   // The content on day 1 already reflects the state after day 1's flows
+  // Check if first day content exceeds full pool (cap it if so)
+  let firstDaySpillway = 0
+  if ((firstDay.content || 0) > FULL_POOL_CAPACITY) {
+    firstDaySpillway = (firstDay.content || 0) - FULL_POOL_CAPACITY
+    totalSpillway += firstDaySpillway
+  }
+  
   dailyData.push({
     date: firstDay.date,
     actualElevation: firstDay.elevation,
     actualContent: firstDay.content || 0,
     actualInflow: firstDay.inflow || 0,
     actualOutflow: firstDay.outflow || 0,
-    simulatedElevation: firstDay.elevation, // Same as actual on start day
+    simulatedElevation: contentToElevation(simulatedContent, storageCapacity), // May differ if capped
     simulatedContent: Math.round(simulatedContent),
     adjustedOutflow: Math.round((firstDay.outflow || 0) * (outflowPercentage / 100)),
-    evaporation: 0 // No evap calculated for first day
+    evaporation: 0, // No evap calculated for first day
+    spillway: Math.round(firstDaySpillway)
   })
   
   // Track first day's outflows
@@ -817,7 +831,17 @@ export function simulateOutflow(
     const simulatedChange = actualChange + outflowDiff
     
     // Update simulated content
-    simulatedContent = Math.max(0, simulatedContent + simulatedChange)
+    let newSimulatedContent = Math.max(0, simulatedContent + simulatedChange)
+    
+    // Cap at full pool - any excess is forced spillway release
+    let spillway = 0
+    if (newSimulatedContent > FULL_POOL_CAPACITY) {
+      spillway = newSimulatedContent - FULL_POOL_CAPACITY
+      newSimulatedContent = FULL_POOL_CAPACITY
+      totalSpillway += spillway
+    }
+    
+    simulatedContent = newSimulatedContent
     
     // Convert to elevation
     const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
@@ -840,7 +864,8 @@ export function simulateOutflow(
       simulatedElevation: Math.round(simulatedElevation * 100) / 100,
       simulatedContent: Math.round(simulatedContent),
       adjustedOutflow: Math.round(adjustedOutflow),
-      evaporation: Math.round(modeledEvaporation)
+      evaporation: Math.round(modeledEvaporation),
+      spillway: Math.round(spillway)
     })
   }
   
@@ -857,9 +882,10 @@ export function simulateOutflow(
     simulatedEndingContent: lastDay.simulatedContent,
     contentDifference: lastDay.simulatedContent - lastDay.actualContent,
     totalActualOutflow: Math.round(totalActualOutflow),
-    totalSimulatedOutflow: Math.round(totalSimulatedOutflow),
-    outflowDifference: Math.round(totalActualOutflow - totalSimulatedOutflow),
-    totalEvaporation: Math.round(totalEvaporation)
+    totalSimulatedOutflow: Math.round(totalSimulatedOutflow + totalSpillway), // Include spillway in simulated outflow
+    outflowDifference: Math.round(totalActualOutflow - totalSimulatedOutflow - totalSpillway),
+    totalEvaporation: Math.round(totalEvaporation),
+    totalSpillway: Math.round(totalSpillway)
   }
   
   return { dailyData, summary }
