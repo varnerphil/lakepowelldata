@@ -226,7 +226,7 @@ export default function HistoricalDropsChart({
         data={chartData}
         margin={{ 
           top: 5, 
-          right: isMobile ? 10 : 120, 
+          right: isMobile ? 60 : 150, 
           left: isMobile ? 0 : 60, 
           bottom: isMobile ? 40 : 60 
         }}
@@ -300,8 +300,8 @@ export default function HistoricalDropsChart({
           />
         )}
         
-        {/* Ramp reference lines - hide entirely on mobile to reduce clutter */}
-        {!isMobile && ramps
+        {/* Ramp reference lines */}
+        {ramps
           .filter(ramp => {
             // Show all favorite ramps - don't filter by elevation range
             // This ensures all favorites are visible even if outside projected range
@@ -358,9 +358,9 @@ export default function HistoricalDropsChart({
                   value: labelText,
                   position: "right",
                   fill: strokeColor,
-                  fontSize: 11,
+                  fontSize: isMobile ? 8 : 11,
                   fontWeight: 500,
-                  offset: 5
+                  offset: isMobile ? 5 : 5
                 }}
               />
             )

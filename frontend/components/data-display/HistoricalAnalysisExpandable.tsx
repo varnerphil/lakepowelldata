@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
 interface HistoricalDrop {
   water_year: number
@@ -22,21 +23,6 @@ interface HistoricalAnalysisExpandableProps {
   ramps: Array<{ name: string; min_safe_elevation: number }>
 }
 
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  )
-}
-
-function ChevronUpIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-    </svg>
-  )
-}
 
 export default function HistoricalAnalysisExpandable({
   historicalDrops,
@@ -59,9 +45,9 @@ export default function HistoricalAnalysisExpandable({
       >
         <span>View Historical Analysis & Rationale</span>
         {isExpanded ? (
-          <ChevronUpIcon className="w-5 h-5" />
+          <ChevronUp className="w-5 h-5" strokeWidth={1.5} />
         ) : (
-          <ChevronDownIcon className="w-5 h-5" />
+          <ChevronDown className="w-5 h-5" strokeWidth={1.5} />
         )}
       </button>
       

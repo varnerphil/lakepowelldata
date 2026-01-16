@@ -1,39 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
-function MenuIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  )
-}
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  )
-}
-
-const navLinks = [
+const mainNavLinks = [
   { href: '/', label: 'Dashboard' },
+  { href: '/simulator', label: 'Simulator' },
+  { href: '/ramps', label: 'Ramps' },
+]
+
+const resourcesLinks = [
   { href: '/history', label: 'History' },
   { href: '/storage', label: 'Storage' },
   { href: '/snowpack', label: 'Snowpack' },
-  { href: '/simulator', label: 'Simulator' },
   { href: '/stats', label: 'Stats' },
-  { href: '/ramps', label: 'Ramps' },
   { href: '/about', label: 'About' },
 ]
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false)
   const pathname = usePathname()
+  const resourcesRef = useRef<HTMLDivElement>(null)
+
+  // Check if current path is in resources
+  const isResourcesActive = resourcesLinks.some(link => pathname === link.href)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (resourcesRef.current && !resourcesRef.current.contains(event.target as Node)) {
+        setIsResourcesOpen(false)
+      }
+    }
+
+    if (isResourcesOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isResourcesOpen])
 
   return (
     <nav className="bg-white border-b border-gray-100">
@@ -49,8 +56,8 @@ export default function MobileNav() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex gap-6 xl:gap-8">
-            {navLinks.map(link => (
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8">
+            {mainNavLinks.map(link => (
               <Link 
                 key={link.href}
                 href={link.href} 
@@ -63,6 +70,43 @@ export default function MobileNav() {
                 {link.label}
               </Link>
             ))}
+            
+            {/* Resources Dropdown */}
+            <div className="relative" ref={resourcesRef}>
+              <button
+                onClick={() => setIsResourcesOpen(!isResourcesOpen)}
+                className={`flex items-center gap-1 text-sm font-light transition-colors ${
+                  isResourcesActive
+                    ? 'text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Resources
+                <ChevronDown 
+                  className={`w-4 h-4 transition-transform ${isResourcesOpen ? 'rotate-180' : ''}`}
+                  strokeWidth={1.5}
+                />
+              </button>
+              
+              {isResourcesOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50">
+                  {resourcesLinks.map(link => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsResourcesOpen(false)}
+                      className={`block px-4 py-2 text-sm font-light transition-colors ${
+                        pathname === link.href
+                          ? 'bg-gray-100 text-gray-900'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Mobile Menu Button */}
@@ -72,9 +116,9 @@ export default function MobileNav() {
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
           >
             {isOpen ? (
-              <CloseIcon className="w-6 h-6" />
+              <X className="w-6 h-6" strokeWidth={1.5} />
             ) : (
-              <MenuIcon className="w-6 h-6" />
+              <Menu className="w-6 h-6" strokeWidth={1.5} />
             )}
           </button>
         </div>
@@ -83,7 +127,7 @@ export default function MobileNav() {
         {isOpen && (
           <div className="lg:hidden border-t border-gray-100 py-4">
             <div className="flex flex-col space-y-1">
-              {navLinks.map(link => (
+              {mainNavLinks.map(link => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -97,6 +141,45 @@ export default function MobileNav() {
                   {link.label}
                 </Link>
               ))}
+              
+              {/* Resources Section */}
+              <div>
+                <button
+                  onClick={() => setIsResourcesOpen(!isResourcesOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-light transition-colors ${
+                    isResourcesActive
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  Resources
+                  <ChevronDownIcon 
+                    className={`w-4 h-4 transition-transform ${isResourcesOpen ? 'rotate-180' : ''}`} 
+                  />
+                </button>
+                
+                {isResourcesOpen && (
+                  <div className="pl-4 mt-1 space-y-1">
+                    {resourcesLinks.map(link => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => {
+                          setIsOpen(false)
+                          setIsResourcesOpen(false)
+                        }}
+                        className={`block px-4 py-2 rounded-lg text-sm font-light transition-colors ${
+                          pathname === link.href
+                            ? 'bg-gray-100 text-gray-900'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

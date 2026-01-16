@@ -183,7 +183,7 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         data={chartDataWithRange}
         margin={{ 
           top: 5, 
-          right: isMobile ? 10 : 120, 
+          right: isMobile ? 60 : 150, 
           left: isMobile ? 0 : 75, 
           bottom: isMobile ? 40 : 60 
         }}
@@ -346,13 +346,13 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
                 strokeWidth={2}
                 strokeDasharray="5 3"
                 strokeOpacity={0.8}
-                label={isMobile ? undefined : {
+                label={{
                   value: `${shortName} ${ramp.min_safe_elevation.toFixed(0)}ft`,
                   position: "right",
                   fill: strokeColor,
-                  fontSize: 11,
+                  fontSize: isMobile ? 8 : 11,
                   fontWeight: 500,
-                  offset: 20
+                  offset: isMobile ? 5 : 20
                 }}
               />
             )

@@ -20,17 +20,38 @@ const pool = new Pool({
   // Supabase pooler Session mode has limited pool_size (typically 15-20 for free tier)
   // We must keep our client pool smaller than the pooler's pool_size to avoid "max clients reached"
   // For direct connections, we can use more
-  max: isUsingPooler ? 8 : 15, // Keep pool size small (8) to stay well below pooler limit (15-20)
-  idleTimeoutMillis: 5000, // Close idle clients after 5 seconds (very fast cleanup)
+  max: isUsingPooler ? 5 : 10, // Reduced pool size to avoid exhaustion (5 for pooler, 10 for direct)
+  idleTimeoutMillis: 3000, // Close idle clients after 3 seconds (faster cleanup)
   connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
   // Allow waiting for connections if pool is full
-  allowExitOnIdle: false,
+  allowExitOnIdle: true, // Allow process to exit when pool is idle (helps with hot reload)
 })
 
 // Handle pool errors
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err)
 })
+
+// Gracefully close pool on process exit (important for hot reload in development)
+if (typeof process !== 'undefined') {
+  const gracefulShutdown = async () => {
+    try {
+      await pool.end()
+      console.log('Database pool closed gracefully')
+    } catch (err) {
+      console.error('Error closing database pool:', err)
+    }
+  }
+  
+  process.on('SIGINT', gracefulShutdown)
+  process.on('SIGTERM', gracefulShutdown)
+  // In development, also handle exit to clean up on hot reload
+  if (process.env.NODE_ENV === 'development') {
+    process.on('exit', () => {
+      pool.end().catch(() => {})
+    })
+  }
+}
 
 // Helper function to retry queries on connection errors
 async function retryQuery<T>(
@@ -58,6 +79,18 @@ async function retryQuery<T>(
     }
   }
   throw new Error('Max retries exceeded')
+}
+
+// Wrapper to ensure queries use retry logic and proper connection management
+async function executeQuery<T>(
+  queryFn: () => Promise<T>
+): Promise<T> {
+  return retryQuery(queryFn, 3, 100)
+}
+
+// Wrapper for pool.query that automatically includes retry logic
+async function query(text: string, params?: any[]) {
+  return executeQuery(() => pool.query(text, params))
 }
 
 // Log pool statistics in development
@@ -104,7 +137,7 @@ export interface RampStatus extends Ramp {
 }
 
 export async function getLatestWaterMeasurement(): Promise<WaterMeasurement | null> {
-  const result = await pool.query(
+  const result = await query(
     'SELECT date, elevation, change, content, inflow, outflow FROM water_measurements ORDER BY date DESC LIMIT 1'
   )
   if (result.rows.length === 0) {
@@ -122,7 +155,7 @@ export async function getLatestWaterMeasurement(): Promise<WaterMeasurement | nu
 }
 
 export async function getEarliestWaterMeasurement(): Promise<WaterMeasurement | null> {
-  const result = await pool.query(
+  const result = await query(
     'SELECT date, elevation, change, content, inflow, outflow FROM water_measurements ORDER BY date ASC LIMIT 1'
   )
   if (result.rows.length === 0) {
@@ -143,7 +176,7 @@ export async function getWaterMeasurementsByRange(
   startDate: string,
   endDate: string
 ): Promise<WaterMeasurement[]> {
-  const result = await pool.query(
+  const result = await query(
     'SELECT date, elevation, change, content, inflow, outflow FROM water_measurements WHERE date >= $1 AND date <= $2 ORDER BY date ASC',
     [startDate, endDate]
   )
@@ -158,7 +191,7 @@ export async function getWaterMeasurementsByRange(
 }
 
 export async function getAllRamps(): Promise<Ramp[]> {
-  const result = await pool.query(
+  const result = await query(
     'SELECT id, name, min_safe_elevation, min_usable_elevation, location FROM ramps ORDER BY name'
   )
   return result.rows.map(row => ({
@@ -205,7 +238,7 @@ export async function getWaterYearSummaries(): Promise<WaterYearSummary[]> {
   // Convert cfs-days to acre-feet: 1 cfs-day = 1.983 acre-feet (86400 seconds / 43560 cubic feet)
   const CFS_DAYS_TO_ACRE_FEET = 1.983
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       CASE 
         WHEN EXTRACT(MONTH FROM date) >= 10 THEN EXTRACT(YEAR FROM date) + 1
@@ -252,7 +285,7 @@ export async function getWaterYearSummaries(): Promise<WaterYearSummary[]> {
 
 export async function getHistoricalAverages() {
   // All-time averages
-  const allTimeResult = await pool.query(`
+    const allTimeResult = await query(`
     SELECT 
       AVG(elevation) as avg_elevation,
       AVG(content) as avg_content,
@@ -262,7 +295,7 @@ export async function getHistoricalAverages() {
   `)
 
   // Since filled (June 22, 1980)
-  const sinceFilledResult = await pool.query(`
+    const sinceFilledResult = await query(`
     SELECT 
       AVG(elevation) as avg_elevation,
       AVG(content) as avg_content,
@@ -273,7 +306,7 @@ export async function getHistoricalAverages() {
   `)
 
   // Since Water Year 2000 (October 1, 1999)
-  const sinceWY2000Result = await pool.query(`
+    const sinceWY2000Result = await query(`
     SELECT 
       AVG(elevation) as avg_elevation,
       AVG(content) as avg_content,
@@ -322,7 +355,7 @@ export async function getMonthlyAverages(
 ): Promise<MonthlyAverage[]> {
   const CFS_DAYS_TO_ACRE_FEET = 1.983
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       EXTRACT(YEAR FROM date)::INTEGER as year,
       EXTRACT(MONTH FROM date)::INTEGER as month,
@@ -363,7 +396,7 @@ export interface SeasonalTrend {
 export async function getSeasonalTrends(): Promise<SeasonalTrend[]> {
   const CFS_DAYS_TO_ACRE_FEET = 1.983
   
-  const result = await pool.query(`
+  const result = await query(`
     WITH seasonal_data AS (
       SELECT 
         CASE 
@@ -427,7 +460,7 @@ export async function getElevationDistribution(
   // Use parameterized query to prevent SQL injection
   let result
   if (startDate && endDate) {
-    result = await pool.query(`
+    result = await query(`
       SELECT 
         MIN(elevation) as min,
         MAX(elevation) as max,
@@ -441,7 +474,7 @@ export async function getElevationDistribution(
       WHERE date >= $1 AND date <= $2
     `, [startDate, endDate])
   } else {
-    result = await pool.query(`
+    result = await query(`
       SELECT 
         MIN(elevation) as min,
         MAX(elevation) as max,
@@ -488,7 +521,7 @@ export async function getFlowStatistics(
 ): Promise<FlowStatistics> {
   const CFS_DAYS_TO_ACRE_FEET = 1.983
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       AVG(inflow) as avg_inflow,
       AVG(outflow) as avg_outflow,
@@ -538,7 +571,7 @@ export async function getStorageCapacityAnalysis(
   // Use parameterized query to prevent SQL injection and improve connection reuse
   let result
   if (startDate && endDate) {
-    result = await pool.query(`
+    result = await query(`
       SELECT 
         date,
         elevation,
@@ -549,7 +582,7 @@ export async function getStorageCapacityAnalysis(
       ORDER BY date
     `, [startDate, endDate, FULL_POOL_CAPACITY])
   } else {
-    result = await pool.query(`
+    result = await query(`
       SELECT 
         date,
         elevation,
@@ -583,7 +616,7 @@ export interface ElevationStorageCapacity {
  *   python -m migrations.calculate_elevation_storage
  */
 export async function getElevationStorageCapacity(): Promise<ElevationStorageCapacity[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       elevation,
       storage_at_elevation,
@@ -631,7 +664,7 @@ export async function getHistoricalWaterYearLows(
   currentElevation: number,
   elevationTolerance: number = 50
 ): Promise<WaterYearLow[]> {
-  const result = await pool.query(`
+  const result = await query(`
     WITH water_years AS (
       SELECT 
         CASE 
@@ -705,7 +738,7 @@ export interface RunoffSeasonOutflow {
 export async function getRunoffSeasonOutflow(): Promise<RunoffSeasonOutflow[]> {
   const CFS_DAYS_TO_ACRE_FEET = 1.983
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       CASE 
         WHEN EXTRACT(MONTH FROM date) >= 10 THEN EXTRACT(YEAR FROM date) + 1
@@ -752,7 +785,7 @@ export interface HistoricalDropToLow {
  * Get historical water year highs to determine typical high date
  */
 export async function getHistoricalWaterYearHighs(): Promise<WaterYearHigh[]> {
-  const result = await pool.query(`
+  const result = await query(`
     WITH water_years AS (
       SELECT 
         CASE 
@@ -823,7 +856,7 @@ export async function getHistoricalDropsToLow(
   const lowMonth = lowDateObj.getMonth() + 1
   const lowDay = lowDateObj.getDate()
   
-  const result = await pool.query(`
+  const result = await query(`
     WITH water_years AS (
       SELECT 
         CASE 
@@ -910,7 +943,7 @@ export interface BasinPlotsDataPoint {
 }
 
 export async function getBasinPlotsData(): Promise<BasinPlotsDataPoint[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       date_str,
       water_year_date,
@@ -972,7 +1005,7 @@ export interface SNOTELSiteWithLatest extends SNOTELSite {
 }
 
 export async function getAllSNOTELSites(): Promise<SNOTELSite[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       site_id, 
       name, 
@@ -996,7 +1029,7 @@ export async function getAllSNOTELSites(): Promise<SNOTELSite[]> {
 }
 
 export async function getSNOTELSitesWithLatestMeasurements(): Promise<SNOTELSiteWithLatest[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       s.site_id, 
       s.name, 
@@ -1043,7 +1076,7 @@ export async function getSNOTELSitesWithLatestMeasurements(): Promise<SNOTELSite
 }
 
 export async function getSNOTELBasins(): Promise<Array<{ name: string; site_count: number }>> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       basin as name,
       COUNT(*) as site_count
@@ -1105,7 +1138,7 @@ export interface WaterYearAnalysis {
  * Get all water year analysis records
  */
 export async function getWaterYearAnalysis(): Promise<WaterYearAnalysis[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       water_year,
       peak_swe, peak_swe_date, peak_swe_percent_of_median,
@@ -1160,7 +1193,7 @@ export async function getSimilarSnowpackYears(
   tolerance: number = 15,
   limit: number = 10
 ): Promise<WaterYearAnalysis[]> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       water_year,
       peak_swe, peak_swe_date, peak_swe_percent_of_median,
@@ -1216,7 +1249,7 @@ export async function getSnowpackRunoffCorrelation(): Promise<{
   avgInflowPerInchSwe: number
   correlationYears: number
 }> {
-  const result = await pool.query(`
+  const result = await query(`
     SELECT 
       AVG(ft_gained_per_inch_swe) as avg_ft_per_inch,
       AVG(inflow_per_inch_swe) as avg_inflow_per_inch,
@@ -1244,7 +1277,7 @@ export async function getPreRunoffLow(waterYear: number): Promise<{
   date: string | null
 } | null> {
   // First try to get from water_year_analysis if it exists
-  const analysisResult = await pool.query(`
+  const analysisResult = await query(`
     SELECT pre_runoff_low_elevation, pre_runoff_low_date
     FROM water_year_analysis
     WHERE water_year = $1
@@ -1262,7 +1295,7 @@ export async function getPreRunoffLow(waterYear: number): Promise<{
   const startDate = `${waterYear - 1}-12-01`
   const endDate = `${waterYear}-04-15`
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT elevation, date
     FROM water_measurements
     WHERE date >= $1 AND date <= $2
@@ -1291,7 +1324,7 @@ export async function getWaterYearPeakSoFar(waterYear: number): Promise<{
   const startDate = `${waterYear}-04-01`
   const endDate = new Date().toISOString().split('T')[0]
   
-  const result = await pool.query(`
+  const result = await query(`
     SELECT elevation, date
     FROM water_measurements
     WHERE date >= $1 AND date <= $2

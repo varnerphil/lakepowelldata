@@ -755,7 +755,7 @@ export default async function HomePage({
   }
 
   return (
-    <div className="container mx-auto px-3 sm:px-3 lg:px-4 py-6 sm:py-12 lg:py-16">
+    <div className="container mx-auto px-3 lg:px-4 py-6 lg:py-16">
       {/* 1. Current Water Level */}
       <CurrentStatus current={current} recent={recent} ramps={allRamps} />
 
@@ -793,15 +793,15 @@ export default async function HomePage({
 
       {/* 6. Snowpack Chart */}
       {basinPlotsData && (
-        <div className="mt-8 sm:mt-12">
-          <div className="card p-4 sm:p-6 lg:p-8">
-            <h2 className="text-xl sm:text-2xl font-light mb-2 sm:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
-            <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 font-light hidden sm:block">
+        <div className="mt-8 lg:mt-12">
+          <div className="card p-4 lg:p-8">
+            <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
+            <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light hidden lg:block">
               This chart shows historical snow water equivalent trends for the Upper Colorado River Region from 1986 to present. 
               The shaded bands represent percentile ranges (10th, 30th, 70th, 90th) based on period of record data. 
               The current year is highlighted in black, while historical years are shown in lighter colors.
             </p>
-            <p className="text-xs text-gray-500 mb-4 font-light sm:hidden">
+            <p className="text-xs text-gray-500 mb-4 font-light lg:hidden">
               Historical SWE trends for Upper Colorado. Current year shown in black.
             </p>
             <BasinPlotsChart

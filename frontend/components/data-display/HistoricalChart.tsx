@@ -42,7 +42,7 @@ export default function HistoricalChart({
       />
       
       {showControls && (
-        <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+        <div className="mt-0 sm:mt-6 pt-0 sm:pt-6 border-t-0 sm:border-t border-gray-100">
           <Suspense fallback={<div className="h-12" />}>
             <TimeRangeButtons currentRange={currentRange} formAction={formAction} />
           </Suspense>

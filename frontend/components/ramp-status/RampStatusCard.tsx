@@ -1,5 +1,7 @@
 'use client'
 
+import { MapPin } from 'lucide-react'
+
 interface RampStatusCardProps {
   ramp: {
     id: number
@@ -53,6 +55,14 @@ export default function RampStatusCard({ ramp }: RampStatusCardProps) {
 
   const colors = getStatusColor()
 
+  // Create Google Maps search URL
+  const getMapUrl = () => {
+    const searchQuery = ramp.location 
+      ? `${ramp.name}, ${ramp.location}, Lake Powell`
+      : `${ramp.name}, Lake Powell`
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`
+  }
+
   return (
     <div className={`card ${colors.border} ${colors.bg} p-6 shadow-sm hover:shadow-md transition-shadow`}>
       <div className="flex items-start mb-4">
@@ -60,8 +70,22 @@ export default function RampStatusCard({ ramp }: RampStatusCardProps) {
           <span className={`${colors.accent} text-lg font-light`}>{getStatusIcon()}</span>
         </div>
         <div className="flex-1">
-          <h3 className={`font-light text-lg ${colors.text} mb-1`}>{ramp.name}</h3>
-          <div className={`text-sm font-light ${colors.text}`}>{ramp.status}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <h3 className={`font-light text-lg ${colors.text} mb-1`}>{ramp.name}</h3>
+              <div className={`text-sm font-light ${colors.text}`}>{ramp.status}</div>
+            </div>
+            <a
+              href={getMapUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 p-2 hover:bg-white/50 rounded transition-colors"
+              aria-label={`View ${ramp.name} on map`}
+              title="View on map"
+            >
+              <MapPin className={`w-5 h-5 ${colors.accent}`} strokeWidth={1.5} />
+            </a>
+          </div>
         </div>
       </div>
       <div className="space-y-3 text-sm">

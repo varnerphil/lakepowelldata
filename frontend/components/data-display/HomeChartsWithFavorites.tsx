@@ -245,7 +245,7 @@ export default function HomeChartsWithFavorites({
   return (
     <>
       {/* 2. Historical Chart */}
-      <div className="mt-8 sm:mt-12">
+      <div className="mt-8 lg:mt-12">
         <HistoricalChart 
           data={measurements}
           startDate={startDate}
@@ -259,15 +259,15 @@ export default function HomeChartsWithFavorites({
 
       {/* 3. Elevation Projection - only show when appropriate */}
       {showDropProjection && (
-        <div className="mt-8 sm:mt-12">
-          <div className="card p-4 sm:p-6 lg:p-8">
-            <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
+        <div className="mt-8 lg:mt-12">
+          <div className="card p-4 lg:p-8">
+            <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-6 text-gray-900">
               {seasonalStatus?.dropProjectionLabel || 'Elevation Projection'}
             </h2>
             
             {/* Projection Chart */}
-            <div className="mb-4 sm:mb-6">
-              <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 font-light">
+            <div className="mb-4 lg:mb-6">
+              <p className="text-xs lg:text-sm text-gray-500 mb-0 lg:mb-6 font-light">
                 Projected elevation from {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. 
                 <span className="text-blue-600"> Historical Avg</span> shows the typical drop based on similar years.
                 {weeklyChange !== null && (
@@ -287,22 +287,22 @@ export default function HomeChartsWithFavorites({
             </div>
             
             {/* Projected Drop Summary */}
-            <div className="p-3 sm:p-6 bg-gray-50 rounded-lg">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+            <div className="p-3 lg:p-6 bg-gray-50 rounded-lg">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-3">
                 <div>
-                  <h3 className="text-lg sm:text-xl font-light text-gray-900">
+                  <h3 className="text-lg lg:text-xl font-light text-gray-900">
                     {seasonalStatus?.dropProjectionLabel || 'Projected Drop to Annual Low'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 font-light mt-1 sm:mt-2">
+                  <p className="text-xs lg:text-sm text-gray-500 font-light mt-1 lg:mt-2">
                     Based on {historicalDrops.length} similar historical years starting near this elevation on {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                   </p>
                 </div>
                 {projectedDrop > 0 && (
-                  <div className="text-left sm:text-right">
-                    <div className="text-2xl sm:text-3xl font-light text-[#c99a7a]">
-                      {projectedDrop.toFixed(1)} <span className="text-base sm:text-lg text-gray-500">ft</span>
+                  <div className="text-left lg:text-right">
+                    <div className="text-2xl lg:text-3xl font-light text-[#c99a7a]">
+                      {projectedDrop.toFixed(1)} <span className="text-base lg:text-lg text-gray-500">ft</span>
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-500 font-light">
+                    <div className="text-xs lg:text-sm text-gray-500 font-light">
                       to ~{projectedLowElevation.toFixed(1)} ft by{' '}
                       {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                     </div>
@@ -345,7 +345,7 @@ export default function HomeChartsWithFavorites({
                             <td className="py-2 pr-4">
                               <div className="flex items-center gap-2">
                                 <span className={`w-2 h-2 rounded-full ${isCurrentlyOpen ? 'bg-[#8b9a6b]' : 'bg-[#c99a7a]'}`} />
-                                <span className="font-light text-gray-900 truncate max-w-[150px] sm:max-w-none">
+                                <span className="font-light text-gray-900 truncate max-w-[150px] lg:max-w-none">
                                   {ramp.name}
                                 </span>
                               </div>
@@ -414,7 +414,7 @@ export default function HomeChartsWithFavorites({
 
       {/* 4. Snowpack-Based Runoff Projection - only show during runoff season */}
       {showRunoffProjection && snowpackProjection && (
-        <div className="mt-8 sm:mt-12">
+        <div className="mt-8 lg:mt-12">
           <div className="card p-4 sm:p-6 lg:p-8">
             <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
               {seasonalStatus?.runoffProjectionLabel || 'Spring Runoff Projection'}
@@ -427,7 +427,7 @@ export default function HomeChartsWithFavorites({
             {/* Show current progress if we're actively tracking */}
             {currentGainFromLow !== null && seasonalStatus?.phase === 'runoff-rising' && (
               <div className="mb-6 p-4 bg-[#4a90a4]/10 rounded-lg border border-[#4a90a4]/20">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
                     <h4 className="text-sm uppercase tracking-wider text-gray-500 mb-1 font-light">Current Progress</h4>
                     <p className="text-xs text-gray-400 font-light">
@@ -436,11 +436,11 @@ export default function HomeChartsWithFavorites({
                         : 'N/A'}
                     </p>
                   </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-2xl sm:text-3xl font-light text-[#4a90a4]">
-                      +{currentGainFromLow.toFixed(1)} <span className="text-base sm:text-lg text-gray-500">ft so far</span>
+                  <div className="text-left lg:text-right">
+                    <div className="text-2xl lg:text-3xl font-light text-[#4a90a4]">
+                      +{currentGainFromLow.toFixed(1)} <span className="text-base lg:text-lg text-gray-500">ft so far</span>
                     </div>
-                    <div className="text-xs sm:text-sm text-gray-500 font-light">
+                    <div className="text-xs lg:text-sm text-gray-500 font-light">
                       {snowpackProjection.projectedRunoffGain > 0 && (
                         <>of projected +{snowpackProjection.projectedRunoffGain.toFixed(1)} ft</>
                       )}
@@ -478,15 +478,15 @@ export default function HomeChartsWithFavorites({
 
       {/* 5. Runoff Season Summary - show after peak when we can compare actual vs projected */}
       {showRunoffSummary && currentGainFromLow !== null && snowpackProjection && (
-        <div className="mt-8 sm:mt-12">
-          <div className="card p-4 sm:p-6 lg:p-8">
-            <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
+        <div className="mt-8 lg:mt-12">
+          <div className="card p-4 lg:p-8">
+            <h2 className="text-xl lg:text-2xl font-light mb-4 lg:mb-6 text-gray-900">
               Runoff Season Summary
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-light">Actual Gain</div>
-                <div className="text-2xl sm:text-3xl font-light text-[#4a90a4]">
+                <div className="text-2xl lg:text-3xl font-light text-[#4a90a4]">
                   +{currentGainFromLow.toFixed(1)} ft
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
@@ -496,7 +496,7 @@ export default function HomeChartsWithFavorites({
               
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-light">Projected Gain</div>
-                <div className="text-2xl sm:text-3xl font-light text-gray-600">
+                <div className="text-2xl lg:text-3xl font-light text-gray-600">
                   +{snowpackProjection.projectedRunoffGain.toFixed(1)} ft
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
@@ -506,7 +506,7 @@ export default function HomeChartsWithFavorites({
               
               <div className="bg-gray-50 rounded-lg p-4 text-center">
                 <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-light">Difference</div>
-                <div className={`text-2xl sm:text-3xl font-light ${
+                <div className={`text-2xl lg:text-3xl font-light ${
                   currentGainFromLow > snowpackProjection.projectedRunoffGain 
                     ? 'text-[#8b9a6b]' 
                     : 'text-[#c99a7a]'

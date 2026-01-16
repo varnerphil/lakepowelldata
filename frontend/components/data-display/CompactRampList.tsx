@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Star, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Ramp {
   id: number
@@ -30,34 +31,6 @@ function calculateRampStatus(ramp: Ramp, currentElevation: number): RampStatus {
   } else {
     return 'Unusable'
   }
-}
-
-function StarIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg 
-      className={`w-6 h-6 sm:w-7 sm:h-7 ${filled ? 'text-[#d4a574] fill-current' : 'text-gray-300'}`} 
-      viewBox="0 0 20 20"
-      fill="currentColor"
-    >
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  )
-}
-
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  )
-}
-
-function ChevronUpIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-    </svg>
-  )
 }
 
 export default function CompactRampList({ ramps, currentElevation }: CompactRampListProps) {
@@ -177,20 +150,23 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
         key={ramp.id} 
         className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded transition-colors"
       >
-        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        <div className="flex items-center gap-2 lg:gap-3 flex-1 min-w-0">
           <button
             onClick={(e) => {
               e.stopPropagation()
               toggleFavorite(ramp.id)
             }}
-            className="flex-shrink-0 p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors active:scale-95"
+            className="flex-shrink-0 p-1.5 lg:p-2 hover:bg-gray-100 rounded transition-colors active:scale-95"
             aria-label={favorites.includes(ramp.id) ? 'Remove from favorites' : 'Add to favorites'}
           >
-            <StarIcon filled={favorites.includes(ramp.id)} />
+            <Star 
+              className={`w-6 h-6 lg:w-7 lg:h-7 ${favorites.includes(ramp.id) ? 'text-[#d4a574] fill-[#d4a574]' : 'text-gray-300'}`}
+              strokeWidth={1.5}
+            />
           </button>
           {/* Circular Icon - matching favorites and ramps page style */}
-          <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
-            <span className={`${styles.accent} text-sm sm:text-lg font-light`}>{statusIcon}</span>
+          <div className={`flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
+            <span className={`${styles.accent} text-sm lg:text-lg font-light`}>{statusIcon}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -254,18 +230,18 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
     return (
       <div
         key={ramp.id}
-        className={`flex items-start gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-[calc(50%-4px)]`}
+        className={`flex items-center gap-1 lg:gap-3 px-1.5 lg:px-4 py-0.5 lg:py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all w-full h-full`}
       >
         {/* Circular Icon - matching ramps page style */}
-        <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
-          <span className={`${styles.accent} text-sm sm:text-lg font-light`}>{statusIcon}</span>
+        <div className={`flex-shrink-0 w-5 h-5 lg:w-10 lg:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
+          <span className={`${styles.accent} text-[10px] lg:text-lg font-light`}>{statusIcon}</span>
         </div>
         
         <div className="flex flex-col min-w-0 flex-1">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 mb-1">
-            <span className={`text-sm sm:text-lg font-medium ${styles.text} break-words sm:truncate flex-1 min-w-0 leading-tight`}>{displayName}</span>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-0 lg:gap-2.5 mb-0 lg:mb-1">
+            <span className={`text-[10px] lg:text-lg font-medium ${styles.text} break-words lg:truncate flex-1 min-w-0 leading-tight`}>{displayName}</span>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base font-light flex-wrap">
+          <div className="flex items-center gap-0.5 lg:gap-2 text-[9px] lg:text-base font-light flex-wrap">
             <span className={`${styles.text} whitespace-nowrap`}>{ramp.min_safe_elevation.toFixed(0)}ft min</span>
             <span className={`${styles.text} flex-shrink-0`}>•</span>
             <span className={`${styles.accent} font-medium flex-shrink-0 whitespace-nowrap`}>
@@ -279,11 +255,11 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
 
   return (
     <div className="mt-6 pt-6 border-t border-gray-100">
-      {/* Favorites Section - Horizontal Layout */}
+      {/* Favorites Section - 2 columns on mobile, horizontal on desktop */}
       {favoriteRamps.length > 0 && (
-        <div className="mb-4 pb-4 border-b border-gray-100">
-          <div className="text-sm uppercase tracking-wider text-gray-500 mb-2 font-light">Favorites</div>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-2">
+        <div className="mb-2 lg:mb-4 pb-2 lg:pb-4 border-b border-gray-100">
+          <div className="text-xs lg:text-sm uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Favorites</div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-1 gap-y-0.5 lg:gap-2">
             {favoriteRamps.map(ramp => renderFavoriteItem(ramp))}
           </div>
         </div>
@@ -292,13 +268,13 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
       {/* Dropdown Toggle */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between text-base sm:text-lg font-light text-gray-700 hover:text-gray-900 transition-colors py-2"
+        className="w-full flex items-center justify-between text-base lg:text-lg font-light text-gray-700 hover:text-gray-900 transition-colors py-2"
       >
         <span>Boat Ramp Status ({sortedRampsWithStatus.length})</span>
         {isExpanded ? (
-          <ChevronUpIcon className="w-5 h-5" />
+          <ChevronUp className="w-5 h-5" strokeWidth={1.5} />
         ) : (
-          <ChevronDownIcon className="w-5 h-5" />
+          <ChevronDown className="w-5 h-5" strokeWidth={1.5} />
         )}
       </button>
 
