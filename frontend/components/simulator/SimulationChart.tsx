@@ -120,6 +120,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   
   // Shorten ramp names for display with custom mappings
   const shortenRampName = (name: string, elevation: number): string => {
+    // Normalize name: remove parentheses, extra spaces, etc.
+    const normalized = name.replace(/[()]/g, '').trim()
+    const normalizedLower = normalized.toLowerCase()
+    
     // Custom mappings for specific ramps
     const nameMappings: Record<string, string> = {
       'Antelope Point Public Ramp': 'Antelope M',
@@ -137,17 +141,25 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       'Stateline': 'Stateline'
     }
     
-    // Check for exact match first
+    // Check for exact match first (original and normalized)
     if (nameMappings[name]) {
       return `${nameMappings[name]} ${elevation}ft`
     }
+    if (nameMappings[normalized]) {
+      return `${nameMappings[normalized]} ${elevation}ft`
+    }
     
-    // Check for partial matches (case insensitive)
-    const normalizedName = name.toLowerCase()
+    // Check for partial matches (case insensitive, with normalized name)
     for (const [key, value] of Object.entries(nameMappings)) {
-      if (normalizedName.includes(key.toLowerCase())) {
+      const keyLower = key.toLowerCase()
+      if (normalizedLower.includes(keyLower) || keyLower.includes(normalizedLower)) {
         return `${value} ${elevation}ft`
       }
+    }
+    
+    // Special case: Bullfrog + Main (any variation)
+    if (normalizedLower.includes('bullfrog') && normalizedLower.includes('main') && !normalizedLower.includes('north')) {
+      return `Bullfrog M ${elevation}ft`
     }
     
     // Fallback: use original logic for unmapped names
