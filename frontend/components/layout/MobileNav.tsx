@@ -25,6 +25,7 @@ const navLinks = [
   { href: '/history', label: 'History' },
   { href: '/storage', label: 'Storage' },
   { href: '/snowpack', label: 'Snowpack' },
+  { href: '/simulator', label: 'Simulator' },
   { href: '/stats', label: 'Stats' },
   { href: '/ramps', label: 'Ramps' },
   { href: '/about', label: 'About' },

@@ -1,4 +1,4 @@
-import { WaterMeasurement } from './db'
+import { WaterMeasurement, ElevationStorageCapacity } from './db'
 
 /**
  * Calculate projected runoff based on snowpack percentage and historical data
@@ -598,5 +598,231 @@ export function calculateSnowpackEfficiency(
     avgInflowPerInchSwe: Math.round(avgInflow),
     dataPoints: validYears.length
   }
+}
+
+// ============================================================================
+// OUTFLOW SIMULATION
+// ============================================================================
+
+/**
+ * Monthly evaporation rates in feet per day for Lake Powell
+ * Based on published data - total ~6.6 ft/year
+ */
+const MONTHLY_EVAPORATION_RATES: Record<number, number> = {
+  0: 0.0065,  // January
+  1: 0.0100,  // February
+  2: 0.0129,  // March
+  3: 0.0180,  // April
+  4: 0.0226,  // May
+  5: 0.0300,  // June
+  6: 0.0323,  // July
+  7: 0.0290,  // August
+  8: 0.0227,  // September
+  9: 0.0155,  // October
+  10: 0.0100, // November
+  11: 0.0071  // December
+}
+
+/**
+ * Surface area (acres) at different elevations - approximate values
+ * Used for evaporation calculations
+ */
+function getSurfaceAreaAtElevation(elevation: number): number {
+  // Approximate surface area based on Lake Powell bathymetry
+  // Full pool (3700 ft) = ~161,000 acres
+  // Linear approximation for simplicity (actual is non-linear but close enough)
+  if (elevation <= 3370) return 0 // Dead pool
+  if (elevation >= 3700) return 161000
+  
+  // Roughly linear between dead pool and full
+  const minElev = 3370
+  const maxElev = 3700
+  const minArea = 0
+  const maxArea = 161000
+  
+  return minArea + (elevation - minElev) / (maxElev - minElev) * (maxArea - minArea)
+}
+
+/**
+ * Get daily evaporation in acre-feet based on date and elevation
+ */
+function getDailyEvaporation(date: Date, elevation: number): number {
+  const month = date.getMonth()
+  const evapRateFtPerDay = MONTHLY_EVAPORATION_RATES[month]
+  const surfaceAreaAcres = getSurfaceAreaAtElevation(elevation)
+  
+  // Daily evaporation in acre-feet = surface area (acres) * evaporation rate (ft/day)
+  return surfaceAreaAcres * evapRateFtPerDay
+}
+
+/**
+ * Convert content (acre-feet) to elevation (feet) using the storage capacity table
+ * Uses linear interpolation between elevation bands
+ */
+export function contentToElevation(
+  content: number,
+  storageCapacity: ElevationStorageCapacity[]
+): number {
+  if (storageCapacity.length === 0) return 3500 // Default fallback
+  
+  // Sort by elevation ascending
+  const sorted = [...storageCapacity].sort((a, b) => a.elevation - b.elevation)
+  
+  // Handle edge cases
+  if (content <= 0) return sorted[0].elevation
+  if (content >= sorted[sorted.length - 1].storage_at_elevation) {
+    return sorted[sorted.length - 1].elevation
+  }
+  
+  // Find the band that contains this content
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const current = sorted[i]
+    const next = sorted[i + 1]
+    
+    if (content >= current.storage_at_elevation && content < next.storage_at_elevation) {
+      // Linear interpolation between bands
+      const fraction = (content - current.storage_at_elevation) / 
+                       (next.storage_at_elevation - current.storage_at_elevation)
+      return current.elevation + fraction * (next.elevation - current.elevation)
+    }
+  }
+  
+  // Fallback to last elevation
+  return sorted[sorted.length - 1].elevation
+}
+
+/**
+ * Result of a single day in the simulation
+ */
+export interface SimulationDayResult {
+  date: string
+  actualElevation: number
+  actualContent: number
+  actualInflow: number
+  actualOutflow: number
+  simulatedElevation: number
+  simulatedContent: number
+  adjustedOutflow: number
+  evaporation: number
+}
+
+/**
+ * Summary statistics for the simulation
+ */
+export interface SimulationSummary {
+  startDate: string
+  endDate: string
+  outflowPercentage: number
+  actualEndingElevation: number
+  simulatedEndingElevation: number
+  elevationDifference: number
+  actualEndingContent: number
+  simulatedEndingContent: number
+  contentDifference: number
+  totalActualOutflow: number
+  totalSimulatedOutflow: number
+  outflowDifference: number
+  totalEvaporation: number
+}
+
+/**
+ * Full result of the outflow simulation
+ */
+export interface SimulationResult {
+  dailyData: SimulationDayResult[]
+  summary: SimulationSummary
+}
+
+/**
+ * Simulate lake levels with adjusted outflow percentage
+ * 
+ * @param startDate - Start date for simulation (YYYY-MM-DD)
+ * @param outflowPercentage - Percentage of actual outflow to use (e.g., 90 = 90%)
+ * @param measurements - Historical water measurements
+ * @param storageCapacity - Elevation-to-storage capacity data
+ * @returns Simulation results with daily data and summary
+ */
+export function simulateOutflow(
+  startDate: string,
+  outflowPercentage: number,
+  measurements: WaterMeasurement[],
+  storageCapacity: ElevationStorageCapacity[]
+): SimulationResult | null {
+  // Filter measurements from startDate onwards
+  const filtered = measurements
+    .filter(m => m.date >= startDate)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  
+  if (filtered.length === 0) {
+    return null
+  }
+  
+  // Initialize simulation with first day's values
+  const firstDay = filtered[0]
+  let simulatedContent = firstDay.content || 0
+  
+  const dailyData: SimulationDayResult[] = []
+  let totalActualOutflow = 0
+  let totalSimulatedOutflow = 0
+  let totalEvaporation = 0
+  
+  for (const measurement of filtered) {
+    const date = new Date(measurement.date)
+    const inflow = measurement.inflow || 0
+    const outflow = measurement.outflow || 0
+    const actualContent = measurement.content || 0
+    const actualElevation = measurement.elevation
+    
+    // Calculate adjusted outflow
+    const adjustedOutflow = outflow * (outflowPercentage / 100)
+    
+    // Calculate evaporation based on current simulated elevation
+    const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+    const evaporation = getDailyEvaporation(date, simulatedElevation)
+    
+    // Update simulated content: content + inflow - adjusted_outflow - evaporation
+    const netChange = inflow - adjustedOutflow - evaporation
+    simulatedContent = Math.max(0, simulatedContent + netChange)
+    
+    // Convert to elevation
+    const newSimulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+    
+    // Track totals
+    totalActualOutflow += outflow
+    totalSimulatedOutflow += adjustedOutflow
+    totalEvaporation += evaporation
+    
+    dailyData.push({
+      date: measurement.date,
+      actualElevation,
+      actualContent,
+      actualInflow: inflow,
+      actualOutflow: outflow,
+      simulatedElevation: Math.round(newSimulatedElevation * 100) / 100,
+      simulatedContent: Math.round(simulatedContent),
+      adjustedOutflow: Math.round(adjustedOutflow),
+      evaporation: Math.round(evaporation)
+    })
+  }
+  
+  // Calculate summary
+  const lastDay = dailyData[dailyData.length - 1]
+  const summary: SimulationSummary = {
+    startDate,
+    endDate: lastDay.date,
+    outflowPercentage,
+    actualEndingElevation: Math.round(lastDay.actualElevation * 100) / 100,
+    simulatedEndingElevation: lastDay.simulatedElevation,
+    elevationDifference: Math.round((lastDay.simulatedElevation - lastDay.actualElevation) * 100) / 100,
+    actualEndingContent: lastDay.actualContent,
+    simulatedEndingContent: lastDay.simulatedContent,
+    contentDifference: lastDay.simulatedContent - lastDay.actualContent,
+    totalActualOutflow: Math.round(totalActualOutflow),
+    totalSimulatedOutflow: Math.round(totalSimulatedOutflow),
+    outflowDifference: Math.round(totalActualOutflow - totalSimulatedOutflow),
+    totalEvaporation: Math.round(totalEvaporation)
+  }
+  
+  return { dailyData, summary }
 }
 
