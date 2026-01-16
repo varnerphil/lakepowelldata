@@ -122,11 +122,12 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   const shortenRampName = (name: string, elevation: number): string => {
     // Custom mappings for specific ramps
     const nameMappings: Record<string, string> = {
-      'Antelope Point Public Ramp': 'Antelop Pub',
+      'Antelope Point Public Ramp': 'Antelope M',
       'Antelope Point Business Ramp': 'Antelope E',
       'Castle Rock Cut-Off': 'The Cut',
       'Castle Rock': 'The Cut',
       'Bullfrog Main Ramp': 'Bullfrog M',
+      'Bullfrog Main Launch': 'Bullfrog M',
       'Bullfrog North Ramp': 'Bullfrog N',
       'Halls Crossing Ramp': 'Halls',
       'Halls Crossing': 'Halls',
