@@ -22,14 +22,22 @@ interface SimulationChartProps {
 
 export default function SimulationChart({ data, ramps = [] }: SimulationChartProps) {
   // Sample data for large datasets to improve performance
+  // Split simulated line into segments: green when above actual, orange when below
   const chartData = useMemo(() => {
     const processData = (items: typeof data) => {
-      return items.map(d => ({
-        date: d.date,
-        timestamp: new Date(d.date).getTime(),
-        actual: d.actualElevation,
-        simulated: d.simulatedElevation
-      }))
+      return items.map(d => {
+        const simulated = d.simulatedElevation
+        const actual = d.actualElevation
+        return {
+          date: d.date,
+          timestamp: new Date(d.date).getTime(),
+          actual: actual,
+          simulated: simulated,
+          // Split simulated into above (green) and below (orange) segments
+          simulatedAbove: simulated >= actual ? simulated : null,
+          simulatedBelow: simulated < actual ? simulated : null
+        }
+      })
     }
     
     if (data.length <= 1000) {
@@ -186,7 +194,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 100, left: 60, bottom: 80 }}
+          margin={{ top: 5, right: 100, left: 40, bottom: 80 }}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -219,10 +227,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               value: 'Elevation (ft)', 
               angle: -90, 
               position: 'insideLeft',
-              offset: -45,
+              offset: -30,
               style: { textAnchor: 'middle', fill: '#888', fontSize: 12 }
             }}
-            width={55}
+            width={50}
           />
           
           <Tooltip 
@@ -234,20 +242,24 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}
             labelFormatter={formatTooltipDate}
-            formatter={(value: number, name: string) => [
-              `${value.toFixed(2)} ft`,
-              name === 'actual' ? 'Actual' : 'Simulated'
-            ]}
+            formatter={(value: number, name: string) => {
+              if (name === 'actual') return [`${value.toFixed(2)} ft`, 'Actual']
+              if (name === 'simulatedAbove') return [`${value.toFixed(2)} ft`, 'Simulated (Improving)']
+              if (name === 'simulatedBelow') return [`${value.toFixed(2)} ft`, 'Simulated (Worse)']
+              return [`${value.toFixed(2)} ft`, name]
+            }}
           />
           
           <Legend 
             verticalAlign="top" 
             height={36}
-            formatter={(value) => (
-              <span style={{ color: '#666', fontSize: '12px', fontWeight: 300 }}>
-                {value === 'actual' ? 'Actual Elevation' : 'Simulated Elevation'}
-              </span>
-            )}
+            formatter={(value) => {
+              if (value === 'actual') return 'Actual Elevation'
+              if (value === 'Simulated (Improving)') return 'Simulated (Improving)'
+              if (value === 'Simulated (Worse)') return 'Simulated (Worse)'
+              return value
+            }}
+            iconType="line"
           />
           
           {/* Reference lines for key elevations */}
@@ -329,14 +341,28 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             activeDot={{ r: 4, fill: '#3b82f6' }}
           />
           
-          {/* Simulated elevation line */}
+          {/* Simulated elevation line - green when above actual */}
           <Line 
             type="monotone"
-            dataKey="simulated"
+            dataKey="simulatedAbove"
+            stroke="#8b9a6b"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4, fill: '#8b9a6b' }}
+            connectNulls={false}
+            name="Simulated (Improving)"
+          />
+          
+          {/* Simulated elevation line - orange when below actual */}
+          <Line 
+            type="monotone"
+            dataKey="simulatedBelow"
             stroke="#d4a574"
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4, fill: '#d4a574' }}
+            connectNulls={false}
+            name="Simulated (Worse)"
           />
         </LineChart>
       </ResponsiveContainer>

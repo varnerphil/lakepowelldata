@@ -20,9 +20,17 @@ export default function OutflowSimulator({
   maxDate,
   ramps
 }: OutflowSimulatorProps) {
+  // Preset start dates (sorted chronologically)
+  const PRESET_DATES = [
+    { label: 'Jan 1, 2000', value: '2000-01-01' },
+    { label: 'Apr 13, 2005', value: '2005-04-13' },
+    { label: 'Mar 17, 2014', value: '2014-03-17' },
+    { label: 'Apr 3, 2022', value: '2022-04-03' }
+  ]
+  
   const [startDate, setStartDate] = useState('2000-01-01')
   const [outflowPercentage, setOutflowPercentage] = useState(90)
-  const [hasCalculated, setHasCalculated] = useState(false)
+  const [hasCalculated, setHasCalculated] = useState(true) // Auto-run on load
   const [favoriteRampIds, setFavoriteRampIds] = useState<number[]>([])
   
   // Load favorite ramps from local storage
@@ -66,56 +74,90 @@ export default function OutflowSimulator({
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Controls Card */}
-      <div className="card p-4 sm:p-6 lg:p-8">
-        <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-6">
+      <div className="card p-4 sm:p-6 lg:p-6">
+        <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-4 lg:mb-5">
           Simulation Parameters
         </h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
           {/* Start Date Picker */}
-          <div>
+          <div className="lg:col-span-5">
             <label htmlFor="startDate" className="block text-sm font-light text-gray-600 mb-2">
               Start Date
             </label>
+            {/* Preset Date Buttons */}
+            <div className="flex flex-wrap gap-2 mb-2 lg:mb-3">
+              {PRESET_DATES.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => {
+                    setStartDate(preset.value)
+                    setHasCalculated(true) // Auto-run when preset is selected
+                  }}
+                  className={`px-3 py-1.5 text-xs font-light rounded-lg border transition-colors ${
+                    startDate === preset.value
+                      ? 'bg-[#4a90a4] text-white border-[#4a90a4]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#4a90a4] hover:text-[#4a90a4]'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             <input
               type="date"
               id="startDate"
               value={startDate}
               onChange={(e) => {
                 setStartDate(e.target.value)
-                setHasCalculated(false)
+                setHasCalculated(true) // Auto-run when date is changed
               }}
               min={minDate}
               max={maxDate}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-[#4a90a4]/20 focus:border-[#4a90a4]"
             />
-            <p className="text-xs text-gray-400 mt-1 font-light">
+            <p className="text-xs text-gray-400 mt-1 font-light lg:hidden">
               Simulation runs from this date to present
             </p>
           </div>
           
           {/* Outflow Percentage Slider */}
-          <div>
+          <div className="lg:col-span-7">
             <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
               Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
             </label>
-            <input
-              type="range"
-              id="outflowPercentage"
-              min={80}
-              max={150}
-              step={1}
-              value={outflowPercentage}
-              onChange={(e) => {
-                setOutflowPercentage(Number(e.target.value))
-                setHasCalculated(false)
-              }}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>80%</span>
-              <span>100%</span>
-              <span>150%</span>
+            <div className="relative">
+              <input
+                type="range"
+                id="outflowPercentage"
+                min={70}
+                max={110}
+                step={1}
+                value={outflowPercentage}
+                onChange={(e) => {
+                  setOutflowPercentage(Number(e.target.value))
+                  setHasCalculated(true) // Auto-run when slider changes
+                }}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
+              />
+            </div>
+            <div className="relative mt-1 h-4">
+              {/* Static labels - only edges */}
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>70%</span>
+                <span>110%</span>
+              </div>
+              {/* Dynamic current value label positioned at slider thumb */}
+              <div 
+                className="absolute top-0 text-xs font-medium text-gray-900 pointer-events-none whitespace-nowrap"
+                style={{
+                  left: `${((outflowPercentage - 70) / (110 - 70)) * 100}%`,
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                {outflowPercentage}%
+              </div>
             </div>
             <p className="text-xs text-gray-400 mt-2 font-light">
               {outflowPercentage < 100 
@@ -127,8 +169,8 @@ export default function OutflowSimulator({
             </p>
           </div>
           
-          {/* Calculate Button */}
-          <div className="flex items-end">
+          {/* Calculate Button - Hidden on desktop since it auto-runs */}
+          <div className="flex items-end lg:hidden">
             <button
               onClick={handleCalculate}
               className="w-full sm:w-auto px-6 py-2.5 bg-[#4a90a4] text-white rounded-lg text-sm font-light hover:bg-[#3d7a8c] transition-colors"
@@ -143,12 +185,12 @@ export default function OutflowSimulator({
       {simulationResult && (
         <>
           {/* Summary Card */}
-          <div className="card p-4 sm:p-6 lg:p-8">
-            <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-6">
+          <div className="card p-4 sm:p-6 lg:p-6">
+            <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
               Simulation Results
             </h2>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               {/* Actual End Elevation */}
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 font-light">
@@ -239,7 +281,7 @@ export default function OutflowSimulator({
             </div>
             
             {/* Period Info */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-4 lg:mt-5 pt-4 lg:pt-5 border-t border-gray-100">
               <p className="text-sm text-gray-500 font-light">
                 Simulating from <span className="font-medium text-gray-700">{new Date(simulationResult.summary.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 {' '}to <span className="font-medium text-gray-700">{new Date(simulationResult.summary.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -250,13 +292,14 @@ export default function OutflowSimulator({
           </div>
           
           {/* Chart */}
-          <div className="card p-4 sm:p-6 lg:p-8">
-            <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-6">
+          <div className="card p-4 sm:p-6 lg:p-6">
+            <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
               Elevation Comparison
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-4 font-light">
               <span className="text-blue-600">Blue line</span> shows actual historical elevation.
-              <span className="text-[#d4a574]"> Orange line</span> shows simulated elevation with {outflowPercentage}% outflow.
+              <span className="text-[#8b9a6b]"> Green line</span> shows simulated elevation when <span className="font-medium">improving</span> (higher than actual).
+              <span className="text-[#d4a574]"> Orange line</span> shows simulated elevation when <span className="font-medium">worse</span> (lower than actual).
             </p>
             <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
           </div>
@@ -265,7 +308,7 @@ export default function OutflowSimulator({
       
       {/* Instructions */}
       {!hasCalculated && (
-        <div className="card p-4 sm:p-6 lg:p-8 bg-gray-50/50">
+        <div className="card p-4 sm:p-6 lg:p-6 bg-gray-50/50">
           <h3 className="text-lg font-light text-gray-900 mb-3">How to Use</h3>
           <ol className="space-y-2 text-sm text-gray-600 font-light">
             <li className="flex gap-2">
