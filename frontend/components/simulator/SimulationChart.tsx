@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   LineChart,
   Line,
@@ -21,6 +21,17 @@ interface SimulationChartProps {
 }
 
 export default function SimulationChart({ data, ramps = [] }: SimulationChartProps) {
+  // Detect mobile screen size
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640) // sm breakpoint
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   // Sample data for large datasets to improve performance
   // Split simulated line into segments: green when above actual, orange when below
   const chartData = useMemo(() => {
@@ -189,12 +200,20 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     return `${short} ${elevation}ft`
   }
 
+  // Responsive margins
+  const chartMargins = useMemo(() => {
+    if (isMobile) {
+      return { top: 5, right: 60, left: 20, bottom: 60 } // Increased right margin for ramp labels
+    }
+    return { top: 5, right: 100, left: 40, bottom: 80 }
+  }, [isMobile])
+
   return (
     <div className="h-[300px] sm:h-[400px] lg:h-[500px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 100, left: 40, bottom: 80 }}
+          margin={chartMargins}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -207,30 +226,30 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
-            ticks={xAxisTicks}
+            ticks={isMobile ? xAxisTicks.filter((_, i) => i % 2 === 0) : xAxisTicks} // Show fewer ticks on mobile
             tickFormatter={formatXAxis}
-            tick={{ fontSize: 11, fill: '#888' }}
+            tick={{ fontSize: isMobile ? 9 : 11, fill: '#888' }}
             tickLine={{ stroke: '#ccc' }}
             axisLine={{ stroke: '#ccc' }}
-            angle={-45}
+            angle={isMobile ? -30 : -45}
             textAnchor="end"
-            height={60}
+            height={isMobile ? 50 : 60}
           />
           
           <YAxis 
             domain={[yMin, yMax]}
-            tick={{ fontSize: 11, fill: '#888' }}
+            tick={{ fontSize: isMobile ? 9 : 11, fill: '#888' }}
             tickLine={{ stroke: '#ccc' }}
             axisLine={{ stroke: '#ccc' }}
             tickFormatter={(value) => value.toFixed(0)}
-            label={{ 
+            label={isMobile ? undefined : { 
               value: 'Elevation (ft)', 
               angle: -90, 
               position: 'insideLeft',
               offset: -30,
               style: { textAnchor: 'middle', fill: '#888', fontSize: 12 }
             }}
-            width={50}
+            width={isMobile ? 30 : 50}
           />
           
           <Tooltip 
@@ -238,8 +257,9 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
-              fontSize: '12px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              fontSize: isMobile ? '10px' : '12px',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              padding: isMobile ? '6px' : '8px'
             }}
             labelFormatter={formatTooltipDate}
             formatter={(value: number, name: string) => {
@@ -252,11 +272,12 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
           
           <Legend 
             verticalAlign="top" 
-            height={36}
+            height={isMobile ? 60 : 36}
+            wrapperStyle={{ fontSize: isMobile ? '10px' : '12px' }}
             formatter={(value) => {
-              if (value === 'actual') return 'Actual Elevation'
-              if (value === 'Simulated (Improving)') return 'Simulated (Improving)'
-              if (value === 'Simulated (Worse)') return 'Simulated (Worse)'
+              if (value === 'actual') return 'Actual'
+              if (value === 'Simulated (Improving)') return isMobile ? 'Sim (↑)' : 'Simulated (Improving)'
+              if (value === 'Simulated (Worse)') return isMobile ? 'Sim (↓)' : 'Simulated (Worse)'
               return value
             }}
             iconType="line"
@@ -269,7 +290,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               stroke="#f59e0b" 
               strokeDasharray="5 5"
               strokeOpacity={0.7}
-              label={{ 
+              label={isMobile ? undefined : { 
                 value: 'Min Power', 
                 position: 'right', 
                 fill: '#f59e0b', 
@@ -284,7 +305,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               stroke="#ef4444" 
               strokeDasharray="5 5"
               strokeOpacity={0.7}
-              label={{ 
+              label={isMobile ? undefined : { 
                 value: 'Dead Pool', 
                 position: 'right', 
                 fill: '#ef4444', 
@@ -300,7 +321,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
               stroke="#3b82f6" 
               strokeDasharray="5 5"
               strokeOpacity={0.7}
-              label={{ 
+              label={isMobile ? undefined : { 
                 value: 'Full Pool', 
                 position: 'right', 
                 fill: '#3b82f6', 
@@ -309,27 +330,50 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             />
           )}
           
-          {/* Favorite ramp reference lines */}
-          {ramps.map((ramp, index) => {
-            const elevation = ramp.min_safe_elevation || ramp.min_usable_elevation
-            if (elevation < yMin || elevation > yMax) return null
-            const color = rampColors[index % rampColors.length]
-            return (
-              <ReferenceLine 
-                key={ramp.id}
-                y={elevation} 
-                stroke={color}
-                strokeDasharray="3 3"
-                strokeOpacity={0.6}
-                label={{ 
-                  value: shortenRampName(ramp.name, elevation), 
-                  position: 'right', 
-                  fill: color, 
-                  fontSize: 10 
-                }}
-              />
-            )
-          })}
+          {/* Favorite ramp reference lines - filter to prevent label overlap */}
+          {(() => {
+            // Filter ramps within visible range and sort by elevation
+            const visibleRamps = ramps
+              .map((ramp, index) => ({
+                ramp,
+                elevation: ramp.min_safe_elevation || ramp.min_usable_elevation,
+                index
+              }))
+              .filter(item => item.elevation >= yMin && item.elevation <= yMax)
+              .sort((a, b) => a.elevation - b.elevation)
+            
+            // Filter to only show ramps that are at least 25ft apart to prevent label overlap
+            const MIN_ELEVATION_SPACING = 25
+            const filteredRamps: typeof visibleRamps = []
+            
+            visibleRamps.forEach((item) => {
+              // Check if this ramp is far enough from the last added ramp
+              if (filteredRamps.length === 0 || 
+                  item.elevation - filteredRamps[filteredRamps.length - 1].elevation >= MIN_ELEVATION_SPACING) {
+                filteredRamps.push(item)
+              }
+            })
+            
+            return filteredRamps.map((item) => {
+              const color = rampColors[item.index % rampColors.length]
+              return (
+                <ReferenceLine 
+                  key={item.ramp.id}
+                  y={item.elevation} 
+                  stroke={color}
+                  strokeDasharray="3 3"
+                  strokeOpacity={0.6}
+                  label={{ 
+                    value: shortenRampName(item.ramp.name, item.elevation), 
+                    position: 'right', 
+                    fill: color, 
+                    fontSize: isMobile ? 8 : 10,
+                    offset: isMobile ? 5 : 0
+                  }}
+                />
+              )
+            })
+          })()}
           
           {/* Actual elevation line */}
           <Line 

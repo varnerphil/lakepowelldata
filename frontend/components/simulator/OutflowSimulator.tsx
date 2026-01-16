@@ -168,24 +168,14 @@ export default function OutflowSimulator({
               }
             </p>
           </div>
-          
-          {/* Calculate Button - Hidden on desktop since it auto-runs */}
-          <div className="flex items-end lg:hidden">
-            <button
-              onClick={handleCalculate}
-              className="w-full sm:w-auto px-6 py-2.5 bg-[#4a90a4] text-white rounded-lg text-sm font-light hover:bg-[#3d7a8c] transition-colors"
-            >
-              Calculate Simulation
-            </button>
-          </div>
         </div>
       </div>
       
       {/* Results */}
       {simulationResult && (
-        <>
-          {/* Summary Card */}
-          <div className="card p-4 sm:p-6 lg:p-6">
+        <div className="flex flex-col gap-6 sm:gap-8">
+          {/* Summary Card - Always second */}
+          <div className="card p-4 sm:p-6 lg:p-6 order-2">
             <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
               Simulation Results
             </h2>
@@ -291,8 +281,8 @@ export default function OutflowSimulator({
             </div>
           </div>
           
-          {/* Chart */}
-          <div className="card p-4 sm:p-6 lg:p-6">
+          {/* Chart - Always first */}
+          <div className="card p-4 sm:p-6 lg:p-6 order-1">
             <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
               Elevation Comparison
             </h2>
@@ -303,7 +293,7 @@ export default function OutflowSimulator({
             </p>
             <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
           </div>
-        </>
+        </div>
       )}
       
       {/* Instructions */}
@@ -321,7 +311,7 @@ export default function OutflowSimulator({
             </li>
             <li className="flex gap-2">
               <span className="text-[#4a90a4] font-medium">3.</span>
-              Click &quot;Calculate Simulation&quot; to see what would have happened
+              The simulation updates automatically to show what would have happened
             </li>
           </ol>
           <p className="mt-4 text-xs text-gray-500 font-light">
