@@ -57,11 +57,20 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   // Format date for X-axis
   const formatXAxis = (dateStr: string) => {
     const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
+    
+    // For long time ranges, show month/day format
+    // Show more ticks for better readability
+    const month = date.getMonth() + 1
+    const day = date.getDate()
     const year = date.getFullYear()
-    const month = date.toLocaleDateString('en-US', { month: 'short' })
-    // Show year at start of each year
-    if (date.getMonth() === 0) {
+    
+    // Show year at start of each year, otherwise show month/day
+    if (day === 1 && month === 1) {
       return `${year}`
+    } else if (day === 1 || day === 15) {
+      // Show month name and day for 1st and 15th of each month
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }
     return ''
   }
@@ -88,7 +97,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 20, left: 60, bottom: 20 }}
+          margin={{ top: 5, right: 20, left: 60, bottom: 60 }}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -102,8 +111,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             tick={{ fontSize: 11, fill: '#888' }}
             tickLine={{ stroke: '#ccc' }}
             axisLine={{ stroke: '#ccc' }}
+            angle={-45}
+            textAnchor="end"
+            height={60}
             interval="preserveStartEnd"
-            minTickGap={50}
           />
           
           <YAxis 
