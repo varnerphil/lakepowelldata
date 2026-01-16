@@ -23,23 +23,24 @@ interface SimulationChartProps {
 export default function SimulationChart({ data, ramps = [] }: SimulationChartProps) {
   // Sample data for large datasets to improve performance
   const chartData = useMemo(() => {
-    if (data.length <= 1000) {
-      return data.map(d => ({
+    const processData = (items: typeof data) => {
+      return items.map(d => ({
         date: d.date,
+        timestamp: new Date(d.date).getTime(),
         actual: d.actualElevation,
         simulated: d.simulatedElevation
       }))
     }
     
+    if (data.length <= 1000) {
+      return processData(data)
+    }
+    
     // Sample every Nth point for large datasets
     const sampleRate = Math.ceil(data.length / 1000)
-    return data
-      .filter((_, i) => i % sampleRate === 0 || i === data.length - 1)
-      .map(d => ({
-        date: d.date,
-        actual: d.actualElevation,
-        simulated: d.simulatedElevation
-      }))
+    return processData(
+      data.filter((_, i) => i % sampleRate === 0 || i === data.length - 1)
+    )
   }, [data])
   
   // Calculate Y-axis domain
@@ -54,24 +55,29 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     }
   }, [chartData])
   
-  // Format date for X-axis
-  const formatXAxis = (dateStr: string) => {
-    const date = new Date(dateStr)
+  // Format date for X-axis (receives timestamp)
+  const formatXAxis = (timestamp: number) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
     if (isNaN(date.getTime())) return ''
     
-    // For long time ranges, show month/day format
-    // Show more ticks for better readability
     const month = date.getMonth() + 1
     const day = date.getDate()
     const year = date.getFullYear()
     
-    // Show year at start of each year, otherwise show month/day
+    // Show year at start of each year
     if (day === 1 && month === 1) {
       return `${year}`
-    } else if (day === 1 || day === 15) {
-      // Show month name and day for 1st and 15th of each month
+    }
+    // Show month/day for 1st of each month
+    else if (day === 1) {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }
+    // Show day only for mid-month (15th)
+    else if (day === 15) {
+      return day.toString()
+    }
+    // For other dates, return empty to let Recharts space them
     return ''
   }
   
@@ -121,7 +127,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 100, left: 60, bottom: 60 }}
+          margin={{ top: 5, right: 100, left: 60, bottom: 80 }}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -130,7 +136,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
           />
           
           <XAxis 
-            dataKey="date"
+            dataKey="timestamp"
+            type="number"
+            scale="time"
+            domain={['dataMin', 'dataMax']}
             tickFormatter={formatXAxis}
             tick={{ fontSize: 11, fill: '#888' }}
             tickLine={{ stroke: '#ccc' }}
@@ -138,7 +147,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             angle={-45}
             textAnchor="end"
             height={60}
-            interval="preserveStartEnd"
+            minTickGap={30}
           />
           
           <YAxis 
