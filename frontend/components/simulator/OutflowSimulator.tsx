@@ -102,7 +102,7 @@ export default function OutflowSimulator({
             <input
               type="range"
               id="outflowPercentage"
-              min={50}
+              min={80}
               max={150}
               step={1}
               value={outflowPercentage}
@@ -113,7 +113,7 @@ export default function OutflowSimulator({
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
             />
             <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>50%</span>
+              <span>80%</span>
               <span>100%</span>
               <span>150%</span>
             </div>
