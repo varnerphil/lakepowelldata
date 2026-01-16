@@ -91,13 +91,37 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   
   // Colors for ramp reference lines
   const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
+  
+  // Shorten ramp names for display
+  const shortenRampName = (name: string, elevation: number): string => {
+    let short = name
+      // Remove common suffixes
+      .replace(/\s+(Ramp|Launch|Cut-Off|Cutoff)$/i, '')
+      // Abbreviate common words
+      .replace(/\bPoint\b/gi, 'Pt')
+      .replace(/\bNorth\b/gi, 'N')
+      .replace(/\bSouth\b/gi, 'S')
+      .replace(/\bEast\b/gi, 'E')
+      .replace(/\bWest\b/gi, 'W')
+      .replace(/\bBusiness\b/gi, 'Bus')
+      .replace(/\bAuxiliary\b/gi, 'Aux')
+      .replace(/\bCrossing\b/gi, 'Xing')
+    
+    // If still long, truncate and add elevation
+    if (short.length > 20) {
+      short = short.substring(0, 17) + '...'
+    }
+    
+    // Add elevation in compact format
+    return `${short} ${elevation}ft`
+  }
 
   return (
     <div className="h-[300px] sm:h-[400px] lg:h-[500px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 150, left: 60, bottom: 60 }}
+          margin={{ top: 5, right: 100, left: 60, bottom: 60 }}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -218,7 +242,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
                 strokeDasharray="3 3"
                 strokeOpacity={0.6}
                 label={{ 
-                  value: ramp.name, 
+                  value: shortenRampName(ramp.name, elevation), 
                   position: 'right', 
                   fill: color, 
                   fontSize: 10 
