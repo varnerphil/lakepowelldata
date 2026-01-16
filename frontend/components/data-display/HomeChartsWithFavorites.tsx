@@ -175,7 +175,7 @@ export default function HomeChartsWithFavorites({
     
     return favoriteRamps
       .map(ramp => {
-        const minSafe = ramp.min_safe_elevation || ramp.elevation
+        const minSafe = ramp.min_safe_elevation || ramp.min_usable_elevation
         const isCurrentlyOpen = currentElevation >= minSafe
         
         // Skip ramps that are already closed
