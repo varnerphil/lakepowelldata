@@ -52,7 +52,7 @@ export default function MobileNav() {
             className="flex items-center hover:opacity-80 transition-opacity"
           >
             <img 
-              src="/logo.svg" 
+              src="/logo.png" 
               alt="Lake Powell Data" 
               className="h-8 sm:h-10 lg:h-12 w-auto"
             />
