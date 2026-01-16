@@ -153,8 +153,9 @@ export default function MobileNav() {
                   }`}
                 >
                   Resources
-                  <ChevronDownIcon 
-                    className={`w-4 h-4 transition-transform ${isResourcesOpen ? 'rotate-180' : ''}`} 
+                  <ChevronDown 
+                    className={`w-4 h-4 transition-transform ${isResourcesOpen ? 'rotate-180' : ''}`}
+                    strokeWidth={1.5}
                   />
                 </button>
                 
