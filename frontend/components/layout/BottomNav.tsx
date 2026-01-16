@@ -43,7 +43,7 @@ export default function BottomNav() {
               }`}
             >
               <Icon 
-                className={`w-6 h-6 mb-1 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
+                className={`w-6 h-6 mb-1.5 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
                 strokeWidth={1.5}
               />
               <span className={`text-xs font-light ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
