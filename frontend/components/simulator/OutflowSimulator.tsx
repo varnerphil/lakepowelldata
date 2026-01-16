@@ -84,7 +84,7 @@ export default function OutflowSimulator({
               id="outflowPercentage"
               min={50}
               max={150}
-              step={5}
+              step={1}
               value={outflowPercentage}
               onChange={(e) => {
                 setOutflowPercentage(Number(e.target.value))
