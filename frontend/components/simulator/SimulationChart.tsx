@@ -55,6 +55,34 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     }
   }, [chartData])
   
+  // Calculate X-axis ticks for date labels
+  const xAxisTicks = useMemo(() => {
+    if (chartData.length === 0) return []
+    const startTime = chartData[0].timestamp
+    const endTime = chartData[chartData.length - 1].timestamp
+    const ticks: number[] = []
+    
+    // Generate ticks every year on Jan 1
+    const startDate = new Date(startTime)
+    const endDate = new Date(endTime)
+    let currentDate = new Date(startDate.getFullYear(), 0, 1) // Jan 1 of start year
+    
+    while (currentDate <= endDate) {
+      const timestamp = currentDate.getTime()
+      if (timestamp >= startTime && timestamp <= endTime) {
+        ticks.push(timestamp)
+      }
+      currentDate.setFullYear(currentDate.getFullYear() + 1) // Add 1 year
+    }
+    
+    // Also add the end date if not already included
+    if (ticks.length === 0 || ticks[ticks.length - 1] !== endTime) {
+      ticks.push(endTime)
+    }
+    
+    return ticks
+  }, [chartData])
+  
   // Format date for X-axis (receives timestamp)
   const formatXAxis = (timestamp: number) => {
     if (!timestamp) return ''
@@ -65,20 +93,12 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     const day = date.getDate()
     const year = date.getFullYear()
     
-    // Show year at start of each year
+    // Show year for Jan 1, otherwise show month/day/year
     if (day === 1 && month === 1) {
-      return `${year}`
+      return year.toString()
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
-    // Show month/day for 1st of each month
-    else if (day === 1) {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    }
-    // Show day only for mid-month (15th)
-    else if (day === 15) {
-      return day.toString()
-    }
-    // For other dates, return empty to let Recharts space them
-    return ''
   }
   
   // Format date for tooltip
@@ -166,6 +186,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             type="number"
             scale="time"
             domain={['dataMin', 'dataMax']}
+            ticks={xAxisTicks}
             tickFormatter={formatXAxis}
             tick={{ fontSize: 11, fill: '#888' }}
             tickLine={{ stroke: '#ccc' }}
@@ -173,7 +194,6 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             angle={-45}
             textAnchor="end"
             height={60}
-            minTickGap={30}
           />
           
           <YAxis 
