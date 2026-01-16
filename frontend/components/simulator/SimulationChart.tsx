@@ -209,7 +209,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   }, [isMobile])
 
   return (
-    <div className="h-[300px] sm:h-[400px] lg:h-[500px]">
+    <div className="h-[400px] sm:h-[400px] lg:h-[500px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
@@ -330,50 +330,28 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             />
           )}
           
-          {/* Favorite ramp reference lines - filter to prevent label overlap */}
-          {(() => {
-            // Filter ramps within visible range and sort by elevation
-            const visibleRamps = ramps
-              .map((ramp, index) => ({
-                ramp,
-                elevation: ramp.min_safe_elevation || ramp.min_usable_elevation,
-                index
-              }))
-              .filter(item => item.elevation >= yMin && item.elevation <= yMax)
-              .sort((a, b) => a.elevation - b.elevation)
-            
-            // Filter to only show ramps that are at least 25ft apart to prevent label overlap
-            const MIN_ELEVATION_SPACING = 25
-            const filteredRamps: typeof visibleRamps = []
-            
-            visibleRamps.forEach((item) => {
-              // Check if this ramp is far enough from the last added ramp
-              if (filteredRamps.length === 0 || 
-                  item.elevation - filteredRamps[filteredRamps.length - 1].elevation >= MIN_ELEVATION_SPACING) {
-                filteredRamps.push(item)
-              }
-            })
-            
-            return filteredRamps.map((item) => {
-              const color = rampColors[item.index % rampColors.length]
-              return (
-                <ReferenceLine 
-                  key={item.ramp.id}
-                  y={item.elevation} 
-                  stroke={color}
-                  strokeDasharray="3 3"
-                  strokeOpacity={0.6}
-                  label={{ 
-                    value: shortenRampName(item.ramp.name, item.elevation), 
-                    position: 'right', 
-                    fill: color, 
-                    fontSize: isMobile ? 8 : 10,
-                    offset: isMobile ? 5 : 0
-                  }}
-                />
-              )
-            })
-          })()}
+          {/* Favorite ramp reference lines */}
+          {ramps.map((ramp, index) => {
+            const elevation = ramp.min_safe_elevation || ramp.min_usable_elevation
+            if (elevation < yMin || elevation > yMax) return null
+            const color = rampColors[index % rampColors.length]
+            return (
+              <ReferenceLine 
+                key={ramp.id}
+                y={elevation} 
+                stroke={color}
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{ 
+                  value: shortenRampName(ramp.name, elevation), 
+                  position: 'right', 
+                  fill: color, 
+                  fontSize: isMobile ? 8 : 10,
+                  offset: isMobile ? 5 : 0
+                }}
+              />
+            )
+          })}
           
           {/* Actual elevation line */}
           <Line 

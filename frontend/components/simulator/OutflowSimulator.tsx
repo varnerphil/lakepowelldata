@@ -86,7 +86,7 @@ export default function OutflowSimulator({
               Start Date
             </label>
             {/* Preset Date Buttons */}
-            <div className="flex flex-wrap gap-2 mb-2 lg:mb-3">
+            <div className="grid grid-cols-2 gap-2 mb-2 lg:mb-3">
               {PRESET_DATES.map((preset) => (
                 <button
                   key={preset.value}
@@ -142,21 +142,11 @@ export default function OutflowSimulator({
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
               />
             </div>
-            <div className="relative mt-1 h-4">
+            <div className="mt-1">
               {/* Static labels - only edges */}
               <div className="flex justify-between text-xs text-gray-400">
                 <span>70%</span>
                 <span>110%</span>
-              </div>
-              {/* Dynamic current value label positioned at slider thumb */}
-              <div 
-                className="absolute top-0 text-xs font-medium text-gray-900 pointer-events-none whitespace-nowrap"
-                style={{
-                  left: `${((outflowPercentage - 70) / (110 - 70)) * 100}%`,
-                  transform: 'translateX(-50%)'
-                }}
-              >
-                {outflowPercentage}%
               </div>
             </div>
             <p className="text-xs text-gray-400 mt-2 font-light">
