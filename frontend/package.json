@@ -15,27 +15,27 @@
   },
   "dependencies": {
     "next": "16.1.1",
+    "pg": "^8.11.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "pg": "^8.11.3",
     "recharts": "^2.10.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^16.0.0",
     "@types/node": "^20",
+    "@types/pg": "^8.10.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/pg": "^8.10.9",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.1.5",
-    "@playwright/test": "^1.40.1",
+    "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^1.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "jsdom": "^23.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^1.0.4",
-    "jsdom": "^23.0.1",
-    "@vitejs/plugin-react": "^4.2.1"
+    "vitest": "^1.0.4"
   }
 }

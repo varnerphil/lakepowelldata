@@ -93,14 +93,14 @@ export default function StorageVisualization({
   
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-6">
         <h3 className="text-lg sm:text-xl font-light text-gray-900">Lake Powell Storage Profile</h3>
         
         {/* Toggle Buttons */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg flex-shrink-0">
           <button
             onClick={() => setViewMode('1ft')}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-light rounded-md transition-colors ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-light rounded-md transition-colors ${
               viewMode === '1ft'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -110,7 +110,7 @@ export default function StorageVisualization({
           </button>
           <button
             onClick={() => setViewMode('15ft')}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-light rounded-md transition-colors ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-light rounded-md transition-colors ${
               viewMode === '15ft'
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'

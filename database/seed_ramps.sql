@@ -2,7 +2,6 @@
 -- Based on data from lakepowell.water-data.com ramp accessibility table
 
 INSERT INTO ramps (name, min_safe_elevation, min_usable_elevation, location) VALUES
-('Stateline Auxiliary Ramp', 3520.00, 3519.00, 'Stateline, UT'),
 ('Bullfrog North Ramp', 3529.00, 3528.00, 'Bullfrog, UT'),
 ('Antelope Point Business Ramp', 3540.00, 3539.00, 'Antelope Point, AZ'),
 ('Bullfrog Spur (Boats < 25'')', 3549.00, 3548.00, 'Bullfrog, UT'),

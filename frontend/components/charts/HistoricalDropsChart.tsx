@@ -29,6 +29,7 @@ interface HistoricalDropsChartProps {
   projectedLowDate?: string
   dailyProjections?: Array<{ date: string; projected: number; low: number; high: number }>
   ramps?: Ramp[]
+  weeklyChange?: number | null  // Weekly change in feet (negative = dropping)
 }
 
 export default function HistoricalDropsChart({
@@ -38,7 +39,8 @@ export default function HistoricalDropsChart({
   projectedDrop,
   projectedLowDate,
   dailyProjections = [],
-  ramps = []
+  ramps = [],
+  weeklyChange = null
 }: HistoricalDropsChartProps) {
   // Detect mobile viewport - default to true to avoid hydration mismatch
   const [isMobile, setIsMobile] = useState(true)
@@ -126,7 +128,12 @@ export default function HistoricalDropsChart({
       date: string
       timestamp: number
       projected: number
+      currentTrend: number | null
     }> = []
+    
+    // Calculate daily rate from weekly change (if available)
+    // weeklyChange is the change over 7 days, so daily rate = weeklyChange / 7
+    const dailyChangeRate = weeklyChange !== null ? weeklyChange / 7 : null
     
     // Spread the drop evenly across all days
     for (let day = 0; day <= days; day++) {
@@ -139,6 +146,10 @@ export default function HistoricalDropsChart({
       const progress = day / days
       const elevation = elev - (drop * progress)
       
+      // Current trend: project based on weekly change rate
+      // This shows what would happen if the current weekly trend continues
+      const trendElevation = dailyChangeRate !== null ? elev + (dailyChangeRate * day) : null
+      
       if (isNaN(elevation)) {
         console.log('HistoricalDropsChart - Invalid elevation calculated')
         continue
@@ -148,14 +159,15 @@ export default function HistoricalDropsChart({
         days: day,
         date: dateStr,
         timestamp: timestamp,
-        projected: elevation
+        projected: elevation,
+        currentTrend: trendElevation
       })
     }
     
     console.log('HistoricalDropsChart - Generated', data.length, 'data points')
     
     return data
-  }, [currentDate, currentElevation, projectedDrop, projectedLowDate])
+  }, [currentDate, currentElevation, projectedDrop, projectedLowDate, weeklyChange])
   
   // Debug: log what we have
   console.log('HistoricalDropsChart render check:', {
@@ -186,8 +198,13 @@ export default function HistoricalDropsChart({
     )
   }
   
-  // Calculate Y-axis domain from projection data
-  const allElevations = chartData.map(d => d.projected).filter(v => !isNaN(v))
+  // Calculate Y-axis domain from projection data (including current trend if available)
+  const projectedElevations = chartData.map(d => d.projected).filter(v => !isNaN(v))
+  const trendElevations = chartData
+    .map(d => d.currentTrend)
+    .filter((v): v is number => v !== null && !isNaN(v))
+  
+  const allElevations = [...projectedElevations, ...trendElevations]
   
   if (allElevations.length === 0) {
     return (
@@ -347,19 +364,35 @@ export default function HistoricalDropsChart({
             )
           })}
         
-        {/* Projected line (current year) */}
+        {/* Projected line based on historical average (current year) */}
         <Line
           type="monotone"
           dataKey="projected"
           stroke="#3b82f6"
           strokeWidth={3}
           strokeDasharray="8 4"
-          name="2026 Projected"
+          name="Historical Avg"
           dot={false}
           activeDot={{ r: 6 }}
           connectNulls={false}
           isAnimationActive={false}
         />
+        
+        {/* Current trend line based on weekly change rate */}
+        {weeklyChange !== null && (
+          <Line
+            type="monotone"
+            dataKey="currentTrend"
+            stroke="#10b981"
+            strokeWidth={2}
+            strokeDasharray="4 2"
+            name="Current Trend"
+            dot={false}
+            activeDot={{ r: 5 }}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   )

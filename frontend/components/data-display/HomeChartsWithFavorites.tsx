@@ -26,6 +26,9 @@ interface HomeChartsWithFavoritesProps {
   dailyProjections: Array<{ date: string; projected: number; low: number; high: number }>
   recentHistoricalData: Array<{ date: string; elevation: number }>
   
+  // Weekly change for current trend line
+  weeklyChange: number | null
+  
   // All ramps for reference
   allRamps: Ramp[]
   
@@ -48,6 +51,7 @@ export default function HomeChartsWithFavorites({
   historicalDrops,
   dailyProjections,
   recentHistoricalData,
+  weeklyChange,
   allRamps,
   favoriteRampIds
 }: HomeChartsWithFavoritesProps) {
@@ -152,8 +156,11 @@ export default function HomeChartsWithFavorites({
           {/* Projection Chart */}
           <div className="mb-4 sm:mb-6">
             <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 font-light">
-              Projected elevation drop from {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. 
-              The line shows the average drop spread evenly across the remaining days.
+              Projected elevation from {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. 
+              <span className="text-blue-600">Historical Avg</span> shows the typical drop based on similar years.
+              {weeklyChange !== null && (
+                <> <span className="text-emerald-600">Current Trend</span> shows what happens if the current weekly rate continues.</>
+              )}
             </p>
             <HistoricalDropsChart
               historicalDrops={historicalDrops}
@@ -163,6 +170,7 @@ export default function HomeChartsWithFavorites({
               projectedLowDate={typicalLowDate}
               dailyProjections={dailyProjections}
               ramps={favoriteRamps}
+              weeklyChange={weeklyChange}
             />
           </div>
           

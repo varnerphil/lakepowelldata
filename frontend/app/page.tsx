@@ -12,16 +12,21 @@ import {
 import { unstable_cache } from 'next/cache'
 
 // Cache water measurements by range for 1 hour
-const getCachedWaterMeasurements = unstable_cache(
-  async (startDate: string, endDate: string) => {
-    return getWaterMeasurementsByRange(startDate, endDate)
-  },
-  ['water-measurements'],
-  {
-    revalidate: 3600, // 1 hour
-    tags: ['water-measurements']
-  }
-)
+// Each date range gets its own cache entry
+async function getCachedWaterMeasurements(startDate: string, endDate: string) {
+  const cacheKey = `water-measurements-${startDate}-${endDate}`
+  const cached = unstable_cache(
+    async () => {
+      return getWaterMeasurementsByRange(startDate, endDate)
+    },
+    [cacheKey],
+    {
+      revalidate: 3600, // 1 hour
+      tags: ['water-measurements', cacheKey]
+    }
+  )
+  return cached()
+}
 
 // Cache historical averages for 1 hour  
 const getCachedHistoricalAverages = unstable_cache(
@@ -602,9 +607,16 @@ export default async function HomePage({
   const startDate = dateRange.start
   const endDate = dateRange.end
   
-  const measurements = current 
+  let measurements = current 
     ? await getCachedWaterMeasurements(startDate, endDate)
     : []
+  
+  // For "alltime" view, sample the data to improve performance
+  // Sample to ~2000 points max (weekly for very long ranges)
+  if (currentRange === 'alltime' && measurements.length > 2000) {
+    const sampleInterval = Math.ceil(measurements.length / 2000)
+    measurements = measurements.filter((_, index) => index % sampleInterval === 0 || index === measurements.length - 1)
+  }
   
   // Get recent measurements for CurrentStatus (use cached with specific range)
   const recentStartDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -663,6 +675,32 @@ export default async function HomePage({
     dailyProjections = calculateDailyElevationProjection(today, typicalLowDate, current.elevation, historicalDrops)
   }
 
+  // Calculate weekly change for current trend line
+  let weeklyChange: number | null = null
+  if (current && recent.length > 0) {
+    // Find measurement closest to 7 days ago (within 2 days tolerance)
+    const sevenDaysAgo = new Date(current.date)
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const sevenDaysAgoTime = sevenDaysAgo.getTime()
+    
+    let measurement7DaysAgo: typeof recent[0] | null = null
+    let minDiff = Infinity
+    
+    for (const measurement of recent) {
+      const measurementDate = new Date(measurement.date).getTime()
+      const diff = Math.abs(measurementDate - sevenDaysAgoTime)
+      // Accept measurements within 2 days of 7 days ago
+      if (diff < minDiff && diff <= 2 * 24 * 60 * 60 * 1000) {
+        minDiff = diff
+        measurement7DaysAgo = measurement
+      }
+    }
+    
+    if (measurement7DaysAgo) {
+      weeklyChange = current.elevation - measurement7DaysAgo.elevation
+    }
+  }
+
   if (!current) {
     return (
       <div className="container mx-auto p-4">
@@ -693,6 +731,7 @@ export default async function HomePage({
         historicalDrops={historicalDrops}
         dailyProjections={dailyProjections}
         recentHistoricalData={recentHistoricalData}
+        weeklyChange={weeklyChange}
         allRamps={allRamps}
         favoriteRampIds={[]}
       />

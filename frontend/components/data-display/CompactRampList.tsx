@@ -35,7 +35,7 @@ function calculateRampStatus(ramp: Ramp, currentElevation: number): RampStatus {
 function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg 
-      className={`w-5 h-5 ${filled ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+      className={`w-6 h-6 sm:w-7 sm:h-7 ${filled ? 'text-[#d4a574] fill-current' : 'text-gray-300'}`} 
       viewBox="0 0 20 20"
       fill="currentColor"
     >
@@ -115,32 +115,25 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
     }
   })
 
-  // Sort by status: Open first, then Use at Own Risk, then Unusable
-  const statusOrder: Record<RampStatus, number> = { 
-    'Open and Usable': 0, 
-    'Use at Own Risk': 1, 
-    'Unusable': 2 
-  }
-  rampsWithStatus.sort((a, b) => {
-    const statusDiff = statusOrder[a.status] - statusOrder[b.status]
-    if (statusDiff !== 0) return statusDiff
-    // If same status, sort by elevation difference (closer to usable first)
-    return Math.abs(a.elevation_difference) - Math.abs(b.elevation_difference)
-  })
+  // Separate into available and unusable groups
+  const availableRamps = rampsWithStatus.filter(ramp => ramp.status !== 'Unusable')
+  const unusableRamps = rampsWithStatus.filter(ramp => ramp.status === 'Unusable')
 
-  // Separate favorites and non-favorites (ensure no overlap)
-  const favoriteRamps = rampsWithStatus
+  // Sort each group by min_safe_elevation (lowest to highest)
+  availableRamps.sort((a, b) => a.min_safe_elevation - b.min_safe_elevation)
+  unusableRamps.sort((a, b) => a.min_safe_elevation - b.min_safe_elevation)
+
+  // Combine back: available first, then unusable
+  const sortedRampsWithStatus = [...availableRamps, ...unusableRamps]
+
+  // Separate favorites and non-favorites
+  const favoriteRamps = sortedRampsWithStatus
     .filter(r => favorites.includes(r.id))
     .sort((a, b) => {
-      // Sort favorites by their order in defaultFavoriteNames, then by status
-      const aIndex = defaultFavoriteNames.indexOf(a.name)
-      const bIndex = defaultFavoriteNames.indexOf(b.name)
-      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
-      if (aIndex !== -1) return -1
-      if (bIndex !== -1) return 1
-      return statusOrder[a.status] - statusOrder[b.status]
+      // Sort favorites by min_safe_elevation (ascending - lowest to highest)
+      return a.min_safe_elevation - b.min_safe_elevation
     })
-  const otherRamps = rampsWithStatus.filter(r => !favorites.includes(r.id))
+  const otherRamps = sortedRampsWithStatus.filter(r => !favorites.includes(r.id))
 
   const toggleFavorite = (rampId: number) => {
     const newFavorites = favorites.includes(rampId)
@@ -172,39 +165,48 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
     }
   }
 
-  const renderRampItem = (ramp: RampWithStatus, isFavorite: boolean = false) => (
-    <div 
-      key={ramp.id} 
-      className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded transition-colors"
-    >
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleFavorite(ramp.id)
-          }}
-          className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
-          aria-label={favorites.includes(ramp.id) ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <StarIcon filled={favorites.includes(ramp.id)} />
-        </button>
-        <span className={`text-sm font-light ${getStatusColor(ramp.status)} flex-shrink-0`}>
-          {getStatusIcon(ramp.status)}
-        </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-light text-gray-900 truncate">{ramp.name}</span>
+  const renderRampItem = (ramp: RampWithStatus, isFavorite: boolean = false) => {
+    const styles = getStatusStyles(ramp.status)
+    const statusIcon = getStatusIcon(ramp.status)
+    const borderColor = ramp.status === 'Open and Usable' ? 'border-[#8b9a6b]' : 
+                       ramp.status === 'Use at Own Risk' ? 'border-[#d4a574]' : 
+                       'border-[#c99a7a]'
+    
+    return (
+      <div 
+        key={ramp.id} 
+        className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded transition-colors"
+      >
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleFavorite(ramp.id)
+            }}
+            className="flex-shrink-0 p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors active:scale-95"
+            aria-label={favorites.includes(ramp.id) ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <StarIcon filled={favorites.includes(ramp.id)} />
+          </button>
+          {/* Circular Icon - matching favorites and ramps page style */}
+          <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
+            <span className={`${styles.accent} text-sm sm:text-lg font-light`}>{statusIcon}</span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500 font-light">
-            <span>{ramp.min_safe_elevation.toFixed(0)}ft</span>
-            <span className={ramp.elevation_difference >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]'}>
-              {ramp.elevation_difference >= 0 ? '+' : ''}{ramp.elevation_difference.toFixed(0)}ft
-            </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-light text-gray-900 truncate">{ramp.name}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 text-sm text-gray-500 font-light">
+              <span>{ramp.min_safe_elevation.toFixed(0)}ft</span>
+              <span className={ramp.elevation_difference >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]'}>
+                {ramp.elevation_difference >= 0 ? '+' : ''}{ramp.elevation_difference.toFixed(0)}ft
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const getStatusStyles = (status: RampStatus) => {
     switch (status) {
@@ -244,23 +246,29 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
                        ramp.name.replace(' (Main Launch)', '').replace(' Ramp', '').replace(' (use at own risk)', '')
     
     const styles = getStatusStyles(ramp.status)
+    const statusIcon = getStatusIcon(ramp.status)
+    const borderColor = ramp.status === 'Open and Usable' ? 'border-[#8b9a6b]' : 
+                       ramp.status === 'Use at Own Risk' ? 'border-[#d4a574]' : 
+                       'border-[#c99a7a]'
     
     return (
       <div
         key={ramp.id}
-        className={`flex items-center gap-3 px-4 py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all`}
+        className={`flex items-start gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all flex-1 min-w-[140px] sm:flex-initial sm:min-w-[200px]`}
       >
+        {/* Circular Icon - matching ramps page style */}
+        <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
+          <span className={`${styles.accent} text-sm sm:text-lg font-light`}>{statusIcon}</span>
+        </div>
+        
         <div className="flex flex-col min-w-0 flex-1">
-          <div className="flex items-center gap-2.5">
-            <span className={`text-lg font-medium ${styles.text} truncate`}>{displayName}</span>
-            <span className={`text-sm font-medium px-2.5 py-1 rounded ${styles.badge}`}>
-              {styles.label}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2.5 mb-1">
+            <span className={`text-sm sm:text-lg font-medium ${styles.text} break-words sm:truncate flex-1 min-w-0 leading-tight`}>{displayName}</span>
           </div>
-          <div className="flex items-center gap-2 text-base font-light mt-1">
-            <span className={styles.text}>{ramp.min_safe_elevation.toFixed(0)}ft min</span>
-            <span className={styles.text}>•</span>
-            <span className={`${styles.accent} font-medium`}>
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base font-light flex-wrap">
+            <span className={`${styles.text} whitespace-nowrap`}>{ramp.min_safe_elevation.toFixed(0)}ft min</span>
+            <span className={`${styles.text} flex-shrink-0`}>•</span>
+            <span className={`${styles.accent} font-medium flex-shrink-0 whitespace-nowrap`}>
               {ramp.elevation_difference >= 0 ? '+' : ''}{ramp.elevation_difference.toFixed(0)}ft
             </span>
           </div>
@@ -275,7 +283,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
       {favoriteRamps.length > 0 && (
         <div className="mb-4 pb-4 border-b border-gray-100">
           <div className="text-sm uppercase tracking-wider text-gray-500 mb-2 font-light">Favorites</div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 sm:gap-2">
             {favoriteRamps.map(ramp => renderFavoriteItem(ramp))}
           </div>
         </div>
@@ -286,7 +294,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between text-base sm:text-lg font-light text-gray-700 hover:text-gray-900 transition-colors py-2"
       >
-        <span>Boat Ramp Status ({rampsWithStatus.length})</span>
+        <span>Boat Ramp Status ({sortedRampsWithStatus.length})</span>
         {isExpanded ? (
           <ChevronUpIcon className="w-5 h-5" />
         ) : (
@@ -298,7 +306,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
       {isExpanded && (
         <div className="mt-2 max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
           <div className="divide-y divide-gray-100">
-            {rampsWithStatus.map(ramp => renderRampItem(ramp, favorites.includes(ramp.id)))}
+            {sortedRampsWithStatus.map(ramp => renderRampItem(ramp, favorites.includes(ramp.id)))}
           </div>
         </div>
       )}

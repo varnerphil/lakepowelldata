@@ -14,12 +14,6 @@ from utils.database import insert_ramp
 # Minimum safe elevation and absolute minimum usable elevation
 RAMPS = [
     {
-        'name': 'Stateline Auxiliary Ramp',
-        'min_safe_elevation': 3520.00,
-        'min_usable_elevation': 3519.00,
-        'location': 'Stateline, UT'
-    },
-    {
         'name': 'Bullfrog North Ramp',
         'min_safe_elevation': 3529.00,
         'min_usable_elevation': 3528.00,

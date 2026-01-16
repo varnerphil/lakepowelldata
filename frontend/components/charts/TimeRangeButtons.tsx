@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import { startTransition } from 'react'
 
 interface TimeRangeButtonsProps {
   currentRange: string
@@ -20,16 +21,18 @@ export default function TimeRangeButtons({ currentRange, formAction }: TimeRange
   const searchParams = useSearchParams()
 
   const handleRangeChange = (range: string) => {
-    const targetPath = formAction || '/history'
-    // Preserve other search params if on home page
-    if (targetPath === '/') {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set('range', range)
-      router.push(`/?${params.toString()}`)
-    } else {
-      // Navigate with the range parameter, clearing any custom dates
-      router.push(`${targetPath}?range=${range}`)
-    }
+    startTransition(() => {
+      const targetPath = formAction || '/history'
+      // Preserve other search params if on home page
+      if (targetPath === '/') {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('range', range)
+        router.replace(`/?${params.toString()}`, { scroll: false })
+      } else {
+        // Navigate with the range parameter, clearing any custom dates
+        router.replace(`${targetPath}?range=${range}`, { scroll: false })
+      }
+    })
   }
 
   return (

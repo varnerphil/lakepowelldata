@@ -30,9 +30,13 @@ export default async function RampsPage() {
     }
   })
 
-  // Sort by status: Open first, then Use at Own Risk, then Unusable
-  const statusOrder = { 'Open and Usable': 0, 'Use at Own Risk': 1, 'Unusable': 2 }
-  rampStatuses.sort((a, b) => statusOrder[a.status] - statusOrder[b.status])
+  // Separate into available and unusable groups
+  const availableRamps = rampStatuses.filter(ramp => ramp.status !== 'Unusable')
+  const unusableRamps = rampStatuses.filter(ramp => ramp.status === 'Unusable')
+
+  // Sort each group by min_safe_elevation (lowest to highest)
+  availableRamps.sort((a, b) => a.min_safe_elevation - b.min_safe_elevation)
+  unusableRamps.sort((a, b) => a.min_safe_elevation - b.min_safe_elevation)
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-16">
@@ -55,11 +59,33 @@ export default async function RampsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {rampStatuses.map((ramp) => (
-          <RampStatusCard key={ramp.id} ramp={ramp} />
-        ))}
-      </div>
+      {/* Available Ramps Section */}
+      {availableRamps.length > 0 && (
+        <div className="mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
+            Available Ramps
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {availableRamps.map((ramp) => (
+              <RampStatusCard key={ramp.id} ramp={ramp} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Unusable Ramps Section */}
+      {unusableRamps.length > 0 && (
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
+            Unusable Ramps
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {unusableRamps.map((ramp) => (
+              <RampStatusCard key={ramp.id} ramp={ramp} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
