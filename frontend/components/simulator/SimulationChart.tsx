@@ -112,8 +112,8 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
 
   // Key elevations
   const FULL_POOL = 3700
-  const DEADPOOL = 3490
-  const MIN_POWER = 3525
+  const DEADPOOL = 3370  // Dead Pool - below this, no water can be released
+  const MIN_POWER = 3490  // Minimum Power Pool - below this, no hydroelectric generation
   
   // Colors for ramp reference lines
   const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
