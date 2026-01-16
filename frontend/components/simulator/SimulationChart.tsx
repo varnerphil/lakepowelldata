@@ -98,12 +98,40 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   // Colors for ramp reference lines
   const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
   
-  // Shorten ramp names for display
+  // Shorten ramp names for display with custom mappings
   const shortenRampName = (name: string, elevation: number): string => {
+    // Custom mappings for specific ramps
+    const nameMappings: Record<string, string> = {
+      'Antelope Point Public Ramp': 'Antelop Pub',
+      'Antelope Point Business Ramp': 'Antelope E',
+      'Castle Rock Cut-Off': 'The Cut',
+      'Castle Rock': 'The Cut',
+      'Bullfrog Main Ramp': 'Bullfrog M',
+      'Bullfrog North Ramp': 'Bullfrog N',
+      'Halls Crossing Ramp': 'Halls',
+      'Halls Crossing': 'Halls',
+      'Wahweap Main Ramp': 'Wahweap M',
+      'Wahweap': 'Wahweap M',
+      'Stateline Launch': 'Stateline',
+      'Stateline': 'Stateline'
+    }
+    
+    // Check for exact match first
+    if (nameMappings[name]) {
+      return `${nameMappings[name]} ${elevation}ft`
+    }
+    
+    // Check for partial matches (case insensitive)
+    const normalizedName = name.toLowerCase()
+    for (const [key, value] of Object.entries(nameMappings)) {
+      if (normalizedName.includes(key.toLowerCase())) {
+        return `${value} ${elevation}ft`
+      }
+    }
+    
+    // Fallback: use original logic for unmapped names
     let short = name
-      // Remove common suffixes
       .replace(/\s+(Ramp|Launch|Cut-Off|Cutoff)$/i, '')
-      // Abbreviate common words
       .replace(/\bPoint\b/gi, 'Pt')
       .replace(/\bNorth\b/gi, 'N')
       .replace(/\bSouth\b/gi, 'S')
@@ -113,12 +141,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       .replace(/\bAuxiliary\b/gi, 'Aux')
       .replace(/\bCrossing\b/gi, 'Xing')
     
-    // If still long, truncate and add elevation
     if (short.length > 20) {
       short = short.substring(0, 17) + '...'
     }
     
-    // Add elevation in compact format
     return `${short} ${elevation}ft`
   }
 
