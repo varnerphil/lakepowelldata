@@ -97,7 +97,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 20, left: 60, bottom: 60 }}
+          margin={{ top: 5, right: 150, left: 60, bottom: 60 }}
         >
           <CartesianGrid 
             strokeDasharray="3 3" 
@@ -169,7 +169,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
                 value: 'Min Power', 
                 position: 'right', 
                 fill: '#f59e0b', 
-                fontSize: 10 
+                fontSize: 11 
               }}
             />
           )}
@@ -184,7 +184,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
                 value: 'Dead Pool', 
                 position: 'right', 
                 fill: '#ef4444', 
-                fontSize: 10 
+                fontSize: 11 
               }}
             />
           )}
@@ -200,7 +200,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
                 value: 'Full Pool', 
                 position: 'right', 
                 fill: '#3b82f6', 
-                fontSize: 10 
+                fontSize: 11 
               }}
             />
           )}
@@ -218,10 +218,10 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
                 strokeDasharray="3 3"
                 strokeOpacity={0.6}
                 label={{ 
-                  value: ramp.name.length > 15 ? ramp.name.substring(0, 15) + '...' : ramp.name, 
+                  value: ramp.name, 
                   position: 'right', 
                   fill: color, 
-                  fontSize: 9 
+                  fontSize: 10 
                 }}
               />
             )
