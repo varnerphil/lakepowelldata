@@ -766,7 +766,27 @@ export function simulateOutflow(
   let totalSimulatedOutflow = 0
   let totalEvaporation = 0
   
-  for (const measurement of filtered) {
+  // First day: record as-is, no changes applied
+  // The content on day 1 already reflects the state after day 1's flows
+  dailyData.push({
+    date: firstDay.date,
+    actualElevation: firstDay.elevation,
+    actualContent: firstDay.content || 0,
+    actualInflow: firstDay.inflow || 0,
+    actualOutflow: firstDay.outflow || 0,
+    simulatedElevation: firstDay.elevation, // Same as actual on start day
+    simulatedContent: Math.round(simulatedContent),
+    adjustedOutflow: Math.round((firstDay.outflow || 0) * (outflowPercentage / 100)),
+    evaporation: 0 // No evap calculated for first day
+  })
+  
+  // Track first day's outflows
+  totalActualOutflow += firstDay.outflow || 0
+  totalSimulatedOutflow += (firstDay.outflow || 0) * (outflowPercentage / 100)
+  
+  // Process from SECOND day onwards - apply daily changes
+  for (let i = 1; i < filtered.length; i++) {
+    const measurement = filtered[i]
     const date = new Date(measurement.date)
     const inflow = measurement.inflow || 0
     const outflow = measurement.outflow || 0
@@ -780,8 +800,35 @@ export function simulateOutflow(
     const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
     const evaporation = getDailyEvaporation(date, simulatedElevation)
     
-    // Update simulated content: content + inflow - adjusted_outflow - evaporation
-    const netChange = inflow - adjustedOutflow - evaporation
+    // The KEY insight: at 100%, we want simulated to match actual
+    // The actual content already reflects: inflow - outflow - evaporation - other_losses
+    // So we DON'T add our own evaporation model - instead, we calculate
+    // what the evaporation+losses were implicitly and use that
+    
+    // Get previous actual content to calculate implied evaporation
+    const prevActualContent = filtered[i - 1].content || 0
+    const impliedEvapAndLosses = prevActualContent + inflow - outflow - actualContent
+    
+    // For the simulation, use the implied evaporation at 100%, 
+    // but scale it for different outflow percentages based on surface area
+    // (lower lake = less evaporation)
+    const outflowDiff = outflow - adjustedOutflow // Water saved (positive) or extra released (negative)
+    
+    // Update simulated content
+    // At 100%: simulated should track actual closely
+    // At <100%: save water (outflowDiff positive), but also slightly more evap due to higher surface area
+    // At >100%: release more, less evap due to lower surface area
+    
+    // Simple approach: use implied evaporation adjusted for surface area difference
+    const actualSurfaceArea = getSurfaceAreaAtElevation(actualElevation)
+    const simSurfaceArea = getSurfaceAreaAtElevation(simulatedElevation)
+    const surfaceAreaRatio = actualSurfaceArea > 0 ? simSurfaceArea / actualSurfaceArea : 1
+    
+    // Adjust evaporation based on surface area ratio
+    const adjustedEvapLosses = impliedEvapAndLosses * surfaceAreaRatio
+    
+    // Net change for simulation
+    const netChange = inflow - adjustedOutflow - adjustedEvapLosses
     simulatedContent = Math.max(0, simulatedContent + netChange)
     
     // Convert to elevation
@@ -790,7 +837,7 @@ export function simulateOutflow(
     // Track totals
     totalActualOutflow += outflow
     totalSimulatedOutflow += adjustedOutflow
-    totalEvaporation += evaporation
+    totalEvaporation += adjustedEvapLosses > 0 ? adjustedEvapLosses : 0
     
     dailyData.push({
       date: measurement.date,
@@ -801,7 +848,7 @@ export function simulateOutflow(
       simulatedElevation: Math.round(newSimulatedElevation * 100) / 100,
       simulatedContent: Math.round(simulatedContent),
       adjustedOutflow: Math.round(adjustedOutflow),
-      evaporation: Math.round(evaporation)
+      evaporation: Math.round(adjustedEvapLosses > 0 ? adjustedEvapLosses : 0)
     })
   }
   
