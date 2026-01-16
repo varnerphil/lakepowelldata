@@ -7,9 +7,15 @@ import {
   getHistoricalWaterYearLows,
   getHistoricalDropsToLow,
   getBasinPlotsData,
-  type BasinPlotsDataPoint
+  getPreRunoffLow,
+  getWaterYearPeakSoFar,
+  getSimilarSnowpackYears,
+  type BasinPlotsDataPoint,
+  type WaterYearAnalysis
 } from '@/lib/db'
 import { unstable_cache } from 'next/cache'
+import { getSeasonalStatus, getCurrentWaterYear, type SeasonalStatus } from '@/lib/seasonal-utils'
+import { projectFromSnowpack, type SnowpackProjection } from '@/lib/calculations'
 
 // Cache water measurements by range for 1 hour
 // Each date range gets its own cache entry
@@ -104,15 +110,6 @@ interface BasinPlotsData {
     daysUntilMedianPeak: number | null
     percentile: number | null
   }
-}
-
-function getCurrentWaterYear(): number {
-  const now = new Date()
-  // Water year runs from Oct 1 to Sep 30
-  if (now.getMonth() >= 9) { // October (month 9) or later
-    return now.getFullYear() + 1
-  }
-  return now.getFullYear()
 }
 
 function calculateCurrentStats(
@@ -638,9 +635,18 @@ export default async function HomePage({
   
   // Get historical drops for projection - use last available water data date, not actual today
   const today = current?.date || new Date().toISOString().split('T')[0]
-  const typicalLowDate = historicalLows.length > 0 && historicalLows[Math.floor(historicalLows.length / 2)]?.date_of_min
-    ? historicalLows[Math.floor(historicalLows.length / 2)].date_of_min
-    : new Date(new Date().getFullYear(), 3, 21).toISOString().split('T')[0]
+  
+  // Get typical low date - use median historical low date's month/day, but apply to CURRENT year
+  const currentYear = new Date().getFullYear()
+  let typicalLowDate: string
+  if (historicalLows.length > 0 && historicalLows[Math.floor(historicalLows.length / 2)]?.date_of_min) {
+    const medianLowDate = new Date(historicalLows[Math.floor(historicalLows.length / 2)].date_of_min)
+    // Apply the month and day to the current year
+    typicalLowDate = new Date(currentYear, medianLowDate.getMonth(), medianLowDate.getDate()).toISOString().split('T')[0]
+  } else {
+    // Default to April 21 if no historical data
+    typicalLowDate = new Date(currentYear, 3, 21).toISOString().split('T')[0]
+  }
   
   const historicalDrops = current
     ? await getHistoricalDropsToLow(
@@ -700,6 +706,44 @@ export default async function HomePage({
       weeklyChange = current.elevation - measurement7DaysAgo.elevation
     }
   }
+  
+  // Get seasonal status for conditional rendering
+  const currentWaterYear = getCurrentWaterYear(new Date())
+  const preRunoffLow = await getPreRunoffLow(currentWaterYear)
+  const peakSoFar = await getWaterYearPeakSoFar(currentWaterYear)
+  
+  const seasonalStatus = current 
+    ? getSeasonalStatus(
+        new Date(),
+        current.elevation,
+        weeklyChange,
+        preRunoffLow,
+        peakSoFar
+      )
+    : null
+  
+  // Get current snowpack percentage for runoff projection
+  let currentSnowpackPercent = 100
+  if (basinPlotsData?.currentStats?.percentOfMedian) {
+    currentSnowpackPercent = basinPlotsData.currentStats.percentOfMedian
+  }
+  
+  // Get similar historical years for snowpack projection
+  const similarSnowpackYears = await getSimilarSnowpackYears(currentSnowpackPercent, 20, 10)
+  
+  // Get elevation storage capacity for projection calculations
+  const elevationStorageCapacityForProjection = await getCachedElevationStorageCapacity()
+  
+  // Calculate snowpack projection
+  let snowpackProjection: SnowpackProjection | null = null
+  if (current && similarSnowpackYears.length > 0) {
+    snowpackProjection = projectFromSnowpack(
+      currentSnowpackPercent,
+      current.elevation,
+      similarSnowpackYears,
+      elevationStorageCapacityForProjection
+    )
+  }
 
   if (!current) {
     return (
@@ -711,11 +755,11 @@ export default async function HomePage({
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-16">
+    <div className="container mx-auto px-3 sm:px-3 lg:px-4 py-6 sm:py-12 lg:py-16">
       {/* 1. Current Water Level */}
       <CurrentStatus current={current} recent={recent} ramps={allRamps} />
 
-      {/* 2. Historical Chart + 3. Elevation Projection - with favorite ramps */}
+      {/* 2. Historical Chart + 3. Elevation Projection + 4. Snowpack Projection - with favorite ramps */}
       <HomeChartsWithFavorites
         measurements={measurements}
         startDate={startDate}
@@ -734,9 +778,12 @@ export default async function HomePage({
         weeklyChange={weeklyChange}
         allRamps={allRamps}
         favoriteRampIds={[]}
+        seasonalStatus={seasonalStatus}
+        snowpackProjection={snowpackProjection}
+        currentSnowpackPercent={currentSnowpackPercent}
       />
 
-      {/* 4. Storage Profile */}
+      {/* 5. Storage Profile */}
       <div className="mt-12">
         <StorageVisualization 
           elevationStorageData={elevationStorageData}
@@ -744,7 +791,7 @@ export default async function HomePage({
         />
       </div>
 
-      {/* 5. Snowpack Chart */}
+      {/* 6. Snowpack Chart */}
       {basinPlotsData && (
         <div className="mt-8 sm:mt-12">
           <div className="card p-4 sm:p-6 lg:p-8">
@@ -772,16 +819,16 @@ export default async function HomePage({
         </div>
       )}
 
-      {/* 6. Tributary Snowpack */}
+      {/* 7. Tributary Snowpack */}
       {snotelData && (
         <div className="mt-12">
           <TributarySnowpack sites={sitesWithData} basins={basinsWithCalculatedIndex} />
         </div>
       )}
 
-      {/* 7. Historical Averages (Bottom) */}
+      {/* 8. Historical Averages (Bottom) */}
       <div className="mt-12">
-        <HistoricalAverages averages={averages} currentElevation={current.elevation} />
+      <HistoricalAverages averages={averages} currentElevation={current.elevation} />
       </div>
     </div>
   )

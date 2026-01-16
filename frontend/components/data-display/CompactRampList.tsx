@@ -254,7 +254,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
     return (
       <div
         key={ramp.id}
-        className={`flex items-start gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all flex-1 min-w-[140px] sm:flex-initial sm:min-w-[200px]`}
+        className={`flex items-start gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg ${styles.bg} ${styles.border} hover:brightness-95 transition-all w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-[calc(50%-4px)]`}
       >
         {/* Circular Icon - matching ramps page style */}
         <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full ${styles.bg} border-2 ${borderColor} flex items-center justify-center`}>
@@ -283,7 +283,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
       {favoriteRamps.length > 0 && (
         <div className="mb-4 pb-4 border-b border-gray-100">
           <div className="text-sm uppercase tracking-wider text-gray-500 mb-2 font-light">Favorites</div>
-          <div className="flex flex-wrap gap-2 sm:gap-2">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-2">
             {favoriteRamps.map(ramp => renderFavoriteItem(ramp))}
           </div>
         </div>

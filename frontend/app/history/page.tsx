@@ -1,5 +1,5 @@
-import { getWaterMeasurementsByRange, getEarliestWaterMeasurement, getLatestWaterMeasurement, getWaterYearSummaries, getAllRamps } from '@/lib/db'
-import { HistoricalChart, WaterYearTable } from '@/components/data-display'
+import { getWaterMeasurementsByRange, getEarliestWaterMeasurement, getLatestWaterMeasurement, getWaterYearSummaries, getAllRamps, getWaterYearAnalysis } from '@/lib/db'
+import { HistoricalChartWithFavorites, WaterYearTable } from '@/components/data-display'
 import { unstable_cache } from 'next/cache'
 
 // Force dynamic rendering to prevent caching
@@ -26,6 +26,18 @@ const getCachedWaterYearSummaries = unstable_cache(
   {
     revalidate: 3600, // 1 hour
     tags: ['water-year-summaries']
+  }
+)
+
+// Cache water year analysis for 1 hour
+const getCachedWaterYearAnalysis = unstable_cache(
+  async () => {
+    return getWaterYearAnalysis()
+  },
+  ['water-year-analysis'],
+  {
+    revalidate: 3600, // 1 hour
+    tags: ['water-year-analysis']
   }
 )
 
@@ -125,20 +137,8 @@ export default async function HistoryPage({
 
   const measurements = await getCachedWaterMeasurements(startDate, endDate)
   const waterYearSummaries = await getCachedWaterYearSummaries()
+  const waterYearAnalysis = await getCachedWaterYearAnalysis()
   const allRamps = await getCachedAllRamps()
-  
-  // Filter for specific ramps to display on the chart
-  const selectedRamps = allRamps.filter(ramp => 
-    ramp.name === 'Halls Crossing (use at own risk)' ||
-    ramp.name === 'Antelope Point Public Ramp' ||
-    ramp.name === 'Antelope Point Business Ramp' ||
-    ramp.name === 'Bullfrog (Main Launch)' ||
-    ramp.name === 'Wahweap (Main Launch)' ||
-    ramp.name === 'Bullfrog to Halls Creek Cut-Off' ||
-    ramp.name === 'Stateline Launch' ||
-    ramp.name === 'Bullfrog North Ramp' ||
-    ramp.name === 'Castle Rock Cut-Off'
-  )
 
   const currentRange = params.range || '1year'
 
@@ -155,18 +155,18 @@ export default async function HistoryPage({
 
       {/* Chart */}
       <div className="mb-8">
-        <HistoricalChart 
+        <HistoricalChartWithFavorites 
           data={measurements}
           startDate={startDate}
           endDate={endDate}
           currentRange={currentRange}
-          ramps={selectedRamps}
+          allRamps={allRamps}
         />
       </div>
 
       {/* Water Year Summaries */}
       <div className="mb-12">
-        <WaterYearTable summaries={waterYearSummaries} />
+        <WaterYearTable summaries={waterYearSummaries} analysis={waterYearAnalysis} />
       </div>
 
       {/* Data Table */}

@@ -53,13 +53,18 @@ CREATE TABLE IF NOT EXISTS data_sources (
 );
 
 -- Function to update updated_at timestamp
+-- Set search_path to prevent search path manipulation attacks
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
 -- Triggers to auto-update updated_at
 CREATE TRIGGER update_water_measurements_updated_at BEFORE UPDATE ON water_measurements

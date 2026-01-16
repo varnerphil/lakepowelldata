@@ -314,8 +314,8 @@ export default function HistoricalDropsChart({
             const willBecomeUnusable = chartData.length > 0 && 
               Math.min(...chartData.map(d => d.projected)) < ramp.min_safe_elevation
             
-            // Color based on current status
-            const strokeColor = isUsable ? '#10b981' : '#c99a7a'
+            // Color based on current status (using theme colors)
+            const strokeColor = isUsable ? '#8b9a6b' : '#c99a7a'
             
             // Find when the projection crosses this elevation
             let crossDate: string | null = null
@@ -351,13 +351,15 @@ export default function HistoricalDropsChart({
                 key={ramp.id}
                 y={ramp.min_safe_elevation}
                 stroke={strokeColor}
-                strokeWidth={1.5}
-                strokeDasharray="3 3"
+                strokeWidth={2}
+                strokeDasharray="5 3"
+                strokeOpacity={0.8}
                 label={{
                   value: labelText,
                   position: "right",
                   fill: strokeColor,
-                  fontSize: 10,
+                  fontSize: 11,
+                  fontWeight: 500,
                   offset: 5
                 }}
               />
@@ -383,12 +385,12 @@ export default function HistoricalDropsChart({
           <Line
             type="monotone"
             dataKey="currentTrend"
-            stroke="#10b981"
-            strokeWidth={2}
-            strokeDasharray="4 2"
+            stroke="#d4a574"
+            strokeWidth={3}
+            strokeDasharray="8 4"
             name="Current Trend"
             dot={false}
-            activeDot={{ r: 5 }}
+            activeDot={{ r: 6 }}
             connectNulls={false}
             isAnimationActive={false}
           />

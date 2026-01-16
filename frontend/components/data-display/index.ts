@@ -1,10 +1,11 @@
 export { default as CurrentStatus } from './CurrentStatus'
 export { default as HistoricalChart } from './HistoricalChart'
+export { default as HistoricalChartWithFavorites } from './HistoricalChartWithFavorites'
 export { default as WaterYearTable } from './WaterYearTable'
 export { default as RecentMeasurements } from './RecentMeasurements'
 export { default as HistoricalAverages } from './HistoricalAverages'
-export { default as ProjectedRunoff } from './ProjectedRunoff'
 export { default as ElevationStorageCapacity } from './ElevationStorageCapacity'
 export { default as StorageVisualization } from './StorageVisualization'
 export { default as HistoricalAnalysisExpandable } from './HistoricalAnalysisExpandable'
+export { default as SnowpackProjection } from './SnowpackProjection'
 

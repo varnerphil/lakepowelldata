@@ -8,12 +8,77 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set')
 }
 
+// Check if we're using Supabase connection pooler (port 6543 or has pgbouncer=true)
+const isUsingPooler = process.env.DATABASE_URL?.includes(':6543') || 
+                      process.env.DATABASE_URL?.includes('pgbouncer=true')
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') ? false : {
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
     rejectUnauthorized: false
-  }
+  },
+  // Supabase pooler Session mode has limited pool_size (typically 15-20 for free tier)
+  // We must keep our client pool smaller than the pooler's pool_size to avoid "max clients reached"
+  // For direct connections, we can use more
+  max: isUsingPooler ? 8 : 15, // Keep pool size small (8) to stay well below pooler limit (15-20)
+  idleTimeoutMillis: 5000, // Close idle clients after 5 seconds (very fast cleanup)
+  connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
+  // Allow waiting for connections if pool is full
+  allowExitOnIdle: false,
 })
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err)
+})
+
+// Helper function to retry queries on connection errors
+async function retryQuery<T>(
+  queryFn: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 100
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await queryFn()
+    } catch (error: any) {
+      const isConnectionError = 
+        error?.message?.includes('MaxClientsInSessionMode') ||
+        error?.message?.includes('max clients reached') ||
+        error?.message?.includes('connection') ||
+        error?.code === 'ECONNREFUSED'
+      
+      if (isConnectionError && attempt < maxRetries) {
+        const waitTime = delayMs * Math.pow(2, attempt - 1) // Exponential backoff
+        console.warn(`Connection error (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+        continue
+      }
+      throw error
+    }
+  }
+  throw new Error('Max retries exceeded')
+}
+
+// Log pool statistics in development
+if (process.env.NODE_ENV === 'development') {
+  pool.on('connect', () => {
+    console.log('Database connection established. Pool size:', pool.totalCount, 'Idle:', pool.idleCount, 'Waiting:', pool.waitingCount)
+  })
+  
+  // Warn if not using connection pooler for Supabase
+  if (process.env.DATABASE_URL?.includes('supabase') && !isUsingPooler) {
+    console.warn('⚠️  Consider using Supabase connection pooler (port 6543) to avoid connection limits.')
+    console.warn('   Update DATABASE_URL to use port 6543 with ?pgbouncer=true')
+  }
+}
+
+// Log pool statistics in development
+if (process.env.NODE_ENV === 'development') {
+  pool.on('connect', () => {
+    console.log('Database connection established. Pool size:', pool.totalCount, 'Idle:', pool.idleCount, 'Waiting:', pool.waitingCount)
+  })
+}
 
 export interface WaterMeasurement {
   date: string
@@ -359,23 +424,36 @@ export async function getElevationDistribution(
   startDate?: string,
   endDate?: string
 ): Promise<ElevationDistribution> {
-  const dateFilter = startDate && endDate 
-    ? `WHERE date >= '${startDate}' AND date <= '${endDate}'`
-    : ''
-  
-  const result = await pool.query(`
-    SELECT 
-      MIN(elevation) as min,
-      MAX(elevation) as max,
-      PERCENTILE_CONT(0.10) WITHIN GROUP (ORDER BY elevation) as p10,
-      PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY elevation) as p25,
-      PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY elevation) as p50,
-      PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY elevation) as p75,
-      PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY elevation) as p90,
-      AVG(elevation) as avg
-    FROM water_measurements
-    ${dateFilter}
-  `)
+  // Use parameterized query to prevent SQL injection
+  let result
+  if (startDate && endDate) {
+    result = await pool.query(`
+      SELECT 
+        MIN(elevation) as min,
+        MAX(elevation) as max,
+        PERCENTILE_CONT(0.10) WITHIN GROUP (ORDER BY elevation) as p10,
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY elevation) as p25,
+        PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY elevation) as p50,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY elevation) as p75,
+        PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY elevation) as p90,
+        AVG(elevation) as avg
+      FROM water_measurements
+      WHERE date >= $1 AND date <= $2
+    `, [startDate, endDate])
+  } else {
+    result = await pool.query(`
+      SELECT 
+        MIN(elevation) as min,
+        MAX(elevation) as max,
+        PERCENTILE_CONT(0.10) WITHIN GROUP (ORDER BY elevation) as p10,
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY elevation) as p25,
+        PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY elevation) as p50,
+        PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY elevation) as p75,
+        PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY elevation) as p90,
+        AVG(elevation) as avg
+      FROM water_measurements
+    `)
+  }
   
   const row = result.rows[0]
   return {
@@ -457,20 +535,30 @@ export async function getStorageCapacityAnalysis(
 ): Promise<StorageCapacityAnalysis[]> {
   const FULL_POOL_CAPACITY = 24322000 // acre-feet at 3700 ft
   
-  const dateFilter = startDate && endDate 
-    ? `WHERE date >= '${startDate}' AND date <= '${endDate}'`
-    : ''
-  
-  const result = await pool.query(`
-    SELECT 
-      date,
-      elevation,
-      content,
-      (content::FLOAT / ${FULL_POOL_CAPACITY} * 100) as percent_of_capacity
-    FROM water_measurements
-    ${dateFilter}
-    ORDER BY date
-  `)
+  // Use parameterized query to prevent SQL injection and improve connection reuse
+  let result
+  if (startDate && endDate) {
+    result = await pool.query(`
+      SELECT 
+        date,
+        elevation,
+        content,
+        (content::FLOAT / $3 * 100) as percent_of_capacity
+      FROM water_measurements
+      WHERE date >= $1 AND date <= $2
+      ORDER BY date
+    `, [startDate, endDate, FULL_POOL_CAPACITY])
+  } else {
+    result = await pool.query(`
+      SELECT 
+        date,
+        elevation,
+        content,
+        (content::FLOAT / $1 * 100) as percent_of_capacity
+      FROM water_measurements
+      ORDER BY date
+    `, [FULL_POOL_CAPACITY])
+  }
   
   return result.rows.map(row => ({
     date: row.date.toISOString().split('T')[0],
@@ -968,5 +1056,256 @@ export async function getSNOTELBasins(): Promise<Array<{ name: string; site_coun
     name: row.name,
     site_count: parseInt(row.site_count)
   }))
+}
+
+// ============================================================
+// Water Year Cycle Analysis Functions
+// ============================================================
+
+export interface WaterYearAnalysis {
+  water_year: number
+  
+  // Snowpack metrics
+  peak_swe: number | null
+  peak_swe_date: string | null
+  peak_swe_percent_of_median: number | null
+  april_1_swe: number | null
+  april_1_percent_of_median: number | null
+  
+  // Seasonal cycle inflection points
+  pre_runoff_low_elevation: number | null
+  pre_runoff_low_date: string | null
+  runoff_start_date: string | null
+  runoff_start_elevation: number | null
+  peak_elevation: number | null
+  peak_date: string | null
+  end_of_year_elevation: number | null
+  
+  // Calculated changes
+  runoff_gain_ft: number | null
+  had_runoff_rise: boolean
+  days_of_rise: number | null
+  
+  // Flow totals (runoff season: Apr-Aug)
+  runoff_inflow_af: number | null
+  runoff_outflow_af: number | null
+  runoff_net_af: number | null
+  
+  // Full water year totals
+  total_inflow_af: number | null
+  total_outflow_af: number | null
+  net_flow_af: number | null
+  
+  // Correlation metrics
+  inflow_per_inch_swe: number | null
+  ft_gained_per_inch_swe: number | null
+}
+
+/**
+ * Get all water year analysis records
+ */
+export async function getWaterYearAnalysis(): Promise<WaterYearAnalysis[]> {
+  const result = await pool.query(`
+    SELECT 
+      water_year,
+      peak_swe, peak_swe_date, peak_swe_percent_of_median,
+      april_1_swe, april_1_percent_of_median,
+      pre_runoff_low_elevation, pre_runoff_low_date,
+      runoff_start_date, runoff_start_elevation,
+      peak_elevation, peak_date, end_of_year_elevation,
+      runoff_gain_ft, had_runoff_rise, days_of_rise,
+      runoff_inflow_af, runoff_outflow_af, runoff_net_af,
+      total_inflow_af, total_outflow_af, net_flow_af,
+      inflow_per_inch_swe, ft_gained_per_inch_swe
+    FROM water_year_analysis
+    ORDER BY water_year DESC
+  `)
+  
+  return result.rows.map(row => ({
+    water_year: parseInt(row.water_year),
+    peak_swe: row.peak_swe ? parseFloat(row.peak_swe) : null,
+    peak_swe_date: row.peak_swe_date ? row.peak_swe_date.toISOString().split('T')[0] : null,
+    peak_swe_percent_of_median: row.peak_swe_percent_of_median ? parseFloat(row.peak_swe_percent_of_median) : null,
+    april_1_swe: row.april_1_swe ? parseFloat(row.april_1_swe) : null,
+    april_1_percent_of_median: row.april_1_percent_of_median ? parseFloat(row.april_1_percent_of_median) : null,
+    pre_runoff_low_elevation: row.pre_runoff_low_elevation ? parseFloat(row.pre_runoff_low_elevation) : null,
+    pre_runoff_low_date: row.pre_runoff_low_date ? row.pre_runoff_low_date.toISOString().split('T')[0] : null,
+    runoff_start_date: row.runoff_start_date ? row.runoff_start_date.toISOString().split('T')[0] : null,
+    runoff_start_elevation: row.runoff_start_elevation ? parseFloat(row.runoff_start_elevation) : null,
+    peak_elevation: row.peak_elevation ? parseFloat(row.peak_elevation) : null,
+    peak_date: row.peak_date ? row.peak_date.toISOString().split('T')[0] : null,
+    end_of_year_elevation: row.end_of_year_elevation ? parseFloat(row.end_of_year_elevation) : null,
+    runoff_gain_ft: row.runoff_gain_ft ? parseFloat(row.runoff_gain_ft) : null,
+    had_runoff_rise: row.had_runoff_rise ?? false,
+    days_of_rise: row.days_of_rise ? parseInt(row.days_of_rise) : null,
+    runoff_inflow_af: row.runoff_inflow_af ? parseInt(row.runoff_inflow_af) : null,
+    runoff_outflow_af: row.runoff_outflow_af ? parseInt(row.runoff_outflow_af) : null,
+    runoff_net_af: row.runoff_net_af ? parseInt(row.runoff_net_af) : null,
+    total_inflow_af: row.total_inflow_af ? parseInt(row.total_inflow_af) : null,
+    total_outflow_af: row.total_outflow_af ? parseInt(row.total_outflow_af) : null,
+    net_flow_af: row.net_flow_af ? parseInt(row.net_flow_af) : null,
+    inflow_per_inch_swe: row.inflow_per_inch_swe ? parseInt(row.inflow_per_inch_swe) : null,
+    ft_gained_per_inch_swe: row.ft_gained_per_inch_swe ? parseFloat(row.ft_gained_per_inch_swe) : null
+  }))
+}
+
+/**
+ * Find water years with similar snowpack percentage for projections
+ * @param targetPercent - Target snowpack percent of median
+ * @param tolerance - Percentage tolerance for matching (default 15%)
+ * @param limit - Maximum number of results
+ */
+export async function getSimilarSnowpackYears(
+  targetPercent: number,
+  tolerance: number = 15,
+  limit: number = 10
+): Promise<WaterYearAnalysis[]> {
+  const result = await pool.query(`
+    SELECT 
+      water_year,
+      peak_swe, peak_swe_date, peak_swe_percent_of_median,
+      april_1_swe, april_1_percent_of_median,
+      pre_runoff_low_elevation, pre_runoff_low_date,
+      runoff_start_date, runoff_start_elevation,
+      peak_elevation, peak_date, end_of_year_elevation,
+      runoff_gain_ft, had_runoff_rise, days_of_rise,
+      runoff_inflow_af, runoff_outflow_af, runoff_net_af,
+      total_inflow_af, total_outflow_af, net_flow_af,
+      inflow_per_inch_swe, ft_gained_per_inch_swe,
+      ABS(peak_swe_percent_of_median - $1) as diff
+    FROM water_year_analysis
+    WHERE peak_swe_percent_of_median IS NOT NULL
+      AND ABS(peak_swe_percent_of_median - $1) <= $2
+    ORDER BY diff ASC
+    LIMIT $3
+  `, [targetPercent, tolerance, limit])
+  
+  return result.rows.map(row => ({
+    water_year: parseInt(row.water_year),
+    peak_swe: row.peak_swe ? parseFloat(row.peak_swe) : null,
+    peak_swe_date: row.peak_swe_date ? row.peak_swe_date.toISOString().split('T')[0] : null,
+    peak_swe_percent_of_median: row.peak_swe_percent_of_median ? parseFloat(row.peak_swe_percent_of_median) : null,
+    april_1_swe: row.april_1_swe ? parseFloat(row.april_1_swe) : null,
+    april_1_percent_of_median: row.april_1_percent_of_median ? parseFloat(row.april_1_percent_of_median) : null,
+    pre_runoff_low_elevation: row.pre_runoff_low_elevation ? parseFloat(row.pre_runoff_low_elevation) : null,
+    pre_runoff_low_date: row.pre_runoff_low_date ? row.pre_runoff_low_date.toISOString().split('T')[0] : null,
+    runoff_start_date: row.runoff_start_date ? row.runoff_start_date.toISOString().split('T')[0] : null,
+    runoff_start_elevation: row.runoff_start_elevation ? parseFloat(row.runoff_start_elevation) : null,
+    peak_elevation: row.peak_elevation ? parseFloat(row.peak_elevation) : null,
+    peak_date: row.peak_date ? row.peak_date.toISOString().split('T')[0] : null,
+    end_of_year_elevation: row.end_of_year_elevation ? parseFloat(row.end_of_year_elevation) : null,
+    runoff_gain_ft: row.runoff_gain_ft ? parseFloat(row.runoff_gain_ft) : null,
+    had_runoff_rise: row.had_runoff_rise ?? false,
+    days_of_rise: row.days_of_rise ? parseInt(row.days_of_rise) : null,
+    runoff_inflow_af: row.runoff_inflow_af ? parseInt(row.runoff_inflow_af) : null,
+    runoff_outflow_af: row.runoff_outflow_af ? parseInt(row.runoff_outflow_af) : null,
+    runoff_net_af: row.runoff_net_af ? parseInt(row.runoff_net_af) : null,
+    total_inflow_af: row.total_inflow_af ? parseInt(row.total_inflow_af) : null,
+    total_outflow_af: row.total_outflow_af ? parseInt(row.total_outflow_af) : null,
+    net_flow_af: row.net_flow_af ? parseInt(row.net_flow_af) : null,
+    inflow_per_inch_swe: row.inflow_per_inch_swe ? parseInt(row.inflow_per_inch_swe) : null,
+    ft_gained_per_inch_swe: row.ft_gained_per_inch_swe ? parseFloat(row.ft_gained_per_inch_swe) : null
+  }))
+}
+
+/**
+ * Get correlation statistics for projection model
+ */
+export async function getSnowpackRunoffCorrelation(): Promise<{
+  avgFtPerInchSwe: number
+  avgInflowPerInchSwe: number
+  correlationYears: number
+}> {
+  const result = await pool.query(`
+    SELECT 
+      AVG(ft_gained_per_inch_swe) as avg_ft_per_inch,
+      AVG(inflow_per_inch_swe) as avg_inflow_per_inch,
+      COUNT(*) as years
+    FROM water_year_analysis
+    WHERE ft_gained_per_inch_swe IS NOT NULL
+      AND inflow_per_inch_swe IS NOT NULL
+      AND had_runoff_rise = true
+  `)
+  
+  const row = result.rows[0]
+  return {
+    avgFtPerInchSwe: row.avg_ft_per_inch ? parseFloat(row.avg_ft_per_inch) : 0,
+    avgInflowPerInchSwe: row.avg_inflow_per_inch ? parseFloat(row.avg_inflow_per_inch) : 0,
+    correlationYears: row.years ? parseInt(row.years) : 0
+  }
+}
+
+/**
+ * Get pre-runoff low for a specific water year
+ * The pre-runoff low is the minimum elevation before spring runoff begins
+ */
+export async function getPreRunoffLow(waterYear: number): Promise<{
+  elevation: number | null
+  date: string | null
+} | null> {
+  // First try to get from water_year_analysis if it exists
+  const analysisResult = await pool.query(`
+    SELECT pre_runoff_low_elevation, pre_runoff_low_date
+    FROM water_year_analysis
+    WHERE water_year = $1
+  `, [waterYear])
+  
+  if (analysisResult.rows.length > 0 && analysisResult.rows[0].pre_runoff_low_elevation) {
+    return {
+      elevation: parseFloat(analysisResult.rows[0].pre_runoff_low_elevation),
+      date: analysisResult.rows[0].pre_runoff_low_date?.toISOString().split('T')[0] || null
+    }
+  }
+  
+  // Otherwise calculate from water_measurements for current year
+  // Pre-runoff low is typically the minimum between Dec 1 and Apr 15
+  const startDate = `${waterYear - 1}-12-01`
+  const endDate = `${waterYear}-04-15`
+  
+  const result = await pool.query(`
+    SELECT elevation, date
+    FROM water_measurements
+    WHERE date >= $1 AND date <= $2
+    ORDER BY elevation ASC
+    LIMIT 1
+  `, [startDate, endDate])
+  
+  if (result.rows.length === 0) {
+    return null
+  }
+  
+  return {
+    elevation: parseFloat(result.rows[0].elevation),
+    date: result.rows[0].date?.toISOString().split('T')[0] || null
+  }
+}
+
+/**
+ * Get the peak elevation so far this water year (for detecting if we've peaked)
+ */
+export async function getWaterYearPeakSoFar(waterYear: number): Promise<{
+  elevation: number | null
+  date: string | null
+} | null> {
+  // Look for peak since April 1
+  const startDate = `${waterYear}-04-01`
+  const endDate = new Date().toISOString().split('T')[0]
+  
+  const result = await pool.query(`
+    SELECT elevation, date
+    FROM water_measurements
+    WHERE date >= $1 AND date <= $2
+    ORDER BY elevation DESC
+    LIMIT 1
+  `, [startDate, endDate])
+  
+  if (result.rows.length === 0) {
+    return null
+  }
+  
+  return {
+    elevation: parseFloat(result.rows[0].elevation),
+    date: result.rows[0].date?.toISOString().split('T')[0] || null
+  }
 }
 

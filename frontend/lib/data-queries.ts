@@ -16,6 +16,7 @@ import {
   FlowStatistics,
   StorageCapacityAnalysis
 } from './db'
+import { unstable_cache } from 'next/cache'
 
 /**
  * Centralized query functions that combine database queries
@@ -144,10 +145,61 @@ export interface StatisticalSummary {
   storageAnalysis: StorageCapacityAnalysis[]
 }
 
+// Cache statistical summary for 1 hour to reduce database load
+const getCachedStatisticalSummary = unstable_cache(
+  async (startDate?: string, endDate?: string) => {
+    const now = new Date()
+    const defaultEnd = now.toISOString().split('T')[0]
+    const defaultStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]
+    
+    const queryStart = startDate || defaultStart
+    const queryEnd = endDate || defaultEnd
+    
+    // Execute queries in smaller batches to avoid exhausting connection pool
+    // With pool size of 8, we limit to max 3 concurrent queries per batch
+    // Batch 1: Quick single queries (3 queries)
+    const [current, historicalAverages, waterYearSummaries] = await Promise.all([
+      getLatestWaterMeasurement(),
+      getHistoricalAverages(),
+      getWaterYearSummaries()
+    ])
+    
+    // Batch 2: First group of date-range queries (3 queries)
+    const [monthlyAverages, seasonalTrends, elevationDistribution] = await Promise.all([
+      getMonthlyAverages(queryStart, queryEnd),
+      getSeasonalTrends(),
+      getElevationDistribution(queryStart, queryEnd)
+    ])
+    
+    // Batch 3: Remaining date-range queries (2 queries - these can be heavier)
+    const [recentFlowStats, storageAnalysis] = await Promise.all([
+      getFlowStatistics(queryStart, queryEnd),
+      getStorageCapacityAnalysis(queryStart, queryEnd)
+    ])
+    
+    return {
+      current,
+      historicalAverages,
+      waterYearSummaries,
+      monthlyAverages,
+      seasonalTrends,
+      elevationDistribution,
+      recentFlowStats,
+      storageAnalysis
+    }
+  },
+  ['statistical-summary'],
+  {
+    revalidate: 3600, // 1 hour
+    tags: ['statistical-summary']
+  }
+)
+
 export async function getStatisticalSummary(
   startDate?: string,
   endDate?: string
 ): Promise<StatisticalSummary> {
+  return getCachedStatisticalSummary(startDate, endDate)
   const now = new Date()
   const defaultEnd = now.toISOString().split('T')[0]
   const defaultStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]
@@ -155,22 +207,24 @@ export async function getStatisticalSummary(
   const queryStart = startDate || defaultStart
   const queryEnd = endDate || defaultEnd
   
-  const [
-    current,
-    historicalAverages,
-    waterYearSummaries,
-    monthlyAverages,
-    seasonalTrends,
-    elevationDistribution,
-    recentFlowStats,
-    storageAnalysis
-  ] = await Promise.all([
+  // Execute queries in smaller batches to avoid exhausting connection pool
+  // With pool size of 10, we limit to max 3 concurrent queries per batch
+  // Batch 1: Quick single queries (3 queries)
+  const [current, historicalAverages, waterYearSummaries] = await Promise.all([
     getLatestWaterMeasurement(),
     getHistoricalAverages(),
-    getWaterYearSummaries(),
+    getWaterYearSummaries()
+  ])
+  
+  // Batch 2: First group of date-range queries (3 queries)
+  const [monthlyAverages, seasonalTrends, elevationDistribution] = await Promise.all([
     getMonthlyAverages(queryStart, queryEnd),
     getSeasonalTrends(),
-    getElevationDistribution(queryStart, queryEnd),
+    getElevationDistribution(queryStart, queryEnd)
+  ])
+  
+  // Batch 3: Remaining date-range queries (2 queries - these can be heavier)
+  const [recentFlowStats, storageAnalysis] = await Promise.all([
     getFlowStatistics(queryStart, queryEnd),
     getStorageCapacityAnalysis(queryStart, queryEnd)
   ])

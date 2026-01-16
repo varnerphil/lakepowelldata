@@ -165,7 +165,7 @@ export default function ElevationProjectionChart({
         <Line 
           type="monotone" 
           dataKey="projected" 
-          stroke="#10b981" 
+          stroke="#3b82f6" 
           strokeWidth={2}
           strokeDasharray="5 5"
           name="Projected"

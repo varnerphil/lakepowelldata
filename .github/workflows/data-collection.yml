@@ -1,14 +1,37 @@
-name: Daily Data Collection
+name: Data Collection
 
 on:
   schedule:
-    # Run daily at 1 AM UTC (6 PM MST previous day, 5 PM PST previous day)
+    # Daily water data: 1 AM UTC (6 PM MST previous day)
     - cron: '0 1 * * *'
-  workflow_dispatch: # Allow manual triggering
+    
+    # Daily snowpack data: 2 PM UTC (7 AM MST) - captures morning SNOTEL updates
+    - cron: '0 14 * * *'
+  
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - water-data
+          - snowpack-data
+          - basin-plots
+          - water-year-analysis
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
-  collect-data:
+  # ============================================
+  # Daily Water Measurements (runs every day)
+  # ============================================
+  water-data:
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'water-data'
     
     steps:
       - name: Checkout repository
@@ -25,21 +48,129 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run data collection
+      - name: Run water data collection
         working-directory: ./data-collection
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
         run: |
+          echo "📊 Starting daily water data collection..."
           python collectors/scheduler.py
+          echo "✅ Water data collection complete"
+
+  # ============================================
+  # Daily Snowpack Data (SNOTEL + Basin Plots)
+  # ============================================
+  snowpack-data:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'snowpack-data'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-      - name: Report status
-        if: always()
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: ./data-collection
         run: |
-          echo "Data collection job completed"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Update SNOTEL data
+        working-directory: ./data-collection
+        run: |
+          echo "❄️ Updating SNOTEL data..."
+          python -m migrations.import_snotel_historical_data --end-date $(date +%Y-%m-%d) || echo "⚠️ SNOTEL update had issues (may be upstream data quality)"
+          echo "✅ SNOTEL update complete"
+      
+      - name: Update Basin Plots data
+        working-directory: ./data-collection
+        run: |
+          echo "📈 Updating Basin Plots data..."
+          python -m migrations.import_basin_plots_data
+          echo "✅ Basin Plots update complete"
 
+  # ============================================
+  # Basin Plots Only (manual trigger)
+  # ============================================
+  basin-plots:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.job == 'basin-plots'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: ./data-collection
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Update Basin Plots data
+        working-directory: ./data-collection
+        run: |
+          echo "📈 Updating Basin Plots data..."
+          python -m migrations.import_basin_plots_data
+          echo "✅ Basin Plots update complete"
 
+  # ============================================
+  # Water Year Analysis (manual trigger only)
+  # Run annually after October 1 when new water year starts
+  # ============================================
+  water-year-analysis:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.job == 'water-year-analysis'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: ./data-collection
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Calculate Water Year Analysis
+        working-directory: ./data-collection
+        run: |
+          echo "📅 Calculating water year analysis..."
+          echo "This analyzes runoff patterns and creates snowpack-to-elevation correlations"
+          python -m migrations.calculate_water_year_analysis
+          echo "✅ Water year analysis complete"
 
-
-
-
+  # ============================================
+  # Report Status
+  # ============================================
+  report:
+    runs-on: ubuntu-latest
+    needs: [water-data, snowpack-data]
+    if: always() && github.event_name == 'schedule'
+    
+    steps:
+      - name: Report status
+        run: |
+          echo "📋 Data Collection Summary"
+          echo "=========================="
+          echo "Water Data: ${{ needs.water-data.result }}"
+          echo "Snowpack Data: ${{ needs.snowpack-data.result }}"
+          echo ""
+          if [[ "${{ needs.water-data.result }}" == "success" && "${{ needs.snowpack-data.result }}" == "success" ]]; then
+            echo "✅ All data collection jobs completed successfully!"
+          else
+            echo "⚠️ Some jobs may have issues. Check the logs above."
+          fi

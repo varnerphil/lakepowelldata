@@ -458,3 +458,145 @@ export function calculateElevationProjection(
   }
 }
 
+// ============================================================
+// Snowpack-Based Projection Functions
+// ============================================================
+
+import type { WaterYearAnalysis } from './db'
+
+export interface SnowpackProjection {
+  // Input data
+  currentSnowpackPercent: number
+  currentElevation: number
+  
+  // Projected outcomes
+  projectedRunoffGain: number           // Expected ft of rise
+  projectedPeakElevation: number        // Expected peak elevation
+  projectedPeakDate: string             // Typical peak date (MM-DD)
+  projectedRunoffInflow: number         // Expected acre-feet inflow
+  
+  // Confidence range
+  minGain: number                       // Minimum from similar years
+  maxGain: number                       // Maximum from similar years
+  
+  // Supporting data
+  similarYears: Array<{
+    water_year: number
+    snowpack_percent: number
+    runoff_gain: number
+    peak_date: string
+  }>
+  yearsUsed: number
+}
+
+/**
+ * Project runoff gain and peak elevation based on current snowpack percentage
+ * Uses historical correlation from similar snowpack years
+ */
+export function projectFromSnowpack(
+  currentSnowpackPercent: number,
+  currentElevation: number,
+  similarYears: WaterYearAnalysis[],
+  elevationStorageCapacity: Array<{ elevation: number; storage_per_foot: number | null }>
+): SnowpackProjection {
+  // Filter to years with valid runoff data
+  const validYears = similarYears.filter(
+    y => y.runoff_gain_ft !== null && y.peak_swe_percent_of_median !== null
+  )
+  
+  if (validYears.length === 0) {
+    return {
+      currentSnowpackPercent,
+      currentElevation,
+      projectedRunoffGain: 0,
+      projectedPeakElevation: currentElevation,
+      projectedPeakDate: 'Jun-15',
+      projectedRunoffInflow: 0,
+      minGain: 0,
+      maxGain: 0,
+      similarYears: [],
+      yearsUsed: 0
+    }
+  }
+  
+  // Calculate statistics from similar years
+  const gains = validYears.map(y => y.runoff_gain_ft!)
+  const avgGain = gains.reduce((a, b) => a + b, 0) / gains.length
+  const minGain = Math.min(...gains)
+  const maxGain = Math.max(...gains)
+  
+  // Average runoff inflow
+  const inflows = validYears.filter(y => y.runoff_inflow_af).map(y => y.runoff_inflow_af!)
+  const avgInflow = inflows.length > 0 
+    ? inflows.reduce((a, b) => a + b, 0) / inflows.length 
+    : 0
+  
+  // Typical peak date (extract month-day from peak_date)
+  const peakDates = validYears.filter(y => y.peak_date).map(y => {
+    const d = new Date(y.peak_date!)
+    return { month: d.getMonth() + 1, day: d.getDate() }
+  })
+  
+  let projectedPeakDate = 'Jun-15'
+  if (peakDates.length > 0) {
+    const avgMonth = Math.round(peakDates.reduce((a, b) => a + b.month, 0) / peakDates.length)
+    const avgDay = Math.round(peakDates.reduce((a, b) => a + b.day, 0) / peakDates.length)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    projectedPeakDate = `${monthNames[avgMonth - 1]}-${avgDay.toString().padStart(2, '0')}`
+  }
+  
+  // Project peak elevation
+  const projectedPeakElevation = currentElevation + avgGain
+  
+  // Build similar years summary
+  const similarYearsSummary = validYears.map(y => ({
+    water_year: y.water_year,
+    snowpack_percent: y.peak_swe_percent_of_median!,
+    runoff_gain: y.runoff_gain_ft!,
+    peak_date: y.peak_date || ''
+  }))
+  
+  return {
+    currentSnowpackPercent,
+    currentElevation,
+    projectedRunoffGain: Math.round(avgGain * 10) / 10,
+    projectedPeakElevation: Math.round(projectedPeakElevation * 10) / 10,
+    projectedPeakDate,
+    projectedRunoffInflow: Math.round(avgInflow),
+    minGain: Math.round(minGain * 10) / 10,
+    maxGain: Math.round(maxGain * 10) / 10,
+    similarYears: similarYearsSummary,
+    yearsUsed: validYears.length
+  }
+}
+
+/**
+ * Calculate the average ft gained per inch of SWE from historical data
+ */
+export function calculateSnowpackEfficiency(
+  waterYearData: WaterYearAnalysis[]
+): {
+  avgFtPerInchSwe: number
+  avgInflowPerInchSwe: number
+  dataPoints: number
+} {
+  const validYears = waterYearData.filter(
+    y => y.ft_gained_per_inch_swe !== null && 
+         y.inflow_per_inch_swe !== null &&
+         y.had_runoff_rise
+  )
+  
+  if (validYears.length === 0) {
+    return { avgFtPerInchSwe: 0, avgInflowPerInchSwe: 0, dataPoints: 0 }
+  }
+  
+  const avgFt = validYears.reduce((a, b) => a + b.ft_gained_per_inch_swe!, 0) / validYears.length
+  const avgInflow = validYears.reduce((a, b) => a + b.inflow_per_inch_swe!, 0) / validYears.length
+  
+  return {
+    avgFtPerInchSwe: Math.round(avgFt * 100) / 100,
+    avgInflowPerInchSwe: Math.round(avgInflow),
+    dataPoints: validYears.length
+  }
+}
+

@@ -292,8 +292,8 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
             // Determine if ramp is currently usable (same logic as projection chart)
             const isUsable = currentElevation >= ramp.min_safe_elevation
             
-            // Color based on current status (matching projection chart)
-            const strokeColor = isUsable ? '#10b981' : '#c99a7a'
+            // Color based on current status (using theme colors)
+            const strokeColor = isUsable ? '#8b9a6b' : '#c99a7a'
             
             // Create abbreviated names
             let shortName: string
@@ -343,13 +343,15 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
                 key={ramp.name}
                 y={ramp.min_safe_elevation}
                 stroke={strokeColor}
-                strokeWidth={1.5}
-                strokeDasharray="3 3"
+                strokeWidth={2}
+                strokeDasharray="5 3"
+                strokeOpacity={0.8}
                 label={isMobile ? undefined : {
                   value: `${shortName} ${ramp.min_safe_elevation.toFixed(0)}ft`,
                   position: "right",
                   fill: strokeColor,
-                  fontSize: 10,
+                  fontSize: 11,
+                  fontWeight: 500,
                   offset: 20
                 }}
               />

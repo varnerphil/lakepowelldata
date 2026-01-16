@@ -1,0 +1,66 @@
+name: Annual Water Year Analysis
+
+on:
+  schedule:
+    # Run on October 15 at 10 AM UTC (3 AM MST)
+    # This is after the water year ends (Oct 1) to ensure complete data
+    - cron: '0 10 15 10 *'
+  
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force recalculation of all years'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+jobs:
+  water-year-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: ./data-collection
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Calculate Water Year Analysis
+        working-directory: ./data-collection
+        run: |
+          echo "📅 Annual Water Year Analysis"
+          echo "=============================="
+          echo ""
+          echo "This job runs annually after October 1 to:"
+          echo "1. Analyze the just-completed water year"
+          echo "2. Calculate runoff gains/losses"
+          echo "3. Correlate snowpack percentage with actual elevation changes"
+          echo "4. Update projections for similar snowpack years"
+          echo ""
+          echo "Starting analysis..."
+          python -m migrations.calculate_water_year_analysis
+          echo ""
+          echo "✅ Water year analysis complete!"
+      
+      - name: Summary
+        run: |
+          echo "## Water Year Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The water year analysis has been updated with data from the just-completed water year." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This data is used to:" >> $GITHUB_STEP_SUMMARY
+          echo "- Project spring runoff based on current snowpack" >> $GITHUB_STEP_SUMMARY
+          echo "- Show low/projected/high elevation estimates" >> $GITHUB_STEP_SUMMARY
+          echo "- Compare current conditions to similar historical years" >> $GITHUB_STEP_SUMMARY
+

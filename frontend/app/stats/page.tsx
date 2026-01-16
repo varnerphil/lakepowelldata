@@ -1,6 +1,7 @@
 import { getStatisticalSummary, getCurrentData, getHistoricalData } from '@/lib/data-queries'
-import { CurrentStatus, HistoricalChart, WaterYearTable, RecentMeasurements, HistoricalAverages, ProjectedRunoff, ElevationStorageCapacity } from '@/components/data-display'
-import { getHistoricalWaterYearLows, getRunoffSeasonOutflow, getHistoricalWaterYearHighs, getWaterMeasurementsByRange, getHistoricalDropsToLow, getAllRamps, getElevationStorageCapacity } from '@/lib/db'
+import { CurrentStatus, HistoricalChart, WaterYearTable, RecentMeasurements, HistoricalAverages, ElevationStorageCapacity, SnowpackProjection } from '@/components/data-display'
+import { getHistoricalWaterYearLows, getRunoffSeasonOutflow, getHistoricalWaterYearHighs, getWaterMeasurementsByRange, getHistoricalDropsToLow, getAllRamps, getElevationStorageCapacity, getWaterYearAnalysis, getSimilarSnowpackYears } from '@/lib/db'
+import { projectFromSnowpack } from '@/lib/calculations'
 import StatsTabs from '@/components/stats/StatsTabs'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
 
@@ -64,6 +65,18 @@ export default async function StatsPage({
   // Get elevation storage capacity data
   const elevationStorageCapacity = await getElevationStorageCapacity()
   
+  // Get water year analysis with snowpack correlation
+  const waterYearAnalysis = await getWaterYearAnalysis()
+  
+  // Get current snowpack percentage for projection
+  let currentSnowpackPercent = 100  // Default to 100% if not available
+  if (basinPlotsData && basinPlotsData.currentStats && basinPlotsData.currentStats.percentOfMedian) {
+    currentSnowpackPercent = basinPlotsData.currentStats.percentOfMedian
+  }
+  
+  // Get similar historical years for snowpack projection
+  const similarSnowpackYears = await getSimilarSnowpackYears(currentSnowpackPercent, 20, 10)
+  
   // Get last 30 days of historical data for chart
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -103,24 +116,6 @@ export default async function StatsPage({
   
   const ramps = allRamps  // Keep all ramps for other components
 
-  // Prepare tributary snowpack data
-  const tributarySnowpack = snowpackData ? [
-    {
-      tributary: 'Colorado River',
-      avgSWEPercent: snowpackData.basins.find((b: any) => b.name.includes('COLORADO RIVER HEADWATERS'))?.snowWaterEquivalentIndex || null,
-      volumePercent: 65
-    },
-    {
-      tributary: 'San Juan River',
-      avgSWEPercent: snowpackData.basins.find((b: any) => b.name.includes('SAN JUAN'))?.snowWaterEquivalentIndex || null,
-      volumePercent: 20
-    },
-    {
-      tributary: 'South Eastern Utah',
-      avgSWEPercent: snowpackData.basins.find((b: any) => b.name.includes('SOUTH EASTERN'))?.snowWaterEquivalentIndex || null,
-      volumePercent: 15
-    }
-  ] : []
 
   if (!currentData) {
     return (
@@ -180,10 +175,6 @@ export default async function StatsPage({
                 formAction="/stats"
                 ramps={selectedRamps}
               />
-            </div>
-
-            <div>
-              <WaterYearTable summaries={statsSummary.waterYearSummaries} />
             </div>
 
             {/* Monthly Averages */}
@@ -395,24 +386,26 @@ export default async function StatsPage({
               </div>
             )}
             
-            {snowpackData && currentData ? (
-              <ProjectedRunoff 
-                tributarySnowpack={tributarySnowpack}
-                historicalInflow={historicalInflow}
-                currentElevation={currentData.current.elevation}
-                currentStorage={currentData.current.content}
-                historicalLows={historicalLows}
-                typicalOutflow={typicalOutflow}
-                historicalHighs={historicalHighs.map(h => ({ max_elevation: h.max_elevation, date_of_max: h.date_of_max }))}
-                recentHistoricalData={recentHistoricalData}
-                historicalDrops={historicalDrops}
-                ramps={ramps}
-              />
-            ) : (
-              <div className="card p-6 lg:p-8 text-center">
-                <p className="text-gray-500 font-light">Snowpack data not available. Projected runoff calculations require current snowpack data.</p>
+            {/* Snowpack-Based Projection */}
+            {currentData && similarSnowpackYears.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-light mb-4 text-gray-900">Snowpack Runoff Projection</h2>
+                <p className="text-sm text-gray-500 mb-6 font-light">
+                  Projection based on historical years with similar peak snowpack percentage. 
+                  This shows expected elevation gain during the runoff season (April-August) based on correlation analysis.
+                </p>
+                <SnowpackProjection 
+                  projection={projectFromSnowpack(
+                    currentSnowpackPercent,
+                    currentData.current.elevation,
+                    similarSnowpackYears,
+                    elevationStorageCapacity
+                  )}
+                  currentElevation={currentData.current.elevation}
+                />
               </div>
             )}
+            
           </div>
         </div>
 
