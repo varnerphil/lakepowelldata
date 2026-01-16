@@ -796,48 +796,40 @@ export function simulateOutflow(
     // Calculate adjusted outflow
     const adjustedOutflow = outflow * (outflowPercentage / 100)
     
-    // Calculate evaporation based on current simulated elevation
-    const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
-    const evaporation = getDailyEvaporation(date, simulatedElevation)
-    
-    // The KEY insight: at 100%, we want simulated to match actual
-    // The actual content already reflects: inflow - outflow - evaporation - other_losses
-    // So we DON'T add our own evaporation model - instead, we calculate
-    // what the evaporation+losses were implicitly and use that
-    
-    // Get previous actual content to calculate implied evaporation
+    // Calculate the ACTUAL change that happened in the real lake
+    // This implicitly includes evaporation, bank storage, and any measurement noise
     const prevActualContent = filtered[i - 1].content || 0
-    const impliedEvapAndLosses = prevActualContent + inflow - outflow - actualContent
+    const actualChange = actualContent - prevActualContent
     
-    // For the simulation, use the implied evaporation at 100%, 
-    // but scale it for different outflow percentages based on surface area
-    // (lower lake = less evaporation)
-    const outflowDiff = outflow - adjustedOutflow // Water saved (positive) or extra released (negative)
+    // The actual change = inflow - outflow - evaporation - other_losses
+    // So: actual_evap_and_losses = inflow - outflow - actualChange
+    const actualEvapAndLosses = inflow - outflow - actualChange
+    
+    // For the simulation:
+    // At 100%: simulated change should equal actual change (perfect tracking)
+    // At other %: account for the outflow difference
+    
+    // The outflow difference (positive = water saved, negative = extra released)
+    const outflowDiff = outflow - adjustedOutflow
+    
+    // Simulated change = actual change + outflow difference
+    // This is because if we release less water, we keep more
+    const simulatedChange = actualChange + outflowDiff
     
     // Update simulated content
-    // At 100%: simulated should track actual closely
-    // At <100%: save water (outflowDiff positive), but also slightly more evap due to higher surface area
-    // At >100%: release more, less evap due to lower surface area
-    
-    // Simple approach: use implied evaporation adjusted for surface area difference
-    const actualSurfaceArea = getSurfaceAreaAtElevation(actualElevation)
-    const simSurfaceArea = getSurfaceAreaAtElevation(simulatedElevation)
-    const surfaceAreaRatio = actualSurfaceArea > 0 ? simSurfaceArea / actualSurfaceArea : 1
-    
-    // Adjust evaporation based on surface area ratio
-    const adjustedEvapLosses = impliedEvapAndLosses * surfaceAreaRatio
-    
-    // Net change for simulation
-    const netChange = inflow - adjustedOutflow - adjustedEvapLosses
-    simulatedContent = Math.max(0, simulatedContent + netChange)
+    simulatedContent = Math.max(0, simulatedContent + simulatedChange)
     
     // Convert to elevation
-    const newSimulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+    const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+    
+    // For evaporation display, use our monthly model based on simulated elevation
+    // This gives a realistic evaporation estimate for the simulated scenario
+    const modeledEvaporation = getDailyEvaporation(date, simulatedElevation)
     
     // Track totals
     totalActualOutflow += outflow
     totalSimulatedOutflow += adjustedOutflow
-    totalEvaporation += adjustedEvapLosses > 0 ? adjustedEvapLosses : 0
+    totalEvaporation += modeledEvaporation
     
     dailyData.push({
       date: measurement.date,
@@ -845,10 +837,10 @@ export function simulateOutflow(
       actualContent,
       actualInflow: inflow,
       actualOutflow: outflow,
-      simulatedElevation: Math.round(newSimulatedElevation * 100) / 100,
+      simulatedElevation: Math.round(simulatedElevation * 100) / 100,
       simulatedContent: Math.round(simulatedContent),
       adjustedOutflow: Math.round(adjustedOutflow),
-      evaporation: Math.round(adjustedEvapLosses > 0 ? adjustedEvapLosses : 0)
+      evaporation: Math.round(modeledEvaporation)
     })
   }
   
