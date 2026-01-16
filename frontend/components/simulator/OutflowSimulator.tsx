@@ -1,26 +1,46 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { simulateOutflow, SimulationResult } from '@/lib/calculations'
 import SimulationChart from './SimulationChart'
-import type { WaterMeasurement, ElevationStorageCapacity } from '@/lib/db'
+import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
 
 interface OutflowSimulatorProps {
   measurements: WaterMeasurement[]
   storageCapacity: ElevationStorageCapacity[]
   minDate: string
   maxDate: string
+  ramps: Ramp[]
 }
 
 export default function OutflowSimulator({
   measurements,
   storageCapacity,
   minDate,
-  maxDate
+  maxDate,
+  ramps
 }: OutflowSimulatorProps) {
   const [startDate, setStartDate] = useState('2000-01-01')
   const [outflowPercentage, setOutflowPercentage] = useState(90)
   const [hasCalculated, setHasCalculated] = useState(false)
+  const [favoriteRampIds, setFavoriteRampIds] = useState<number[]>([])
+  
+  // Load favorite ramps from local storage
+  useEffect(() => {
+    const stored = localStorage.getItem('favoriteRamps')
+    if (stored) {
+      try {
+        setFavoriteRampIds(JSON.parse(stored))
+      } catch {
+        setFavoriteRampIds([])
+      }
+    }
+  }, [])
+  
+  // Get favorite ramps data
+  const favoriteRamps = useMemo(() => {
+    return ramps.filter(r => favoriteRampIds.includes(r.id))
+  }, [ramps, favoriteRampIds])
   
   // Run simulation whenever inputs change (memoized for performance)
   const simulationResult = useMemo<SimulationResult | null>(() => {
@@ -225,7 +245,7 @@ export default function OutflowSimulator({
               <span className="text-blue-600">Blue line</span> shows actual historical elevation.
               <span className="text-[#d4a574]"> Orange line</span> shows simulated elevation with {outflowPercentage}% outflow.
             </p>
-            <SimulationChart data={simulationResult.dailyData} />
+            <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
           </div>
         </>
       )}

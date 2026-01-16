@@ -1,4 +1,4 @@
-import { getWaterMeasurementsByRange, getElevationStorageCapacity } from '@/lib/db'
+import { getWaterMeasurementsByRange, getElevationStorageCapacity, getAllRamps } from '@/lib/db'
 
 import OutflowSimulator from '@/components/simulator/OutflowSimulator'
 
@@ -11,6 +11,7 @@ export default async function SimulatorPage() {
   
   const measurements = await getWaterMeasurementsByRange(startDate, endDate)
   const storageCapacity = await getElevationStorageCapacity()
+  const ramps = await getAllRamps()
   
   // Get the date range for the date picker
   const minDate = measurements.length > 0 
@@ -38,6 +39,7 @@ export default async function SimulatorPage() {
         storageCapacity={storageCapacity}
         minDate={minDate}
         maxDate={maxDate}
+        ramps={ramps}
       />
     </div>
   )

@@ -13,12 +13,14 @@ import {
   ReferenceLine
 } from 'recharts'
 import type { SimulationDayResult } from '@/lib/calculations'
+import type { Ramp } from '@/lib/db'
 
 interface SimulationChartProps {
   data: SimulationDayResult[]
+  ramps?: Ramp[]
 }
 
-export default function SimulationChart({ data }: SimulationChartProps) {
+export default function SimulationChart({ data, ramps = [] }: SimulationChartProps) {
   // Sample data for large datasets to improve performance
   const chartData = useMemo(() => {
     if (data.length <= 1000) {
@@ -74,8 +76,12 @@ export default function SimulationChart({ data }: SimulationChartProps) {
   }
 
   // Key elevations
+  const FULL_POOL = 3700
   const DEADPOOL = 3490
   const MIN_POWER = 3525
+  
+  // Colors for ramp reference lines
+  const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
 
   return (
     <div className="h-[300px] sm:h-[400px] lg:h-[500px]">
@@ -171,6 +177,44 @@ export default function SimulationChart({ data }: SimulationChartProps) {
               }}
             />
           )}
+          
+          {/* Full Pool reference line */}
+          {yMax >= FULL_POOL && (
+            <ReferenceLine 
+              y={FULL_POOL} 
+              stroke="#3b82f6" 
+              strokeDasharray="5 5"
+              strokeOpacity={0.7}
+              label={{ 
+                value: 'Full Pool', 
+                position: 'right', 
+                fill: '#3b82f6', 
+                fontSize: 10 
+              }}
+            />
+          )}
+          
+          {/* Favorite ramp reference lines */}
+          {ramps.map((ramp, index) => {
+            const elevation = ramp.min_safe_elevation || ramp.min_usable_elevation
+            if (elevation < yMin || elevation > yMax) return null
+            const color = rampColors[index % rampColors.length]
+            return (
+              <ReferenceLine 
+                key={ramp.id}
+                y={elevation} 
+                stroke={color}
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{ 
+                  value: ramp.name.length > 15 ? ramp.name.substring(0, 15) + '...' : ramp.name, 
+                  position: 'right', 
+                  fill: color, 
+                  fontSize: 9 
+                }}
+              />
+            )
+          })}
           
           {/* Actual elevation line */}
           <Line 
