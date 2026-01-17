@@ -323,10 +323,15 @@ export default function HomeChartsWithFavorites({
                   </h4>
                   <div className="space-y-3">
                     {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => {
-                      // Calculate weekly trend rate for display
+                      // Calculate weekly trend rate for display (show as negative)
                       const weeklyTrendRate = weeklyChange !== null && weeklyChange < 0 
                         ? Math.abs(weeklyChange).toFixed(1)
                         : null
+                      
+                      // Determine which explanatory text to show
+                      const hasTrend = currentTrendDate !== null
+                      const hasHistorical = historicalAvgDate !== null
+                      const hasBoth = hasTrend && hasHistorical
                       
                       return (
                         <div key={ramp.id} className="py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
@@ -345,7 +350,7 @@ export default function HomeChartsWithFavorites({
                             {weeklyTrendRate && (
                               <div className="text-gray-700">
                                 <span className="text-[#d4a574] font-medium">
-                                  Trend ({weeklyTrendRate} ft/week):
+                                  Trend (-{weeklyTrendRate} ft/week):
                                 </span>{' '}
                                 {currentTrendDate ? (
                                   <span className="text-[#d4a574]">
@@ -369,12 +374,20 @@ export default function HomeChartsWithFavorites({
                                 <span className="text-gray-400">—</span>
                               )}
                             </div>
-                            {/* Summary text only if both dates exist */}
-                            {currentTrendDate && historicalAvgDate && (
+                            {/* Explanatory text based on what data is available */}
+                            {hasBoth ? (
                               <div className="text-gray-500 italic mt-1">
                                 Likely to close between these dates
                               </div>
-                            )}
+                            ) : hasTrend ? (
+                              <div className="text-gray-500 italic mt-1">
+                                Likely to close sometime after this date based on the current trend
+                              </div>
+                            ) : hasHistorical ? (
+                              <div className="text-gray-500 italic mt-1">
+                                Based on similar years, we estimate the ramp will close on this date
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       )
