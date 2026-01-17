@@ -293,14 +293,19 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
     // Re-add measure line layer after style change
     map.current.once('style.load', () => {
       if (map.current) {
-        // Always re-add source and layer after style change
-        if (map.current.getSource('measure-line')) {
-          map.current.removeSource('measure-line')
-        }
-        if (map.current.getLayer('measure-line-layer')) {
-          map.current.removeLayer('measure-line-layer')
+        // Remove layer first, then source (layer depends on source)
+        try {
+          if (map.current.getLayer('measure-line-layer')) {
+            map.current.removeLayer('measure-line-layer')
+          }
+          if (map.current.getSource('measure-line')) {
+            map.current.removeSource('measure-line')
+          }
+        } catch (e) {
+          // Ignore errors during cleanup
         }
 
+        // Re-add with current points
         map.current.addSource('measure-line', {
           type: 'geojson',
           data: {
@@ -841,8 +846,13 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
 
     // Ensure layer exists - retry if needed
     let retries = 0
+    const maxRetries = 5
+    
     const tryUpdate = () => {
-      if (ensureMeasureLineLayer() || retries < 3) {
+      // First ensure the layer exists
+      const layerReady = ensureMeasureLineLayer()
+      
+      if (layerReady) {
         const source = map.current?.getSource('measure-line') as mapboxgl.GeoJSONSource
         if (source) {
           source.setData({
@@ -853,10 +863,16 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
               coordinates: points.map(p => [p.lng, p.lat])
             }
           })
-        } else if (retries < 3) {
-          retries++
-          setTimeout(tryUpdate, 100)
+          return // Success
         }
+      }
+      
+      // Retry if layer or source not ready yet
+      if (retries < maxRetries) {
+        retries++
+        setTimeout(tryUpdate, 150)
+      } else {
+        console.warn('Failed to update measure line after retries')
       }
     }
     tryUpdate()
@@ -1082,8 +1098,9 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
   const duplicatePath = useCallback((path: SavedPath) => {
     if (!map.current || path.coordinates.length === 0) return
 
-    // Clear current measure
-    clearMeasure()
+    // Clear current measure first (removes markers and resets state)
+    measureMarkers.current.forEach(m => m.remove())
+    measureMarkers.current = []
 
     // Don't set editingPath - this is a new path, not editing an existing one
     setEditingPath(null)
@@ -1094,12 +1111,18 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
 
     // Ensure measure line layer exists first, then add points
     if (map.current && isMapLoaded) {
-      // Ensure layer exists
-      ensureMeasureLineLayer()
-      
-      // Wait a bit for layer to be ready, then add all points
-      setTimeout(() => {
-        // Add markers for each point first
+      // Ensure layer exists - might need to wait for style
+      const setupPathDisplay = () => {
+        if (!map.current?.isStyleLoaded()) {
+          // Wait for style to load
+          map.current?.once('style.load', setupPathDisplay)
+          return
+        }
+        
+        // Ensure layer exists
+        ensureMeasureLineLayer()
+        
+        // Add markers for each point
         path.coordinates.forEach(coord => {
           const el = document.createElement('div')
           el.className = 'measure-point'
@@ -1135,11 +1158,16 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
         // Set all points in state at once
         setMeasurePoints(path.coordinates)
         
-        // Update the line with all points - use a small delay to ensure state is set
-        setTimeout(() => {
-          updateMeasureLine(path.coordinates)
-        }, 50)
-      }, 200)
+        // Update the line with all points - call multiple times to ensure it renders
+        updateMeasureLine(path.coordinates)
+        
+        // Also schedule additional updates to handle any timing issues
+        setTimeout(() => updateMeasureLine(path.coordinates), 100)
+        setTimeout(() => updateMeasureLine(path.coordinates), 300)
+      }
+      
+      // Start setup with a small delay to let any previous state settle
+      setTimeout(setupPathDisplay, 50)
     }
 
     // Fit map to show the entire path
@@ -1148,7 +1176,7 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
       bounds.extend([coord.lng, coord.lat])
     })
     map.current.fitBounds(bounds, { padding: 50 })
-  }, [clearMeasure, isMapLoaded, ensureMeasureLineLayer, updateMeasureLine, removeMeasurePointAtIndex])
+  }, [isMapLoaded, ensureMeasureLineLayer, updateMeasureLine, removeMeasurePointAtIndex])
 
   // Toggle measure mode
   const toggleMeasureMode = useCallback(() => {
