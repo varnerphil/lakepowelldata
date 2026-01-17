@@ -11,7 +11,7 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
-  title: "Lake Powell Water Data",
+  title: "Lake Powell Data",
   description: "Track and display Lake Powell water data, boat ramp accessibility, and historical trends",
   manifest: "/manifest.json",
   themeColor: "#faf9f6",
