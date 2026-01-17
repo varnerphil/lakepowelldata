@@ -22,16 +22,8 @@ const resourcesLinks = [
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
   const [isResourcesOpen, setIsResourcesOpen] = useState(false)
-  const [logoSrc, setLogoSrc] = useState<string>('')
   const pathname = usePathname()
   const resourcesRef = useRef<HTMLDivElement>(null)
-
-  // Randomly select logo on page load
-  useEffect(() => {
-    const logos = ['/logotest1.png', '/logotest3.png', '/logotest4.png', '/logotest5.png', '/logotest6.png']
-    const randomLogo = logos[Math.floor(Math.random() * logos.length)]
-    setLogoSrc(randomLogo)
-  }, [])
 
   // Check if current path is in resources
   const isResourcesActive = resourcesLinks.some(link => pathname === link.href)
