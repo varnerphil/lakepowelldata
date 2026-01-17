@@ -59,11 +59,13 @@ export default function MobileNav() {
             href="/" 
             className="flex items-center hover:opacity-80 transition-opacity"
           >
-            <img 
-              src={logoSrc}
-              alt="Lake Powell Data" 
-              className="h-12 sm:h-14 lg:h-18 w-auto"
-            />
+            {logoSrc && (
+              <img 
+                src={logoSrc}
+                alt="Lake Powell Data" 
+                className="h-12 sm:h-14 lg:h-18 w-auto"
+              />
+            )}
           </Link>
           
           {/* Desktop Navigation */}
