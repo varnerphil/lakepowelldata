@@ -41,7 +41,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <MobileNav oswaldFont={oswald.className} />
-        <main className="min-h-screen bg-[#faf9f6] pb-16 md:pb-0">{children}</main>
+        <main className="min-h-screen bg-[#faf9f6] pb-16 md:pb-0" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}>{children}</main>
         <BottomNav />
       </body>
     </html>
