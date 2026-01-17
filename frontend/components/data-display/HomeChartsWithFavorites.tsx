@@ -341,29 +341,35 @@ export default function HomeChartsWithFavorites({
                           </div>
                           {/* Second row: Close date explanations */}
                           <div className="space-y-1.5 text-xs pl-0 sm:pl-2">
-                            {/* Trend-based projection */}
-                            {weeklyTrendRate && currentTrendDate && (
+                            {/* Trend-based projection - always show if weeklyTrendRate exists */}
+                            {weeklyTrendRate && (
                               <div className="text-gray-700">
                                 <span className="text-[#d4a574] font-medium">
                                   Trend ({weeklyTrendRate} ft/week):
                                 </span>{' '}
-                                <span className="text-[#d4a574]">
-                                  {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
+                                {currentTrendDate ? (
+                                  <span className="text-[#d4a574]">
+                                    {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">—</span>
+                                )}
                               </div>
                             )}
-                            {/* Historical average projection */}
-                            {historicalAvgDate && (
-                              <div className="text-gray-700">
-                                <span className="text-blue-600 font-medium">
-                                  Historical avg:
-                                </span>{' '}
+                            {/* Historical average projection - always show */}
+                            <div className="text-gray-700">
+                              <span className="text-blue-600 font-medium">
+                                Historical avg:
+                              </span>{' '}
+                              {historicalAvgDate ? (
                                 <span className="text-blue-600">
                                   {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
-                              </div>
-                            )}
-                            {/* Summary text if both dates exist */}
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </div>
+                            {/* Summary text only if both dates exist */}
                             {currentTrendDate && historicalAvgDate && (
                               <div className="text-gray-500 italic mt-1">
                                 Likely to close between these dates
