@@ -56,10 +56,10 @@ export default function MobileNav({ bebasNeueFont }: { bebasNeueFont?: string })
               alt="Lake Powell Data" 
               className="h-16 sm:h-20 lg:h-20 w-auto"
             />
-            <div className={`flex flex-col ${bebasNeueFont || ''}`}>
-              <span className="text-lg sm:text-xl lg:text-2xl font-light text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
-              <span className="text-lg sm:text-xl lg:text-2xl font-light text-gray-600 leading-tight tracking-wide uppercase">
-                DATA<span className="text-sm sm:text-base lg:text-lg">.COM</span>
+            <div className={`flex flex-col pt-1 sm:pt-1.5 lg:pt-1 ${bebasNeueFont || ''}`}>
+              <span className="text-xl sm:text-2xl lg:text-3xl font-light text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
+              <span className="text-xl sm:text-2xl lg:text-3xl font-light text-gray-600 leading-tight tracking-wide uppercase">
+                DATA<span className="text-base sm:text-lg lg:text-xl">.COM</span>
               </span>
             </div>
           </Link>
