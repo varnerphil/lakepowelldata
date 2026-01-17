@@ -322,72 +322,48 @@ export default function HomeChartsWithFavorites({
                     <span className="text-base">🚤</span>
                     Favorite Ramp Access Timeline
                   </h4>
-                  <div className="overflow-x-auto -mx-3 sm:-mx-4 px-3 sm:px-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-100">
-                          <th className="text-left py-2 pr-4 font-light text-gray-500 text-xs uppercase tracking-wider">Ramp</th>
-                          <th className="text-center py-2 px-2 font-light text-gray-500 text-xs uppercase tracking-wider">Threshold</th>
-                          <th className="text-center py-2 px-2 font-light text-gray-500 text-xs uppercase tracking-wider">Status</th>
-                          {weeklyChange !== null && weeklyChange < 0 && (
-                            <th className="text-center py-2 px-2 font-light text-gray-500 text-xs uppercase tracking-wider">
-                              <span className="text-[#d4a574]">Close (Trend)</span>
-                            </th>
+                  <div className="space-y-2">
+                    {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => (
+                      <div key={ramp.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${isCurrentlyOpen ? 'bg-[#8b9a6b]' : 'bg-[#c99a7a]'}`} />
+                          <div className="min-w-0">
+                            <span className="font-light text-gray-900 text-sm block truncate">
+                              {ramp.name}
+                            </span>
+                            <span className="text-xs text-gray-500">{minSafe.toFixed(0)} ft</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                          {isCurrentlyOpen ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#8b9a6b]/10 text-[#8b9a6b]">
+                              Open
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#c99a7a]/10 text-[#c99a7a]">
+                              Closed
+                            </span>
                           )}
-                          <th className="text-center py-2 px-2 font-light text-gray-500 text-xs uppercase tracking-wider">
-                            <span className="text-blue-600">Close (Hist. Avg)</span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, historicalAvgElevation, currentTrendDate, currentTrendElevation }) => (
-                          <tr key={ramp.id} className="hover:bg-gray-50">
-                            <td className="py-2 pr-4">
-                              <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${isCurrentlyOpen ? 'bg-[#8b9a6b]' : 'bg-[#c99a7a]'}`} />
-                                <span className="font-light text-gray-900 truncate max-w-[150px] lg:max-w-none">
-                                  {ramp.name}
+                          <div className="text-right min-w-[70px]">
+                            {weeklyChange !== null && weeklyChange < 0 && currentTrendDate ? (
+                              <div className="text-xs">
+                                <span className="text-[#d4a574] font-light">
+                                  {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
                               </div>
-                            </td>
-                            <td className="py-2 px-2 text-center">
-                              <span className="text-gray-600 font-light">{minSafe.toFixed(0)} ft</span>
-                            </td>
-                            <td className="py-2 px-2 text-center">
-                              {isCurrentlyOpen ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#8b9a6b]/10 text-[#8b9a6b]">
-                                  Open
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#c99a7a]/10 text-[#c99a7a]">
-                                  Closed
-                                </span>
-                              )}
-                            </td>
-                            {weeklyChange !== null && weeklyChange < 0 && (
-                              <td className="py-2 px-2 text-center">
-                                {currentTrendDate ? (
-                                  <span className="text-[#d4a574] font-light">
-                                    {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 font-light text-xs">—</span>
-                                )}
-                              </td>
-                            )}
-                            <td className="py-2 px-2 text-center">
-                              {historicalAvgDate ? (
+                            ) : historicalAvgDate ? (
+                              <div className="text-xs">
                                 <span className="text-blue-600 font-light">
                                   {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
-                              ) : (
-                                <span className="text-gray-400 font-light text-xs">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 font-light text-xs">—</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <p className="text-xs text-gray-400 mt-3 font-light">
                     Estimated dates when each ramp may become unavailable based on projection trends.
