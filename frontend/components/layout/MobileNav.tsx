@@ -22,8 +22,16 @@ const resourcesLinks = [
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
   const [isResourcesOpen, setIsResourcesOpen] = useState(false)
+  const [logoSrc, setLogoSrc] = useState<string>('/logo.png')
   const pathname = usePathname()
   const resourcesRef = useRef<HTMLDivElement>(null)
+
+  // Randomly select logo on page load
+  useEffect(() => {
+    const logos = ['/logotest1.png', '/logotest2.jpg']
+    const randomLogo = logos[Math.floor(Math.random() * logos.length)]
+    setLogoSrc(randomLogo)
+  }, [])
 
   // Check if current path is in resources
   const isResourcesActive = resourcesLinks.some(link => pathname === link.href)
@@ -52,7 +60,7 @@ export default function MobileNav() {
             className="flex items-center hover:opacity-80 transition-opacity"
           >
             <img 
-              src="/logo.png" 
+              src={logoSrc}
               alt="Lake Powell Data" 
               className="h-10 sm:h-12 lg:h-16 w-auto"
             />
