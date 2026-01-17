@@ -798,11 +798,15 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
 
   // ========== MEASURE MODE FUNCTIONS ==========
 
-  // Ensure measure line source and layer exist
-  const ensureMeasureLineLayer = useCallback(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return false
+  // Ensure measure line source and layer exist - returns true if ready
+  const ensureMeasureLineLayer = useCallback((): boolean => {
+    if (!map.current) return false
+    
+    // If style isn't loaded, we can't add layers yet
+    if (!map.current.isStyleLoaded()) return false
 
     try {
+      // Check if source exists, add if not
       if (!map.current.getSource('measure-line')) {
         map.current.addSource('measure-line', {
           type: 'geojson',
@@ -817,6 +821,7 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
         })
       }
 
+      // Check if layer exists, add if not
       if (!map.current.getLayer('measure-line-layer')) {
         map.current.addLayer({
           id: 'measure-line-layer',
@@ -840,19 +845,12 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
     }
   }, [])
 
-  // Update measure line on map
+  // Update measure line on map - robust version with retries
   const updateMeasureLine = useCallback((points: { lat: number; lng: number }[]) => {
-    if (!map.current || !isMapLoaded) return
+    if (!map.current) return
 
-    // Ensure layer exists - retry if needed
-    let retries = 0
-    const maxRetries = 5
-    
-    const tryUpdate = () => {
-      // First ensure the layer exists
-      const layerReady = ensureMeasureLineLayer()
-      
-      if (layerReady) {
+    const doUpdate = () => {
+      try {
         const source = map.current?.getSource('measure-line') as mapboxgl.GeoJSONSource
         if (source) {
           source.setData({
@@ -863,36 +861,65 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
               coordinates: points.map(p => [p.lng, p.lat])
             }
           })
-          return // Success
+          return true
         }
+      } catch (e) {
+        // Source may not exist yet
+      }
+      return false
+    }
+
+    // If style is loaded and layer is ready, update immediately
+    if (map.current.isStyleLoaded() && ensureMeasureLineLayer()) {
+      if (doUpdate()) return
+    }
+
+    // Otherwise, set up retries
+    let retries = 0
+    const maxRetries = 10
+    const retryDelay = 100
+
+    const tryUpdate = () => {
+      if (!map.current) return
+      
+      // Wait for style to load
+      if (!map.current.isStyleLoaded()) {
+        if (retries < maxRetries) {
+          retries++
+          setTimeout(tryUpdate, retryDelay)
+        }
+        return
       }
       
-      // Retry if layer or source not ready yet
+      // Ensure layer exists
+      ensureMeasureLineLayer()
+      
+      // Try to update
+      if (doUpdate()) return
+      
+      // Retry if failed
       if (retries < maxRetries) {
         retries++
-        setTimeout(tryUpdate, 150)
+        setTimeout(tryUpdate, retryDelay)
       } else {
-        console.warn('Failed to update measure line after retries')
+        console.warn('Failed to update measure line after', maxRetries, 'retries')
       }
     }
-    tryUpdate()
-  }, [ensureMeasureLineLayer, isMapLoaded])
-
-  // Sync measure line when points change
-  useEffect(() => {
-    if (!map.current || !isMapLoaded) return
     
-    // Wait a tick to ensure style is loaded after any changes
+    setTimeout(tryUpdate, 50)
+  }, [ensureMeasureLineLayer])
+
+  // Sync measure line when points change - debounced and robust
+  useEffect(() => {
+    if (!map.current || !isMapLoaded || measurePoints.length === 0) return
+    
+    // Immediate update attempt
+    updateMeasureLine(measurePoints)
+    
+    // Also schedule a delayed update for reliability
     const timer = setTimeout(() => {
-      if (map.current?.isStyleLoaded()) {
-        updateMeasureLine(measurePoints)
-      } else {
-        // If style isn't loaded, wait for it
-        map.current?.once('style.load', () => {
-          updateMeasureLine(measurePoints)
-        })
-      }
-    }, 100)
+      updateMeasureLine(measurePoints)
+    }, 200)
     
     return () => clearTimeout(timer)
   }, [measurePoints, isMapLoaded, updateMeasureLine])
@@ -1066,12 +1093,13 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
     }
   }, [])
 
-  // Edit a saved path
+  // Edit a saved path - load path with markers and line
   const editPath = useCallback((path: SavedPath) => {
     if (!map.current || path.coordinates.length === 0) return
 
-    // Clear current measure
-    clearMeasure()
+    // Clear current markers
+    measureMarkers.current.forEach(m => m.remove())
+    measureMarkers.current = []
 
     // Set editing state
     setEditingPath(path)
@@ -1080,19 +1108,77 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
     setShowMeasurePanel(true)
     setShowSpotsPanel(false)
 
-    // Add the path points
-    path.coordinates.forEach(coord => {
-      addMeasurePoint(coord)
-    })
+    // Setup function to add markers and update line
+    const setupPath = () => {
+      if (!map.current) return
+      
+      // Ensure layer exists
+      ensureMeasureLineLayer()
+      
+      // Add markers for each point
+      path.coordinates.forEach(coord => {
+        const el = document.createElement('div')
+        el.className = 'measure-point'
+        el.style.cssText = `
+          width: 16px;
+          height: 16px;
+          background-color: #8b9a6b;
+          border: 2px solid white;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          pointer-events: auto;
+        `
+        
+        el.addEventListener('mouseenter', () => {
+          el.style.backgroundColor = '#c99a7a'
+          el.style.boxShadow = '0 0 0 4px rgba(201, 154, 122, 0.4), 0 2px 4px rgba(0,0,0,0.3)'
+        })
+        el.addEventListener('mouseleave', () => {
+          el.style.backgroundColor = '#8b9a6b'
+          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)'
+        })
+        el.addEventListener('mousedown', (e) => {
+          e.stopPropagation()
+          e.preventDefault()
+        })
+        el.addEventListener('click', (e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          const currentIndex = measureMarkers.current.findIndex(m => m.getElement() === el)
+          if (currentIndex !== -1) {
+            removeMeasurePointAtIndex(currentIndex)
+          }
+        })
+        
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([coord.lng, coord.lat])
+          .addTo(map.current!)
+        
+        measureMarkers.current.push(marker)
+      })
+      
+      // Set points and update line
+      setMeasurePoints(path.coordinates)
+      updateMeasureLine(path.coordinates)
+      
+      // Additional updates for reliability
+      setTimeout(() => updateMeasureLine(path.coordinates), 150)
+      setTimeout(() => updateMeasureLine(path.coordinates), 400)
+    }
+
+    // Wait for style to be ready
+    if (map.current.isStyleLoaded()) {
+      setTimeout(setupPath, 50)
+    } else {
+      map.current.once('style.load', () => setTimeout(setupPath, 50))
+    }
 
     // Fit map to show the entire path
     const bounds = new mapboxgl.LngLatBounds()
-    path.coordinates.forEach(coord => {
-      bounds.extend([coord.lng, coord.lat])
-    })
-
+    path.coordinates.forEach(coord => bounds.extend([coord.lng, coord.lat]))
     map.current.fitBounds(bounds, { padding: 50 })
-  }, [clearMeasure, addMeasurePoint])
+  }, [ensureMeasureLineLayer, updateMeasureLine, removeMeasurePointAtIndex])
 
   // Duplicate a saved path (opens as new path with no name)
   const duplicatePath = useCallback((path: SavedPath) => {
