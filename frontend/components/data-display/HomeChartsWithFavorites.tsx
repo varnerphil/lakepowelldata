@@ -334,7 +334,7 @@ export default function HomeChartsWithFavorites({
                           <span className="text-xs text-gray-500 flex-shrink-0">{minSafe.toFixed(0)} ft</span>
                         </div>
                         {/* Second row: Status badge and close dates */}
-                        <div className="flex items-center gap-3 pl-4">
+                        <div className="flex items-start gap-3 pl-4">
                           {isCurrentlyOpen ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#8b9a6b]/10 text-[#8b9a6b]">
                               Open
@@ -344,16 +344,18 @@ export default function HomeChartsWithFavorites({
                               Closed
                             </span>
                           )}
-                          <div className="flex items-center gap-2 text-xs">
+                          <div className="flex flex-col gap-1 text-xs">
                             {weeklyChange !== null && weeklyChange < 0 && currentTrendDate && (
-                              <span className="text-[#d4a574] font-light">
-                                Close (Trend): {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
+                              <div className="text-[#d4a574] font-light">
+                                <div>Close (Trend):</div>
+                                <div>{new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                              </div>
                             )}
                             {historicalAvgDate && (
-                              <span className="text-blue-600 font-light">
-                                Close (Avg): {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
+                              <div className="text-blue-600 font-light">
+                                <div>Close (Avg):</div>
+                                <div>{new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                              </div>
                             )}
                             {!currentTrendDate && !historicalAvgDate && (
                               <span className="text-gray-400 font-light">—</span>
