@@ -44,12 +44,12 @@ export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {
 
   return (
     <nav className="bg-white border-b border-gray-100">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-1 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 sm:h-24 lg:h-20">
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
           >
             <img 
               src="/lakepowelldata_logo_icons/ios/128.png"
