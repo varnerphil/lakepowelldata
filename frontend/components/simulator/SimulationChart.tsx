@@ -205,11 +205,11 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     if (isMobile) {
       return { top: 5, right: 60, left: 20, bottom: 60 } // Increased right margin for ramp labels
     }
-    return { top: 5, right: 100, left: 40, bottom: 80 }
+    return { top: 5, right: 100, left: 40, bottom: 60 }
   }, [isMobile])
 
   return (
-    <div className="h-[400px] sm:h-[400px] lg:h-[500px]">
+    <div className="h-[350px] sm:h-[350px] lg:h-[450px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
