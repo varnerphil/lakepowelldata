@@ -405,7 +405,7 @@ function calculateElevationBands(
 }
 
 export default async function StoragePage() {
-  const current = await getLatestWaterMeasurement()
+  const current = await getCachedLatestMeasurement()
   if (!current) {
     return (
       <div className="container mx-auto px-6 lg:px-8 py-12 lg:py-16">
@@ -425,7 +425,7 @@ export default async function StoragePage() {
   const DEAD_POOL_ELEVATION = 3370     // Dead pool elevation
 
   // Get all historical data to calculate capacity bands
-  const allData = await getWaterMeasurementsByRange('1969-01-01', '2026-01-09')
+  const allData = await getCachedMeasurements()
   const capacityBands = calculateStorageBands(
     allData.map(m => ({ elevation: m.elevation, content: m.content })),
     current.elevation,
@@ -443,7 +443,7 @@ export default async function StoragePage() {
   )
   
   // Get pre-calculated elevation storage capacity data
-  const elevationStorageData = await getElevationStorageCapacity()
+  const elevationStorageData = await getCachedStorageCapacity()
 
   const percentFull = (current.content / FULL_POOL_CAPACITY) * 100
   const elevationBelow = FULL_POOL_ELEVATION - current.elevation
