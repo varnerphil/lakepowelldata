@@ -24,7 +24,7 @@ export default async function MapPage() {
     : new Date().toISOString().split('T')[0]
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full">
       <MapContainer 
         ramps={rampsWithCoords}
         currentElevation={currentElevation}
