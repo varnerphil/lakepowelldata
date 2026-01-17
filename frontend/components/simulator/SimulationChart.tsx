@@ -203,9 +203,9 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   // Responsive margins
   const chartMargins = useMemo(() => {
     if (isMobile) {
-      return { top: 5, right: 60, left: 20, bottom: 60 } // Increased right margin for ramp labels
+      return { top: 5, right: 60, left: 20, bottom: 0 } // Increased right margin for ramp labels
     }
-    return { top: 5, right: 100, left: 40, bottom: 60 }
+    return { top: 5, right: 100, left: 40, bottom: 20 }
   }, [isMobile])
 
   return (
