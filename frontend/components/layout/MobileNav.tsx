@@ -57,8 +57,10 @@ export default function MobileNav({ bebasNeueFont }: { bebasNeueFont?: string })
               className="h-16 sm:h-20 lg:h-20 w-auto"
             />
             <div className={`flex flex-col ${bebasNeueFont || ''}`}>
-              <span className="text-lg sm:text-xl lg:text-2xl font-normal text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
-              <span className="text-sm sm:text-base lg:text-lg font-normal text-gray-600 leading-tight tracking-wide uppercase">DATA.COM</span>
+              <span className="text-lg sm:text-xl lg:text-2xl font-light text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
+              <span className="text-lg sm:text-xl lg:text-2xl font-light text-gray-600 leading-tight tracking-wide uppercase">
+                DATA<span className="text-sm sm:text-base lg:text-lg">.COM</span>
+              </span>
             </div>
           </Link>
           
