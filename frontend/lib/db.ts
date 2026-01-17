@@ -190,9 +190,24 @@ export async function getWaterMeasurementsByRange(
 }
 
 export async function getAllRamps(): Promise<Ramp[]> {
-  const result = await query(
-    'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude FROM ramps ORDER BY name'
-  )
+  // Try to select with latitude/longitude, fallback to without if columns don't exist
+  let result
+  try {
+    result = await query(
+      'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude FROM ramps ORDER BY name'
+    )
+  } catch (error: any) {
+    // If latitude/longitude columns don't exist, select without them
+    if (error?.message?.includes('column "latitude" does not exist') || 
+        error?.message?.includes('column "longitude" does not exist')) {
+      result = await query(
+        'SELECT id, name, min_safe_elevation, min_usable_elevation, location FROM ramps ORDER BY name'
+      )
+    } else {
+      throw error
+    }
+  }
+  
   return result.rows.map(row => ({
     id: row.id,
     name: row.name,
