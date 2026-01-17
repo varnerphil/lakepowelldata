@@ -318,68 +318,62 @@ export default function HomeChartsWithFavorites({
               {/* Ramp Access Timeline - show if there are favorite ramps */}
               {rampAccessTimeline.length > 0 && (
                 <div className="mt-4 mb-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="text-base">🚤</span>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
                     Favorite Ramp Access Timeline
                   </h4>
-                  <div className="space-y-2">
-                    {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => (
-                      <div key={ramp.id} className="py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
-                        {/* First row: Status dot, ramp name, and elevation */}
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${isCurrentlyOpen ? 'bg-[#8b9a6b]' : 'bg-[#c99a7a]'}`} />
-                          <span className="font-light text-gray-900 text-sm truncate">
-                            {ramp.name}
-                          </span>
-                          <span className="text-xs text-gray-500 flex-shrink-0">
-                            {isCurrentlyOpen ? `- Open until ${minSafe.toFixed(0)} ft` : `${minSafe.toFixed(0)} ft`}
-                          </span>
-                        </div>
-                        {/* Second row: Status badge and close dates */}
-                        <div className="flex items-start gap-3 pl-4">
-                          {isCurrentlyOpen ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#8b9a6b]/10 text-[#8b9a6b]">
-                              Open
+                  <div className="space-y-3">
+                    {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => {
+                      // Calculate weekly trend rate for display
+                      const weeklyTrendRate = weeklyChange !== null && weeklyChange < 0 
+                        ? Math.abs(weeklyChange).toFixed(1)
+                        : null
+                      
+                      return (
+                        <div key={ramp.id} className="py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
+                          {/* First row: Ramp name and elevation */}
+                          <div className="mb-2">
+                            <span className="font-light text-gray-900 text-sm">
+                              {ramp.name}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#c99a7a]/10 text-[#c99a7a]">
-                              Closed
+                            <span className="text-xs text-gray-500 ml-1">
+                              - Open until {minSafe.toFixed(0)} ft
                             </span>
-                          )}
-                          <div className="flex items-start gap-4 text-xs">
-                            {/* Trend column */}
-                            {weeklyChange !== null && weeklyChange < 0 && (
-                              <div className="flex flex-col">
-                                <span className="text-[#d4a574] font-light">Close (Trend):</span>
-                                {currentTrendDate ? (
-                                  <span className="text-[#d4a574] font-light">
-                                    {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 font-light">—</span>
-                                )}
+                          </div>
+                          {/* Second row: Close date explanations */}
+                          <div className="space-y-1.5 text-xs pl-0 sm:pl-2">
+                            {/* Trend-based projection */}
+                            {weeklyTrendRate && currentTrendDate && (
+                              <div className="text-gray-700">
+                                <span className="text-[#d4a574] font-medium">
+                                  Trend ({weeklyTrendRate} ft/week):
+                                </span>{' '}
+                                <span className="text-[#d4a574]">
+                                  {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
                               </div>
                             )}
-                            {/* Avg column */}
+                            {/* Historical average projection */}
                             {historicalAvgDate && (
-                              <div className="flex flex-col">
-                                <span className="text-blue-600 font-light">Close (Avg):</span>
-                                <span className="text-blue-600 font-light">
+                              <div className="text-gray-700">
+                                <span className="text-blue-600 font-medium">
+                                  Historical avg:
+                                </span>{' '}
+                                <span className="text-blue-600">
                                   {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
                               </div>
                             )}
-                            {!currentTrendDate && !historicalAvgDate && (
-                              <span className="text-gray-400 font-light">—</span>
+                            {/* Summary text if both dates exist */}
+                            {currentTrendDate && historicalAvgDate && (
+                              <div className="text-gray-500 italic mt-1">
+                                Likely to close between these dates
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
-                  <p className="text-xs text-gray-400 mt-3 font-light">
-                    Estimated dates when each ramp may become unavailable based on projection trends.
-                  </p>
                 </div>
               )}
               
