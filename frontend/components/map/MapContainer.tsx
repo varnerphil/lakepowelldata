@@ -346,10 +346,9 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
       map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 })
       // Enable 3D rotation and pitch
       map.current.dragRotate.enable()
-      // Touch rotation is enabled by default, but we can ensure it's on
-      if (map.current.touchPitchRotate) {
-        map.current.touchPitchRotate.enable()
-      }
+      // Enable touch rotation and pitch for 3D navigation
+      map.current.touchZoomRotate.enable()
+      map.current.touchPitch.enable()
     } else {
       map.current.setTerrain(null)
       // Reset pitch and bearing when terrain is disabled
