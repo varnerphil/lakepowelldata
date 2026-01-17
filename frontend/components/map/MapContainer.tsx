@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { SavedSpot, SavedPath, UserLocation, LAKE_POWELL_BOUNDS, SPOT_TYPE_CONFIG } from '@/types/map'
+import { SavedSpot, SavedPath, UserLocation, LAKE_POWELL_BOUNDS, SPOT_TYPE_CONFIG, SpotType } from '@/types/map'
 import { getSpots, saveSpot, deleteSpot, updateSpot } from '@/lib/spots'
 import { getPaths, savePath as savePathToStorage, updatePath, deletePath, calculatePathDistance } from '@/lib/paths'
 import { getHomePoint, saveHomePoint, HomePoint } from '@/lib/homePoint'
