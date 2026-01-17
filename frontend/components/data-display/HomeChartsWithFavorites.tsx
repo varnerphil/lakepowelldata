@@ -344,35 +344,32 @@ export default function HomeChartsWithFavorites({
                               Closed
                             </span>
                           )}
-                          <div className="flex flex-col gap-1 text-xs">
-                            {/* Labels row */}
-                            <div className="flex items-center gap-3">
-                              {weeklyChange !== null && weeklyChange < 0 && (
+                          <div className="flex items-start gap-4 text-xs">
+                            {/* Trend column */}
+                            {weeklyChange !== null && weeklyChange < 0 && (
+                              <div className="flex flex-col">
                                 <span className="text-[#d4a574] font-light">Close (Trend):</span>
-                              )}
-                              {historicalAvgDate && (
+                                {currentTrendDate ? (
+                                  <span className="text-[#d4a574] font-light">
+                                    {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 font-light">—</span>
+                                )}
+                              </div>
+                            )}
+                            {/* Avg column */}
+                            {historicalAvgDate && (
+                              <div className="flex flex-col">
                                 <span className="text-blue-600 font-light">Close (Avg):</span>
-                              )}
-                              {!currentTrendDate && !historicalAvgDate && (
-                                <span className="text-gray-400 font-light">—</span>
-                              )}
-                            </div>
-                            {/* Dates row */}
-                            <div className="flex items-center gap-3">
-                              {weeklyChange !== null && weeklyChange < 0 && currentTrendDate && (
-                                <span className="text-[#d4a574] font-light">
-                                  {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                              )}
-                              {historicalAvgDate && (
                                 <span className="text-blue-600 font-light">
                                   {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
-                              )}
-                              {!currentTrendDate && !historicalAvgDate && (
-                                <span className="text-gray-400 font-light">—</span>
-                              )}
-                            </div>
+                              </div>
+                            )}
+                            {!currentTrendDate && !historicalAvgDate && (
+                              <span className="text-gray-400 font-light">—</span>
+                            )}
                           </div>
                         </div>
                       </div>
