@@ -514,14 +514,15 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
       if (spotMarkers.current.has(spot.id)) return
 
       // Handle old spot types (migration)
-      let spotType = spot.type
-      if (spotType === 'houseboat' || spotType === 'beach') {
+      let spotType: SpotType = spot.type
+      const oldType = spot.type as string
+      if (oldType === 'houseboat' || oldType === 'beach') {
         spotType = 'parking'
-      } else if (spotType === 'camping') {
+      } else if (oldType === 'camping') {
         spotType = 'hike'
       }
 
-      const config = SPOT_TYPE_CONFIG[spotType as SpotType]
+      const config = SPOT_TYPE_CONFIG[spotType]
       if (!config) {
         console.warn('Unknown spot type:', spot.type)
         return
