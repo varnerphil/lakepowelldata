@@ -49,7 +49,7 @@ export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 sm:gap-4 hover:opacity-80 transition-opacity"
           >
             <img 
               src="/lakepowelldata_logo_icons/ios/128.png"
