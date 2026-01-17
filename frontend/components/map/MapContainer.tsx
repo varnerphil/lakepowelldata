@@ -1235,7 +1235,7 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
   }, [])
 
   return (
-    <div className="relative w-full h-[calc(100vh-5rem-4rem-max(env(safe-area-inset-bottom,0px),20px))] md:h-[calc(100vh-5rem)]">
+    <div className="relative w-full h-[calc(100vh-5rem-4rem-max(env(safe-area-inset-bottom,0px),8px))] md:h-[calc(100vh-5rem)]">
       <div ref={mapContainer} className="w-full h-full" />
       
       <MapControls
