@@ -550,6 +550,12 @@ function getDateRange(range: string): { start: string; end: string } {
   let start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   
   switch (range) {
+    case '1month':
+      start.setUTCMonth(start.getUTCMonth() - 1)
+      break
+    case '6months':
+      start.setUTCMonth(start.getUTCMonth() - 6)
+      break
     case '20years':
       start.setUTCFullYear(start.getUTCFullYear() - 20)
       break
