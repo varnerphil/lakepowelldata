@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Oswald } from "next/font/google";
 import "./globals.css";
 import MobileNav from "@/components/layout/MobileNav";
@@ -10,11 +10,14 @@ const oswald = Oswald({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#faf9f6",
+};
+
 export const metadata: Metadata = {
   title: "Lake Powell Data",
   description: "Track and display Lake Powell water data, boat ramp accessibility, and historical trends",
   manifest: "/manifest.json",
-  themeColor: "#faf9f6",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
