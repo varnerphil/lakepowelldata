@@ -125,6 +125,8 @@ export interface Ramp {
   min_safe_elevation: number
   min_usable_elevation: number
   location: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface RampStatus extends Ramp {
@@ -189,14 +191,16 @@ export async function getWaterMeasurementsByRange(
 
 export async function getAllRamps(): Promise<Ramp[]> {
   const result = await query(
-    'SELECT id, name, min_safe_elevation, min_usable_elevation, location FROM ramps ORDER BY name'
+    'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude FROM ramps ORDER BY name'
   )
   return result.rows.map(row => ({
     id: row.id,
     name: row.name,
     min_safe_elevation: parseFloat(row.min_safe_elevation),
     min_usable_elevation: parseFloat(row.min_usable_elevation),
-    location: row.location
+    location: row.location,
+    latitude: row.latitude ? parseFloat(row.latitude) : null,
+    longitude: row.longitude ? parseFloat(row.longitude) : null
   }))
 }
 

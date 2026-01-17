@@ -55,6 +55,7 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
   
   const [isOnline, setIsOnline] = useState(true)
   const [cacheStats, setCacheStats] = useState<{ tileCount: number; maxTiles: number } | null>(null)
+  const [showCacheStats, setShowCacheStats] = useState(false)
   
   // Measure mode state
   const [isMeasureMode, setIsMeasureMode] = useState(false)
@@ -148,6 +149,12 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
 
     map.current.on('load', () => {
       setIsMapLoaded(true)
+      
+      // Show cache stats when map loads, then hide after 10 seconds
+      setShowCacheStats(true)
+      setTimeout(() => {
+        setShowCacheStats(false)
+      }, 10000)
       
       // Add terrain source if enabled
       if (showTerrain && map.current) {
@@ -1322,11 +1329,9 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
         </div>
       )}
 
-      {/* Cache stats (bottom right) */}
-      {cacheStats && isMapLoaded && (
-        <div className={`absolute right-4 bg-white/90 text-gray-700 text-xs px-3 py-2 rounded-lg shadow flex items-center gap-2 transition-all duration-300 ${
-          showMeasurePanel ? 'bottom-60 md:bottom-28' : 'bottom-4'
-        }`}>
+      {/* Cache stats (top center) */}
+      {cacheStats && isMapLoaded && showCacheStats && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 text-gray-700 text-xs px-3 py-2 rounded-lg shadow flex items-center gap-2 transition-all duration-300 z-50">
           <Database className="w-3.5 h-3.5" strokeWidth={1.5} />
           <span>{cacheStats.tileCount} tiles cached</span>
         </div>

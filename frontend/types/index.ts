@@ -16,6 +16,8 @@ export interface Ramp {
   min_safe_elevation: number
   min_usable_elevation: number
   location: string | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export interface RampStatus extends Ramp {

@@ -171,7 +171,7 @@ export default function MapControls({
 
       {/* Bottom controls - map style */}
       <div className={`absolute left-4 flex flex-col gap-2 transition-all duration-300 ${
-        showMeasurePanel ? 'bottom-60 md:bottom-28' : 'bottom-4'
+        showMeasurePanel ? 'bottom-80 md:bottom-28' : 'bottom-4'
       }`}>
         {/* Style selector */}
         <div className="bg-white rounded-lg shadow-lg p-1 flex flex-col gap-1">
@@ -224,7 +224,7 @@ export default function MapControls({
       {/* 3D Controls (only when terrain is enabled) - positioned at bottom for mobile */}
       {showTerrain && (
         <div className={`absolute right-4 flex flex-col gap-2 transition-all duration-300 ${
-          showMeasurePanel ? 'bottom-60 md:bottom-28' : 'bottom-4'
+          showMeasurePanel ? 'bottom-80 md:bottom-28' : 'bottom-4'
         }`}>
           {/* Pitch controls - functionality inverted (up decreases, down increases) */}
           <div className="bg-white rounded-lg shadow-lg p-1 flex flex-col gap-1">
