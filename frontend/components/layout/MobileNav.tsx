@@ -19,7 +19,7 @@ const resourcesLinks = [
   { href: '/about', label: 'About' },
 ]
 
-export default function MobileNav() {
+export default function MobileNav({ bebasNeueFont }: { bebasNeueFont?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isResourcesOpen, setIsResourcesOpen] = useState(false)
   const pathname = usePathname()
@@ -56,7 +56,7 @@ export default function MobileNav() {
               alt="Lake Powell Data" 
               className="h-16 sm:h-20 lg:h-20 w-auto"
             />
-            <div className="flex flex-col">
+            <div className={`flex flex-col ${bebasNeueFont || ''}`}>
               <span className="text-lg sm:text-xl lg:text-2xl font-normal text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
               <span className="text-sm sm:text-base lg:text-lg font-normal text-gray-600 leading-tight tracking-wide uppercase">DATA.COM</span>
             </div>
