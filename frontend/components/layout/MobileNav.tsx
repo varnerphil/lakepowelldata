@@ -62,7 +62,7 @@ export default function MobileNav() {
             <img 
               src={logoSrc}
               alt="Lake Powell Data" 
-              className="h-10 sm:h-12 lg:h-16 w-auto"
+              className="h-12 sm:h-14 lg:h-18 w-auto"
             />
           </Link>
           
