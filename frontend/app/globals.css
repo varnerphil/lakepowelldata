@@ -49,3 +49,9 @@ h1, h2, h3, h4, h5, h6 {
 .border-3 {
   border-width: 3px;
 }
+
+/* Offset Mapbox scale control to avoid overlapping with 3D controls */
+.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-scale {
+  margin-right: 50px;
+  margin-bottom: 4px;
+}

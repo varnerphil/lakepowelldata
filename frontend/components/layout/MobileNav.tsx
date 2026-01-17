@@ -9,6 +9,7 @@ const mainNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/simulator', label: 'Simulator' },
   { href: '/ramps', label: 'Ramps' },
+  { href: '/map', label: 'Map' },
 ]
 
 const resourcesLinks = [
