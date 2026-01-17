@@ -22,7 +22,7 @@ const resourcesLinks = [
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false)
   const [isResourcesOpen, setIsResourcesOpen] = useState(false)
-  const [logoSrc, setLogoSrc] = useState<string>('/logo.png')
+  const [logoSrc, setLogoSrc] = useState<string>('')
   const pathname = usePathname()
   const resourcesRef = useRef<HTMLDivElement>(null)
 
