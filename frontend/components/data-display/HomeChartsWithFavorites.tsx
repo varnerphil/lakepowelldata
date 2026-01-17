@@ -324,17 +324,17 @@ export default function HomeChartsWithFavorites({
                   </h4>
                   <div className="space-y-2">
                     {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => (
-                      <div key={ramp.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div key={ramp.id} className="py-2 px-2 hover:bg-gray-50 rounded transition-colors border-b border-gray-50 last:border-b-0">
+                        {/* First row: Status dot, ramp name, and elevation */}
+                        <div className="flex items-center gap-2 mb-1.5">
                           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${isCurrentlyOpen ? 'bg-[#8b9a6b]' : 'bg-[#c99a7a]'}`} />
-                          <div className="min-w-0">
-                            <span className="font-light text-gray-900 text-sm block truncate">
-                              {ramp.name}
-                            </span>
-                            <span className="text-xs text-gray-500">{minSafe.toFixed(0)} ft</span>
-                          </div>
+                          <span className="font-light text-gray-900 text-sm truncate">
+                            {ramp.name}
+                          </span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">{minSafe.toFixed(0)} ft</span>
                         </div>
-                        <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                        {/* Second row: Status badge and close dates */}
+                        <div className="flex items-center gap-3 pl-4">
                           {isCurrentlyOpen ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-light bg-[#8b9a6b]/10 text-[#8b9a6b]">
                               Open
@@ -344,21 +344,20 @@ export default function HomeChartsWithFavorites({
                               Closed
                             </span>
                           )}
-                          <div className="text-right min-w-[70px]">
-                            {weeklyChange !== null && weeklyChange < 0 && currentTrendDate ? (
-                              <div className="text-xs">
-                                <span className="text-[#d4a574] font-light">
-                                  {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                              </div>
-                            ) : historicalAvgDate ? (
-                              <div className="text-xs">
-                                <span className="text-blue-600 font-light">
-                                  {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 font-light text-xs">—</span>
+                          <div className="flex items-center gap-2 text-xs">
+                            {weeklyChange !== null && weeklyChange < 0 && currentTrendDate && (
+                              <span className="text-[#d4a574] font-light">
+                                Trend: {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
+                            {historicalAvgDate && (
+                              <span className="text-blue-600 font-light">
+                                {weeklyChange !== null && weeklyChange < 0 && currentTrendDate ? '• ' : ''}
+                                Avg: {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
+                            {!currentTrendDate && !historicalAvgDate && (
+                              <span className="text-gray-400 font-light">—</span>
                             )}
                           </div>
                         </div>
