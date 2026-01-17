@@ -249,7 +249,7 @@ export default function OutflowSimulator({
             <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
             
             {/* Outflow Percentage Slider */}
-            <div className="mt-4">
+            <div className="mt-1">
               <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
                 Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
               </label>
