@@ -49,13 +49,17 @@ export default function MobileNav() {
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             <img 
               src="/logotest1.png"
               alt="Lake Powell Data" 
               className="h-16 sm:h-20 lg:h-20 w-auto"
             />
+            <div className="flex flex-col">
+              <span className="text-lg sm:text-xl lg:text-2xl font-light text-gray-900 leading-tight">Lake Powell</span>
+              <span className="text-sm sm:text-base lg:text-lg font-light text-gray-600 leading-tight">Data.com</span>
+            </div>
           </Link>
           
           {/* Desktop Navigation */}
