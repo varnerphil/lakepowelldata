@@ -9,13 +9,13 @@ interface TimeRangeButtonsProps {
 }
 
 const timeRanges = [
-  { value: '1month', label: '1M' },
-  { value: '6months', label: '6M' },
-  { value: '1year', label: '1Y' },
-  { value: '5years', label: '5Y' },
-  { value: '10years', label: '10Y' },
-  { value: '20years', label: '20Y' },
   { value: 'alltime', label: 'All' },
+  { value: '20years', label: '20Y' },
+  { value: '10years', label: '10Y' },
+  { value: '5years', label: '5Y' },
+  { value: '1year', label: '1Y' },
+  { value: '6months', label: '6M' },
+  { value: '1month', label: '1M' },
 ]
 
 export default function TimeRangeButtons({ currentRange, formAction }: TimeRangeButtonsProps) {

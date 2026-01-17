@@ -331,7 +331,9 @@ export default function HomeChartsWithFavorites({
                           <span className="font-light text-gray-900 text-sm truncate">
                             {ramp.name}
                           </span>
-                          <span className="text-xs text-gray-500 flex-shrink-0">{minSafe.toFixed(0)} ft</span>
+                          <span className="text-xs text-gray-500 flex-shrink-0">
+                            {isCurrentlyOpen ? `- Open until ${minSafe.toFixed(0)} ft` : `${minSafe.toFixed(0)} ft`}
+                          </span>
                         </div>
                         {/* Second row: Status badge and close dates */}
                         <div className="flex items-start gap-3 pl-4">
