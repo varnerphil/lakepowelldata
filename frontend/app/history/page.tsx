@@ -51,8 +51,8 @@ const getCachedAllRamps = unstable_cache(
   }
 )
 
-// Historical data start date (when Lake Powell was filled)
-const HISTORICAL_START_DATE = '1980-06-22'
+// Historical data start date (earliest Lake Powell data available)
+const EARLIEST_DATA_DATE = '1963-01-01'
 
 // Calculate date ranges
 function getDateRange(range: string): { start: string; end: string } {
@@ -61,14 +61,17 @@ function getDateRange(range: string): { start: string; end: string } {
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const endDate = end.toISOString().split('T')[0]
   
-  // For "alltime", use historical start date
+  // For "alltime", use earliest available data date
   if (range === 'alltime') {
-    return { start: HISTORICAL_START_DATE, end: endDate }
+    return { start: EARLIEST_DATA_DATE, end: endDate }
   }
   
   let start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   
   switch (range) {
+    case '40years':
+      start.setUTCFullYear(start.getUTCFullYear() - 40)
+      break
     case '20years':
       start.setUTCFullYear(start.getUTCFullYear() - 20)
       break
@@ -89,6 +92,12 @@ function getDateRange(range: string): { start: string; end: string } {
       break
     case '1year':
       start.setUTCFullYear(start.getUTCFullYear() - 1)
+      break
+    case '6months':
+      start.setUTCMonth(start.getUTCMonth() - 6)
+      break
+    case '1month':
+      start.setUTCMonth(start.getUTCMonth() - 1)
       break
     case '6months':
       start.setUTCMonth(start.getUTCMonth() - 6)

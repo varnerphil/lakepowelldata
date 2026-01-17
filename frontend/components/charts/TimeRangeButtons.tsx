@@ -10,6 +10,7 @@ interface TimeRangeButtonsProps {
 
 const timeRanges = [
   { value: 'alltime', label: 'All' },
+  { value: '40years', label: '40Y' },
   { value: '20years', label: '20Y' },
   { value: '10years', label: '10Y' },
   { value: '5years', label: '5Y' },
@@ -39,7 +40,7 @@ export default function TimeRangeButtons({ currentRange, formAction }: TimeRange
 
   return (
     <div className="card p-2 sm:p-4 mt-0">
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="grid grid-cols-8 gap-1 sm:gap-2">
         {timeRanges.map((range) => (
           <button
             key={range.value}
