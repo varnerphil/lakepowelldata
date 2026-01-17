@@ -70,6 +70,30 @@ const getCachedAllRamps = unstable_cache(
   }
 )
 
+// Cache latest water measurement for 5 minutes
+const getCachedLatestMeasurement = unstable_cache(
+  async () => {
+    return getLatestWaterMeasurement()
+  },
+  ['latest-measurement-home'],
+  {
+    revalidate: 300, // 5 minutes
+    tags: ['water-measurements']
+  }
+)
+
+// Cache historical water year lows for 1 hour
+const getCachedHistoricalWaterYearLows = unstable_cache(
+  async (currentElevation: number) => {
+    return getHistoricalWaterYearLows(currentElevation, 50)
+  },
+  ['historical-water-year-lows'],
+  {
+    revalidate: 3600, // 1 hour
+    tags: ['water-year-analysis']
+  }
+)
+
 // Note: Basin plots data is too large (>2MB) for Next.js cache, so we fetch it directly
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
@@ -78,7 +102,8 @@ import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
 import TributarySnowpack from '@/components/snowpack/TributarySnowpack'
 import { calculateDropProjection, calculateDailyElevationProjection } from '@/lib/calculations'
 
-export const dynamic = 'force-dynamic'
+// Revalidate every 5 minutes for fresh data while still benefiting from cache
+export const revalidate = 300
 
 // Historical data start date (when Lake Powell was filled)
 const HISTORICAL_START_DATE = '1980-06-22'
@@ -553,11 +578,15 @@ export default async function HomePage({
   const params = await searchParams
   const currentRange = params.range || '1year'
   
-  const current = await getLatestWaterMeasurement()
-  const averages = await getCachedHistoricalAverages()
-  const elevationStorageData = await getCachedElevationStorageCapacity()
-  const basinPlotsData = await processBasinPlotsData()
-  const snotelData = await getSNOTELData()
+  // Fetch initial data in parallel for faster loading
+  const [current, averages, elevationStorageData, allRamps, basinPlotsData, snotelData] = await Promise.all([
+    getCachedLatestMeasurement(),
+    getCachedHistoricalAverages(),
+    getCachedElevationStorageCapacity(),
+    getCachedAllRamps(),
+    processBasinPlotsData(),
+    getSNOTELData()
+  ])
   
   // Process SNOTEL data for TributarySnowpack
   const sitesWithData = snotelData?.sites.filter(s => 
@@ -621,12 +650,9 @@ export default async function HomePage({
     ? await getCachedWaterMeasurements(recentStartDate, current.date)
     : []
   
-  // Get ramps for the chart (favorites managed by client component)
-  const allRamps = await getCachedAllRamps()
-  
-  // Get data for elevation projection
+  // Get data for elevation projection (use cached version)
   const historicalLows = current 
-    ? await getHistoricalWaterYearLows(current.elevation, 50)
+    ? await getCachedHistoricalWaterYearLows(current.elevation)
     : []
   
   // Get last 30 days of historical data for projection chart
