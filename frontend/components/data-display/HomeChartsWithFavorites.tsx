@@ -352,7 +352,6 @@ export default function HomeChartsWithFavorites({
                             )}
                             {historicalAvgDate && (
                               <span className="text-blue-600 font-light">
-                                {weeklyChange !== null && weeklyChange < 0 && currentTrendDate ? '• ' : ''}
                                 Close (Avg): {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                             )}
