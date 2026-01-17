@@ -347,13 +347,13 @@ export default function HomeChartsWithFavorites({
                           <div className="flex items-center gap-2 text-xs">
                             {weeklyChange !== null && weeklyChange < 0 && currentTrendDate && (
                               <span className="text-[#d4a574] font-light">
-                                Trend: {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                Close (Trend): {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                             )}
                             {historicalAvgDate && (
                               <span className="text-blue-600 font-light">
                                 {weeklyChange !== null && weeklyChange < 0 && currentTrendDate ? '• ' : ''}
-                                Avg: {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                Close (Avg): {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                             )}
                             {!currentTrendDate && !historicalAvgDate && (
