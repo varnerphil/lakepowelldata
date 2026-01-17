@@ -90,7 +90,7 @@ export default function ElevationProjectionChart({
     <ResponsiveContainer width="100%" height={500}>
       <LineChart 
         data={chartData}
-        margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+        margin={{ top: 5, right: 30, left: 20, bottom: 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 

@@ -228,7 +228,7 @@ export default function BasinPlotsChart({
           top: 10, 
           right: isMobile ? 10 : 30, 
           left: isMobile ? 0 : 20, 
-          bottom: isMobile ? 40 : 60 
+          bottom: isMobile ? 0 : 20 
         }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           

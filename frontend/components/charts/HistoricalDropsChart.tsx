@@ -228,7 +228,7 @@ export default function HistoricalDropsChart({
           top: 5, 
           right: isMobile ? 60 : 150, 
           left: isMobile ? 0 : 60, 
-          bottom: isMobile ? 40 : 60 
+          bottom: isMobile ? 0 : 20 
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />

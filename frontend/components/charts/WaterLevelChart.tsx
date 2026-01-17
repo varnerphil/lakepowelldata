@@ -184,8 +184,8 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         margin={{ 
           top: 5, 
           right: isMobile ? 60 : 150, 
-          left: isMobile ? 0 : 75, 
-          bottom: isMobile ? 40 : 60 
+          left: isMobile ? 0 : 30, 
+          bottom: isMobile ? 0 : 0 
         }}
       >
         <CartesianGrid strokeDasharray="3 3" />
