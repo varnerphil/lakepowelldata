@@ -548,12 +548,12 @@ export default function MapContainer({ ramps, currentElevation, latestDate }: Ma
       el.innerHTML = iconSvg
 
       const hazardInfo = spotType === 'hazard' 
-        ? (spot.hazardStatus === 'at-surface' || spot.hazardSubmerged)
+        ? spot.hazardStatus === 'at-surface'
           ? '<small style="color: #f59e0b;">At surface (island visible)</small><br/>'
           : spot.hazardStatus === 'shallow' && spot.hazardDepth !== undefined
             ? `<small style="color: #f97316;">Shallow: ${spot.hazardDepth} ft deep</small><br/>`
-            : (spot.hazardStatus === 'deep' || spot.hazardDepth !== undefined)
-              ? `<small style="color: #ef4444;">${spot.hazardStatus === 'deep' ? 'Deep' : 'Under water'}: ${spot.hazardDepth} ft deep</small><br/>`
+            : spot.hazardStatus === 'deep' && spot.hazardDepth !== undefined
+              ? `<small style="color: #ef4444;">Deep: ${spot.hazardDepth} ft deep</small><br/>`
               : ''
         : ''
 

@@ -36,7 +36,7 @@ export async function getCacheStats(): Promise<{ tileCount: number; maxTiles: nu
       resolve(event.data)
     }
     
-    navigator.serviceWorker.controller.postMessage('GET_CACHE_STATS', [messageChannel.port2])
+    navigator.serviceWorker.controller!.postMessage('GET_CACHE_STATS', [messageChannel.port2])
     
     // Timeout after 2 seconds
     setTimeout(() => resolve(null), 2000)
@@ -55,7 +55,7 @@ export async function clearTileCache(): Promise<boolean> {
       resolve(event.data?.success ?? false)
     }
     
-    navigator.serviceWorker.controller.postMessage('CLEAR_TILE_CACHE', [messageChannel.port2])
+    navigator.serviceWorker.controller!.postMessage('CLEAR_TILE_CACHE', [messageChannel.port2])
     
     // Timeout after 2 seconds
     setTimeout(() => resolve(false), 2000)

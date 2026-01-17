@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { SavedSpot, SavedPath, SPOT_TYPE_CONFIG } from '@/types/map'
+import { SavedSpot, SavedPath, SPOT_TYPE_CONFIG, SpotType } from '@/types/map'
 import { X, Trash2, MapPin, Anchor, AlertTriangle, Mountain, Edit2, Route, Copy } from 'lucide-react'
 import { formatTravelTime } from '@/lib/paths'
 import { getSpeedSettings, SpeedSettings } from '@/lib/speedSettings'
@@ -92,14 +92,15 @@ export default function SpotsPanel({
             <div className="divide-y divide-gray-100">
               {spots.map((spot) => {
                 // Handle old spot types (migration)
-                let spotType = spot.type
-                if (spotType === 'houseboat' || spotType === 'beach') {
+                let spotType: SpotType = spot.type
+                const oldType = spot.type as string
+                if (oldType === 'houseboat' || oldType === 'beach') {
                   spotType = 'parking'
-                } else if (spotType === 'camping') {
+                } else if (oldType === 'camping') {
                   spotType = 'hike'
                 }
 
-                const config = SPOT_TYPE_CONFIG[spotType as keyof typeof SPOT_TYPE_CONFIG]
+                const config = SPOT_TYPE_CONFIG[spotType]
                 if (!config) {
                   return null
                 }
@@ -130,10 +131,6 @@ export default function SpotsPanel({
                               <span className="text-orange-600">Shallow: {spot.hazardDepth} ft deep</span>
                             ) : spot.hazardStatus === 'deep' && spot.hazardDepth !== undefined ? (
                               <span className="text-red-600">Deep: {spot.hazardDepth} ft deep</span>
-                            ) : spot.hazardSubmerged ? (
-                              <span className="text-amber-600">At surface (island visible)</span>
-                            ) : spot.hazardDepth !== undefined ? (
-                              <span className="text-red-600">Under water: {spot.hazardDepth} ft deep</span>
                             ) : null}
                           </div>
                         )}
