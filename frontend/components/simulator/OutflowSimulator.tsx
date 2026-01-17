@@ -79,9 +79,9 @@ export default function OutflowSimulator({
           Simulation Parameters
         </h2>
         
-        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
+        <div>
           {/* Start Date Picker */}
-          <div className="lg:col-span-5">
+          <div>
             <label htmlFor="startDate" className="block text-sm font-light text-gray-600 mb-2">
               Start Date
             </label>
@@ -120,43 +120,6 @@ export default function OutflowSimulator({
             />
             <p className="text-xs text-gray-400 mt-1 font-light lg:hidden">
               Simulation runs from this date to present
-            </p>
-          </div>
-          
-          {/* Outflow Percentage Slider */}
-          <div className="lg:col-span-7">
-            <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
-              Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
-            </label>
-            <div className="relative">
-              <input
-                type="range"
-                id="outflowPercentage"
-                min={70}
-                max={110}
-                step={1}
-                value={outflowPercentage}
-                onChange={(e) => {
-                  setOutflowPercentage(Number(e.target.value))
-                  setHasCalculated(true) // Auto-run when slider changes
-                }}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
-              />
-            </div>
-            <div className="mt-1">
-              {/* Static labels - only edges */}
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>70%</span>
-                <span>110%</span>
-              </div>
-            </div>
-            <p className="text-xs text-gray-400 mt-2 font-light">
-              {outflowPercentage < 100 
-                ? `Releases ${100 - outflowPercentage}% less water than actually occurred`
-                : outflowPercentage > 100
-                ? `Releases ${outflowPercentage - 100}% more water than actually occurred`
-                : 'Matches actual historical releases'
-              }
             </p>
           </div>
         </div>
@@ -282,6 +245,44 @@ export default function OutflowSimulator({
               <span className="text-[#8b9a6b]"> Green line</span> shows simulated elevation when <span className="font-medium">improving</span> (higher than actual).
               <span className="text-[#d4a574]"> Orange line</span> shows simulated elevation when <span className="font-medium">worse</span> (lower than actual).
             </p>
+            
+            {/* Outflow Percentage Slider */}
+            <div className="mb-4">
+              <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
+                Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="range"
+                  id="outflowPercentage"
+                  min={70}
+                  max={110}
+                  step={1}
+                  value={outflowPercentage}
+                  onChange={(e) => {
+                    setOutflowPercentage(Number(e.target.value))
+                    setHasCalculated(true) // Auto-run when slider changes
+                  }}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
+                />
+              </div>
+              <div className="mt-1">
+                {/* Static labels - only edges */}
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>70%</span>
+                  <span>110%</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 font-light">
+                {outflowPercentage < 100 
+                  ? <><strong>Releases {100 - outflowPercentage}% less water than actually occurred</strong></>
+                  : outflowPercentage > 100
+                  ? <><strong>Releases {outflowPercentage - 100}% more water than actually occurred</strong></>
+                  : 'Matches actual historical releases'
+                }
+              </p>
+            </div>
+            
             <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
           </div>
         </div>
