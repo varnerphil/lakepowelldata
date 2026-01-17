@@ -28,7 +28,7 @@ export default function MobileNav() {
 
   // Randomly select logo on page load
   useEffect(() => {
-    const logos = ['/logotest1.png', '/logotest3.png', '/logotest4.png', '/logotest5.png']
+    const logos = ['/logotest1.png', '/logotest3.png', '/logotest4.png', '/logotest5.png', '/logotest6.png']
     const randomLogo = logos[Math.floor(Math.random() * logos.length)]
     setLogoSrc(randomLogo)
   }, [])
