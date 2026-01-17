@@ -5,7 +5,8 @@ import { projectFromSnowpack } from '@/lib/calculations'
 import StatsTabs from '@/components/stats/StatsTabs'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
 
-export const dynamic = 'force-dynamic'
+// Revalidate every hour
+export const revalidate = 3600
 
 export default async function StatsPage({
   searchParams,

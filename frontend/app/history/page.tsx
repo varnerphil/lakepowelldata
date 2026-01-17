@@ -2,8 +2,6 @@ import { getWaterMeasurementsByRange, getEarliestWaterMeasurement, getLatestWate
 import { HistoricalChartWithFavorites, WaterYearTable } from '@/components/data-display'
 import { unstable_cache } from 'next/cache'
 
-// Force dynamic rendering to prevent caching
-export const dynamic = 'force-dynamic'
 
 // Cache water measurements by range for 1 hour
 const getCachedWaterMeasurements = unstable_cache(

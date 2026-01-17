@@ -1,7 +1,30 @@
 import { getLatestWaterMeasurement, getWaterMeasurementsByRange, getElevationStorageCapacity } from '@/lib/db'
+import { unstable_cache } from 'next/cache'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+// Cache latest measurement for 5 minutes
+const getCachedLatestMeasurement = unstable_cache(
+  async () => getLatestWaterMeasurement(),
+  ['storage-latest-measurement'],
+  { revalidate: 300, tags: ['water-measurements'] }
+)
+
+// Cache all measurements for storage calculations (1 hour)
+const getCachedMeasurements = unstable_cache(
+  async () => {
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = '1963-01-01' // Start of Lake Powell data
+    return getWaterMeasurementsByRange(startDate, endDate)
+  },
+  ['storage-all-measurements'],
+  { revalidate: 3600, tags: ['water-measurements'] }
+)
+
+// Cache storage capacity (24 hours)
+const getCachedStorageCapacity = unstable_cache(
+  async () => getElevationStorageCapacity(),
+  ['storage-capacity'],
+  { revalidate: 86400, tags: ['elevation-storage'] }
+)
 
 interface StorageBand {
   percentStart: number  // Starting percentage (0, 25, 50, 75)
