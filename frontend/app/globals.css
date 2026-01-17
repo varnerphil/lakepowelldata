@@ -45,6 +45,20 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.2s ease;
 }
 
+/* Ensure all inputs have 16px font size to prevent mobile zoom */
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
 /* Custom border width for ramp cards */
 .border-3 {
   border-width: 3px;

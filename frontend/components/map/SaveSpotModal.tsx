@@ -153,6 +153,7 @@ export default function SaveSpotModal({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Secret Cove, Favorite Beach"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              style={{ fontSize: '16px' }}
               autoFocus
             />
           </div>
@@ -199,6 +200,7 @@ export default function SaveSpotModal({
               placeholder="Any details about this spot..."
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              style={{ fontSize: '16px' }}
             />
           </div>
 
@@ -266,6 +268,7 @@ export default function SaveSpotModal({
                       min="0"
                       step="0.1"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      style={{ fontSize: '16px' }}
                     />
                     <span className="text-gray-500">feet</span>
                   </div>
@@ -285,6 +288,7 @@ export default function SaveSpotModal({
               onChange={(e) => setSelectedDate(e.target.value)}
               max={latestDate}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              style={{ fontSize: '16px' }}
             />
             <div className="mt-1">
               {isLoadingElevation ? (

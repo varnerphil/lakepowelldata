@@ -205,7 +205,8 @@ export default function MeasurePanel({
                   value={pathName}
                   onChange={(e) => setPathName(e.target.value)}
                   placeholder="Path name"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8b9a6b] focus:border-[#8b9a6b] outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8b9a6b] focus:border-[#8b9a6b] outline-none"
+                  style={{ fontSize: '16px' }}
                   autoFocus
                 />
                 <textarea
@@ -213,7 +214,8 @@ export default function MeasurePanel({
                   onChange={(e) => setPathNotes(e.target.value)}
                   placeholder="Notes (optional)"
                   rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8b9a6b] focus:border-[#8b9a6b] outline-none resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8b9a6b] focus:border-[#8b9a6b] outline-none resize-none"
+                  style={{ fontSize: '16px' }}
                 />
                 <div className="flex gap-2">
                   <button

@@ -115,7 +115,8 @@ export default function OutflowSimulator({
               }}
               min={minDate}
               max={maxDate}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-light focus:outline-none focus:ring-2 focus:ring-[#4a90a4]/20 focus:border-[#4a90a4]"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg font-light focus:outline-none focus:ring-2 focus:ring-[#4a90a4]/20 focus:border-[#4a90a4]"
+              style={{ fontSize: '16px' }}
             />
             <p className="text-xs text-gray-400 mt-1 font-light lg:hidden">
               Simulation runs from this date to present
