@@ -1,19 +1,43 @@
 import { getWaterMeasurementsByRange, getElevationStorageCapacity, getAllRamps } from '@/lib/db'
-
+import { unstable_cache } from 'next/cache'
 import OutflowSimulator from '@/components/simulator/OutflowSimulator'
 
-export const dynamic = 'force-dynamic'
+// Cache historical measurements for 1 hour (large dataset, rarely changes)
+const getCachedHistoricalMeasurements = unstable_cache(
+  async () => {
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = '1985-01-01'
+    return getWaterMeasurementsByRange(startDate, endDate)
+  },
+  ['simulator-historical-measurements'],
+  { revalidate: 3600, tags: ['water-measurements'] }
+)
+
+// Cache storage capacity for 24 hours
+const getCachedStorageCapacity = unstable_cache(
+  async () => getElevationStorageCapacity(),
+  ['simulator-storage-capacity'],
+  { revalidate: 86400, tags: ['elevation-storage'] }
+)
+
+// Cache ramps for 1 hour
+const getCachedRamps = unstable_cache(
+  async () => getAllRamps(),
+  ['simulator-ramps'],
+  { revalidate: 3600, tags: ['ramps'] }
+)
 
 export default async function SimulatorPage() {
-  // Fetch all water measurements - we need the full historical dataset
-  const endDate = new Date().toISOString().split('T')[0]
-  const startDate = '1985-01-01' // Start from when we have reliable data
-  
-  const measurements = await getWaterMeasurementsByRange(startDate, endDate)
-  const storageCapacity = await getElevationStorageCapacity()
-  const ramps = await getAllRamps()
+  // Fetch all data in parallel with caching
+  const [measurements, storageCapacity, ramps] = await Promise.all([
+    getCachedHistoricalMeasurements(),
+    getCachedStorageCapacity(),
+    getCachedRamps()
+  ])
   
   // Get the date range for the date picker
+  const endDate = new Date().toISOString().split('T')[0]
+  const startDate = '1985-01-01'
   const minDate = measurements.length > 0 
     ? measurements[measurements.length - 1].date 
     : startDate

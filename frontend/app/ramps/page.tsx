@@ -1,9 +1,26 @@
 import { getAllRamps, getLatestWaterMeasurement, calculateRampStatus } from '@/lib/db'
+import { unstable_cache } from 'next/cache'
 import RampStatusCard from '@/components/ramp-status/RampStatusCard'
 
+// Cache ramps for 1 hour
+const getCachedRamps = unstable_cache(
+  async () => getAllRamps(),
+  ['all-ramps'],
+  { revalidate: 3600, tags: ['ramps'] }
+)
+
+// Cache latest measurement for 5 minutes
+const getCachedLatestMeasurement = unstable_cache(
+  async () => getLatestWaterMeasurement(),
+  ['latest-measurement'],
+  { revalidate: 300, tags: ['water-measurements'] }
+)
+
 export default async function RampsPage() {
-  const ramps = await getAllRamps()
-  const currentMeasurement = await getLatestWaterMeasurement()
+  const [ramps, currentMeasurement] = await Promise.all([
+    getCachedRamps(),
+    getCachedLatestMeasurement()
+  ])
 
   if (!currentMeasurement) {
     return (
