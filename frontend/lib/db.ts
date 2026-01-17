@@ -1,8 +1,14 @@
 /**
  * Database client for Next.js API routes.
  * Connects to Supabase PostgreSQL database.
+ * 
+ * IMPORTANT: For Supabase free tier, use Transaction mode (port 6543) 
+ * instead of Session mode (port 5432) for better connection handling.
+ * 
+ * To switch to Transaction mode, update your DATABASE_URL to use port 6543:
+ * postgres://user:pass@host:6543/postgres?pgbouncer=true
  */
-import { Pool } from 'pg'
+import { Pool, QueryResult } from 'pg'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set')
@@ -12,46 +18,37 @@ if (!process.env.DATABASE_URL) {
 const isUsingPooler = process.env.DATABASE_URL?.includes(':6543') || 
                       process.env.DATABASE_URL?.includes('pgbouncer=true')
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
-    rejectUnauthorized: false
-  },
-  // Supabase pooler Session mode has limited pool_size (typically 15-20 for free tier)
-  // We must keep our client pool smaller than the pooler's pool_size to avoid "max clients reached"
-  // For direct connections, we can use more
-  max: isUsingPooler ? 5 : 10, // Reduced pool size to avoid exhaustion (5 for pooler, 10 for direct)
-  idleTimeoutMillis: 3000, // Close idle clients after 3 seconds (faster cleanup)
-  connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection could not be established
-  // Allow waiting for connections if pool is full
-  allowExitOnIdle: true, // Allow process to exit when pool is idle (helps with hot reload)
-})
+// Use global to prevent multiple pool instances during hot reload in development
+const globalForDb = globalThis as unknown as { pool: Pool | undefined }
+
+function createPool(): Pool {
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
+      rejectUnauthorized: false
+    },
+    // Supabase free tier has very limited connections
+    // Session mode: ~15 connections shared across all clients
+    // Transaction mode: ~200 connections, much better for serverless
+    // Keep our pool very small to avoid exhaustion
+    max: isUsingPooler ? 2 : 5, // Very small pool (2 for pooler, 5 for direct)
+    idleTimeoutMillis: 1000, // Close idle clients after 1 second (aggressive cleanup)
+    connectionTimeoutMillis: 10000, // Wait longer for a connection (10 seconds)
+    allowExitOnIdle: true, // Allow process to exit when pool is idle
+  })
+}
+
+// Singleton pattern - reuse pool across hot reloads
+const pool = globalForDb.pool ?? createPool()
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForDb.pool = pool
+}
 
 // Handle pool errors
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err)
 })
-
-// Gracefully close pool on process exit (important for hot reload in development)
-if (typeof process !== 'undefined') {
-  const gracefulShutdown = async () => {
-    try {
-      await pool.end()
-      console.log('Database pool closed gracefully')
-    } catch (err) {
-      console.error('Error closing database pool:', err)
-    }
-  }
-  
-  process.on('SIGINT', gracefulShutdown)
-  process.on('SIGTERM', gracefulShutdown)
-  // In development, also handle exit to clean up on hot reload
-  if (process.env.NODE_ENV === 'development') {
-    process.on('exit', () => {
-      pool.end().catch(() => {})
-    })
-  }
-}
 
 // Helper function to retry queries on connection errors
 async function retryQuery<T>(
