@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Lake Powell Water Data",
+    title: "Lake Powell Data",
   },
   icons: {
     icon: [

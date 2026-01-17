@@ -1,6 +1,6 @@
 {
-  "name": "Lake Powell Water Data",
-  "short_name": "Lake Powell",
+  "name": "Lake Powell Data",
+  "short_name": "Lake Powell Data",
   "description": "Track and display Lake Powell water data, boat ramp accessibility, and historical trends",
   "start_url": "/",
   "display": "standalone",

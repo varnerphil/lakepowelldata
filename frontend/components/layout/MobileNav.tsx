@@ -54,7 +54,7 @@ export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {
             <img 
               src="/lakepowelldata_logo_icons/ios/128.png"
               alt="Lake Powell Data" 
-              className="h-16 sm:h-20 lg:h-20 w-auto"
+              className="h-20 w-auto"
             />
             <div className={`flex flex-col pt-2 sm:pt-2.5 lg:pt-2 ${oswaldFont || ''}`}>
               <span className="text-xl sm:text-2xl lg:text-3xl font-light text-gray-900 leading-tight tracking-wide uppercase">LAKE POWELL</span>
