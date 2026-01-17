@@ -72,7 +72,7 @@ export default function OutflowSimulator({
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-5">
       {/* Controls Card */}
       <div className="card p-4 sm:p-6 lg:p-6">
         <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-4 lg:mb-5">
@@ -127,7 +127,7 @@ export default function OutflowSimulator({
       
       {/* Results */}
       {simulationResult && (
-        <div className="flex flex-col gap-6 sm:gap-8">
+        <div className="flex flex-col gap-4 sm:gap-5">
           {/* Summary Card - Always second */}
           <div className="card p-4 sm:p-6 lg:p-6 order-2">
             <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
