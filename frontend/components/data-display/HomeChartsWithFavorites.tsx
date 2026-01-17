@@ -381,11 +381,11 @@ export default function HomeChartsWithFavorites({
                               </div>
                             ) : hasTrend ? (
                               <div className="text-gray-500 italic mt-1">
-                                Likely to close sometime after this date based on the current trend
+                                Likely to close sometime near this date based on the current trend
                               </div>
                             ) : hasHistorical ? (
                               <div className="text-gray-500 italic mt-1">
-                                Based on similar years, we estimate the ramp will close on this date
+                                Likely to close sometime near this date based on the historical avg
                               </div>
                             ) : null}
                           </div>
