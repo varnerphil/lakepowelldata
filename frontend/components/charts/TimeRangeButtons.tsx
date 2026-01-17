@@ -9,11 +9,13 @@ interface TimeRangeButtonsProps {
 }
 
 const timeRanges = [
-  { value: 'alltime', label: 'All-Time' },
-  { value: '20years', label: '20 Years' },
-  { value: '10years', label: '10 Years' },
-  { value: '5years', label: '5 Years' },
-  { value: '1year', label: '1 Year' },
+  { value: '1month', label: '1M' },
+  { value: '6months', label: '6M' },
+  { value: '1year', label: '1Y' },
+  { value: '5years', label: '5Y' },
+  { value: '10years', label: '10Y' },
+  { value: '20years', label: '20Y' },
+  { value: 'alltime', label: 'All' },
 ]
 
 export default function TimeRangeButtons({ currentRange, formAction }: TimeRangeButtonsProps) {
@@ -37,13 +39,12 @@ export default function TimeRangeButtons({ currentRange, formAction }: TimeRange
 
   return (
     <div className="card p-2 sm:p-4 mt-0">
-    <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
-        <span className="text-[10px] sm:text-xs uppercase tracking-wider text-gray-500 font-light">Time Range:</span>
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {timeRanges.map((range) => (
           <button
             key={range.value}
             onClick={() => handleRangeChange(range.value)}
-            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-light transition-colors ${
+            className={`px-1 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-light transition-colors text-center ${
               currentRange === range.value
                 ? 'bg-gray-900 text-white'
                 : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
