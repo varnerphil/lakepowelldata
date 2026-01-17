@@ -189,6 +189,41 @@ export async function getWaterMeasurementsByRange(
   }))
 }
 
+/**
+ * Get water measurements with sampling for large date ranges.
+ * Uses database-level sampling to limit result size and avoid cache limits.
+ * @param sampleInterval - Every Nth record to return (e.g., 7 for weekly)
+ */
+export async function getWaterMeasurementsByRangeSampled(
+  startDate: string,
+  endDate: string,
+  sampleInterval: number = 1
+): Promise<WaterMeasurement[]> {
+  // Use ROW_NUMBER() to sample every Nth row
+  const result = await query(`
+    WITH numbered AS (
+      SELECT 
+        date, elevation, change, content, inflow, outflow,
+        ROW_NUMBER() OVER (ORDER BY date ASC) as rn
+      FROM water_measurements 
+      WHERE date >= $1 AND date <= $2
+    )
+    SELECT date, elevation, change, content, inflow, outflow
+    FROM numbered 
+    WHERE rn = 1 OR rn % $3 = 0 OR date = (SELECT MAX(date) FROM water_measurements WHERE date <= $2)
+    ORDER BY date ASC
+  `, [startDate, endDate, sampleInterval])
+  
+  return result.rows.map(row => ({
+    date: row.date.toISOString().split('T')[0],
+    elevation: parseFloat(row.elevation),
+    change: row.change ? parseFloat(row.change) : null,
+    content: parseInt(row.content),
+    inflow: parseInt(row.inflow),
+    outflow: parseInt(row.outflow)
+  }))
+}
+
 export async function getAllRamps(): Promise<Ramp[]> {
   // Try to select with latitude/longitude, fallback to without if columns don't exist
   let result

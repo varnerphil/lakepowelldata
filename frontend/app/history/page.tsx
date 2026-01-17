@@ -1,4 +1,4 @@
-import { getWaterMeasurementsByRange, getEarliestWaterMeasurement, getLatestWaterMeasurement, getWaterYearSummaries, getAllRamps, getWaterYearAnalysis } from '@/lib/db'
+import { getWaterMeasurementsByRange, getWaterMeasurementsByRangeSampled, getEarliestWaterMeasurement, getLatestWaterMeasurement, getWaterYearSummaries, getAllRamps, getWaterYearAnalysis } from '@/lib/db'
 import { HistoricalChartWithFavorites, WaterYearTable } from '@/components/data-display'
 import { unstable_cache } from 'next/cache'
 
@@ -128,6 +128,8 @@ export default async function HistoryPage({
   let startDate: string
   let endDate: string
   
+  const currentRangeParam = params.range || '1year'
+  
   if (params.range) {
     const range = getDateRange(params.range)
     startDate = range.start
@@ -142,12 +144,19 @@ export default async function HistoryPage({
     endDate = range.end
   }
 
-  const measurements = await getCachedWaterMeasurements(startDate, endDate)
+  // For large date ranges, use sampled data to avoid cache size limits (2MB max)
+  let measurements
+  if (currentRangeParam === 'alltime' || currentRangeParam === '40years') {
+    const sampleInterval = currentRangeParam === 'alltime' ? 7 : 3
+    measurements = await getWaterMeasurementsByRangeSampled(startDate, endDate, sampleInterval)
+  } else {
+    measurements = await getCachedWaterMeasurements(startDate, endDate)
+  }
   const waterYearSummaries = await getCachedWaterYearSummaries()
   const waterYearAnalysis = await getCachedWaterYearAnalysis()
   const allRamps = await getCachedAllRamps()
 
-  const currentRange = params.range || '1year'
+  const currentRange = currentRangeParam
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-16">

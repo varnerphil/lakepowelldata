@@ -1,6 +1,7 @@
 import { 
   getLatestWaterMeasurement, 
-  getWaterMeasurementsByRange, 
+  getWaterMeasurementsByRange,
+  getWaterMeasurementsByRangeSampled,
   getHistoricalAverages, 
   getAllRamps,
   getElevationStorageCapacity,
@@ -642,15 +643,17 @@ export default async function HomePage({
   const startDate = dateRange.start
   const endDate = dateRange.end
   
-  let measurements = current 
-    ? await getCachedWaterMeasurements(startDate, endDate)
-    : []
-  
-  // For "alltime" view, sample the data to improve performance
-  // Sample to ~2000 points max (weekly for very long ranges)
-  if (currentRange === 'alltime' && measurements.length > 2000) {
-    const sampleInterval = Math.ceil(measurements.length / 2000)
-    measurements = measurements.filter((_, index) => index % sampleInterval === 0 || index === measurements.length - 1)
+  // For large date ranges, use sampled data to avoid cache size limits (2MB max)
+  // alltime = ~22,600 days, 40years = ~14,600 days - too big for cache
+  let measurements: Awaited<ReturnType<typeof getWaterMeasurementsByRange>> = []
+  if (current) {
+    if (currentRange === 'alltime' || currentRange === '40years') {
+      // Use sampled data directly (every 7th day for alltime, every 3rd for 40years)
+      const sampleInterval = currentRange === 'alltime' ? 7 : 3
+      measurements = await getWaterMeasurementsByRangeSampled(startDate, endDate, sampleInterval)
+    } else {
+      measurements = await getCachedWaterMeasurements(startDate, endDate)
+    }
   }
   
   // Get recent measurements for CurrentStatus (use cached with specific range)
