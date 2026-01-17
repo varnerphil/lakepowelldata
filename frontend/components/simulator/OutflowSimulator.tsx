@@ -246,8 +246,10 @@ export default function OutflowSimulator({
               <span className="text-[#d4a574]"> Orange line</span> shows simulated elevation when <span className="font-medium">worse</span> (lower than actual).
             </p>
             
+            <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
+            
             {/* Outflow Percentage Slider */}
-            <div className="mb-4">
+            <div className="mt-4">
               <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
                 Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
               </label>
@@ -282,8 +284,6 @@ export default function OutflowSimulator({
                 }
               </p>
             </div>
-            
-            <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
           </div>
         </div>
       )}
