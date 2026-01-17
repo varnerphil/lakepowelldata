@@ -52,7 +52,7 @@ export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             <img 
-              src="/logotest1.png"
+              src="/logohighres512.jpeg"
               alt="Lake Powell Data" 
               className="h-16 sm:h-20 lg:h-20 w-auto"
             />
