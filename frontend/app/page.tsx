@@ -102,9 +102,28 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
-import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
-import TributarySnowpack from '@/components/snowpack/TributarySnowpack'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
 import { calculateDropProjection, calculateDailyElevationProjection } from '@/lib/calculations'
+
+// Lazy load below-the-fold components to improve initial render
+const BasinPlotsChart = dynamic(() => import('@/components/snowpack/BasinPlotsChart'), {
+  loading: () => (
+    <div className="h-[400px] flex items-center justify-center">
+      <div className="text-gray-400">Loading chart...</div>
+    </div>
+  ),
+  ssr: true
+})
+
+const TributarySnowpack = dynamic(() => import('@/components/snowpack/TributarySnowpack'), {
+  loading: () => (
+    <div className="h-[300px] flex items-center justify-center">
+      <div className="text-gray-400">Loading snowpack data...</div>
+    </div>
+  ),
+  ssr: true
+})
 
 // Revalidate every 5 minutes for fresh data while still benefiting from cache
 export const revalidate = 300
@@ -805,53 +824,79 @@ export default async function HomePage({
         currentSnowpackPercent={currentSnowpackPercent}
       />
 
-      {/* 5. Storage Profile */}
-      <div className="mt-12">
-        <StorageVisualization 
-          elevationStorageData={elevationStorageData}
-          currentElevation={current.elevation}
-        />
-      </div>
-
-      {/* 6. Snowpack Chart */}
-      {basinPlotsData && (
-        <div className="mt-8 lg:mt-12">
-          <div className="card p-4 lg:p-8">
-            <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
-            <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light hidden lg:block">
-              This chart shows historical snow water equivalent trends for the Upper Colorado River Region from 1986 to present. 
-              The shaded bands represent percentile ranges (10th, 30th, 70th, 90th) based on period of record data. 
-              The current year is highlighted in black, while historical years are shown in lighter colors.
-            </p>
-            <p className="text-xs text-gray-500 mb-4 font-light lg:hidden">
-              Historical SWE trends for Upper Colorado. Current year shown in black.
-            </p>
-            <BasinPlotsChart
-              years={basinPlotsData.years}
-              percentiles={basinPlotsData.percentiles}
-              statistics={basinPlotsData.statistics}
-              currentYear={basinPlotsData.currentYear}
-              currentStats={basinPlotsData.currentStats}
-            />
-            <p className="text-xs text-gray-400 mt-4 font-light">
-              Statistical shading percentiles are calculated from period of record (POR) data, excluding the current water year. 
-              Percentile categories range from: minimum to 10th percentile, 10th-30th, 30th-70th, 70th-90th, and 90th-maximum.
-            </p>
-          </div>
+      {/* 5. Storage Profile - Below the fold, can load after initial render */}
+      <Suspense fallback={
+        <div className="mt-12 h-[400px] flex items-center justify-center">
+          <div className="text-gray-400">Loading storage visualization...</div>
         </div>
-      )}
-
-      {/* 7. Tributary Snowpack */}
-      {snotelData && (
+      }>
         <div className="mt-12">
-          <TributarySnowpack sites={sitesWithData} basins={basinsWithCalculatedIndex} />
+          <StorageVisualization 
+            elevationStorageData={elevationStorageData}
+            currentElevation={current.elevation}
+          />
         </div>
+      </Suspense>
+
+      {/* 6. Snowpack Chart - Lazy loaded */}
+      {basinPlotsData && (
+        <Suspense fallback={
+          <div className="mt-8 lg:mt-12 card p-4 lg:p-8">
+            <div className="h-[400px] flex items-center justify-center">
+              <div className="text-gray-400">Loading snowpack chart...</div>
+            </div>
+          </div>
+        }>
+          <div className="mt-8 lg:mt-12">
+            <div className="card p-4 lg:p-8">
+              <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
+              <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light hidden lg:block">
+                This chart shows historical snow water equivalent trends for the Upper Colorado River Region from 1986 to present. 
+                The shaded bands represent percentile ranges (10th, 30th, 70th, 90th) based on period of record data. 
+                The current year is highlighted in black, while historical years are shown in lighter colors.
+              </p>
+              <p className="text-xs text-gray-500 mb-4 font-light lg:hidden">
+                Historical SWE trends for Upper Colorado. Current year shown in black.
+              </p>
+              <BasinPlotsChart
+                years={basinPlotsData.years}
+                percentiles={basinPlotsData.percentiles}
+                statistics={basinPlotsData.statistics}
+                currentYear={basinPlotsData.currentYear}
+                currentStats={basinPlotsData.currentStats}
+              />
+              <p className="text-xs text-gray-400 mt-4 font-light">
+                Statistical shading percentiles are calculated from period of record (POR) data, excluding the current water year. 
+                Percentile categories range from: minimum to 10th percentile, 10th-30th, 30th-70th, 70th-90th, and 90th-maximum.
+              </p>
+            </div>
+          </div>
+        </Suspense>
       )}
 
-      {/* 8. Historical Averages (Bottom) */}
-      <div className="mt-12">
-      <HistoricalAverages averages={averages} currentElevation={current.elevation} />
-      </div>
+      {/* 7. Tributary Snowpack - Lazy loaded */}
+      {snotelData && (
+        <Suspense fallback={
+          <div className="mt-12 h-[300px] flex items-center justify-center">
+            <div className="text-gray-400">Loading tributary snowpack...</div>
+          </div>
+        }>
+          <div className="mt-12">
+            <TributarySnowpack sites={sitesWithData} basins={basinsWithCalculatedIndex} />
+          </div>
+        </Suspense>
+      )}
+
+      {/* 8. Historical Averages (Bottom) - Below the fold */}
+      <Suspense fallback={
+        <div className="mt-12 h-[300px] flex items-center justify-center">
+          <div className="text-gray-400">Loading historical averages...</div>
+        </div>
+      }>
+        <div className="mt-12">
+          <HistoricalAverages averages={averages} currentElevation={current.elevation} />
+        </div>
+      </Suspense>
     </div>
   )
 }

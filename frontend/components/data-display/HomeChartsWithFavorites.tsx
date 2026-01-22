@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useDeferredValue } from 'react'
 import { HistoricalChart, SnowpackProjection } from '@/components/data-display'
 import HistoricalDropsChart from '@/components/charts/HistoricalDropsChart'
 import HistoricalAnalysisExpandable from '@/components/data-display/HistoricalAnalysisExpandable'
@@ -146,6 +146,11 @@ export default function HomeChartsWithFavorites({
     return allRamps.filter(ramp => favorites.includes(ramp.id))
   }, [allRamps, favorites, isInitialized])
 
+  // Defer heavy computations to avoid blocking initial render
+  const deferredFavorites = useDeferredValue(favoriteRamps)
+  const deferredDailyProjections = useDeferredValue(dailyProjections)
+  const deferredWeeklyChange = useDeferredValue(weeklyChange)
+
   // Determine what to show based on seasonal status
   const showDropProjection = seasonalStatus?.showDropProjection ?? true
   const showRunoffProjection = seasonalStatus?.showRunoffProjection ?? false
@@ -153,13 +158,14 @@ export default function HomeChartsWithFavorites({
   const currentGainFromLow = seasonalStatus?.currentGainFromLow ?? null
 
   // Calculate when favorite ramps will become unavailable
+  // Use deferred values to avoid blocking initial render
   const rampAccessTimeline = useMemo(() => {
-    if (favoriteRamps.length === 0) return []
+    if (deferredFavorites.length === 0) return []
     
     // Calculate current trend projections if we have weekly change
     const currentTrendProjections: Array<{ date: string; elevation: number }> = []
-    if (weeklyChange !== null && weeklyChange < 0) {
-      const dailyChange = weeklyChange / 7
+    if (deferredWeeklyChange !== null && deferredWeeklyChange < 0) {
+      const dailyChange = deferredWeeklyChange / 7
       let elevation = currentElevation
       const startDate = new Date(today)
       
@@ -174,7 +180,7 @@ export default function HomeChartsWithFavorites({
       }
     }
     
-    return favoriteRamps
+    return deferredFavorites
       .map(ramp => {
         const minSafe = ramp.min_safe_elevation || ramp.min_usable_elevation
         const isCurrentlyOpen = currentElevation >= minSafe
@@ -190,7 +196,7 @@ export default function HomeChartsWithFavorites({
         let historicalAvgElevation: number | null = null
         
         // Loop through daily projections to find when it crosses below the threshold
-        for (const proj of dailyProjections) {
+        for (const proj of deferredDailyProjections) {
           if (proj.projected < minSafe) {
             historicalAvgDate = proj.date
             historicalAvgElevation = proj.projected
@@ -241,7 +247,7 @@ export default function HomeChartsWithFavorites({
         currentTrendDate: string | null
         currentTrendElevation: number | null
       }>
-  }, [favoriteRamps, dailyProjections, weeklyChange, currentElevation, today])
+  }, [deferredFavorites, deferredDailyProjections, deferredWeeklyChange, currentElevation, today])
   
   return (
     <>
