@@ -28,8 +28,8 @@ export default function OutflowSimulator({
     { label: 'Apr 3, 2022', value: '2022-04-03' }
   ]
   
-  const [startDate, setStartDate] = useState('2000-01-01')
-  const [outflowPercentage, setOutflowPercentage] = useState(90)
+  const [startDate, setStartDate] = useState('2005-04-13')
+  const [outflowPercentage, setOutflowPercentage] = useState(95)
   const [hasCalculated, setHasCalculated] = useState(true) // Auto-run on load
   const [favoriteRampIds, setFavoriteRampIds] = useState<number[]>([])
   
