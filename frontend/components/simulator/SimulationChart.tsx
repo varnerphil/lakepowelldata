@@ -122,7 +122,24 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   }
   
   // Format date for tooltip
-  const formatTooltipDate = (dateStr: string) => {
+  // Recharts passes timestamp (number) or date string, and payload with the data point
+  const formatTooltipDate = (value: string | number, payload?: any) => {
+    let dateStr: string
+    
+    // If value is a number (timestamp), convert it to date string
+    if (typeof value === 'number') {
+      // Try to get date from payload first
+      if (payload && payload[0] && payload[0].payload && payload[0].payload.date) {
+        dateStr = payload[0].payload.date
+      } else {
+        // Fallback: convert timestamp to date string
+        const date = new Date(value)
+        dateStr = date.toISOString().split('T')[0]
+      }
+    } else {
+      dateStr = value
+    }
+    
     return formatDateString(dateStr, {
       month: 'short',
       day: 'numeric',

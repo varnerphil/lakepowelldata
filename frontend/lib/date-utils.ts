@@ -16,7 +16,19 @@
  * @param dateStr - Date string in YYYY-MM-DD format
  * @returns Date object representing local midnight on that date
  */
-export function parseLocalDate(dateStr: string): Date {
+export function parseLocalDate(dateStr: string | number | Date): Date {
+  // Handle different input types
+  if (typeof dateStr === 'number') {
+    // Assume it's a timestamp
+    return new Date(dateStr)
+  }
+  if (dateStr instanceof Date) {
+    return dateStr
+  }
+  if (typeof dateStr !== 'string') {
+    throw new Error(`parseLocalDate expects string, number, or Date, got ${typeof dateStr}`)
+  }
+  
   // Handle date strings that might have time component
   const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr
   const [year, month, day] = datePart.split('-').map(Number)
