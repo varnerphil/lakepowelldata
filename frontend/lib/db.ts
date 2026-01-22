@@ -1030,6 +1030,55 @@ export async function getBasinPlotsData(): Promise<BasinPlotsDataPoint[]> {
   }))
 }
 
+/**
+ * Optimized version for home page - only fetches recent years + statistics
+ * This reduces data from ~15K rows to ~2K rows, significantly improving performance
+ */
+export async function getBasinPlotsDataOptimized(recentYearsCount: number = 5): Promise<BasinPlotsDataPoint[]> {
+  // Get current water year (Oct 1 starts new year)
+  const now = new Date()
+  const currentMonth = now.getMonth() // 0-indexed
+  const currentYear = now.getFullYear()
+  const currentWaterYear = currentMonth >= 9 ? currentYear + 1 : currentYear
+  const oldestYear = currentWaterYear - recentYearsCount
+  
+  const result = await query(`
+    SELECT 
+      date_str,
+      water_year_date,
+      year,
+      swe_value,
+      percentile_10,
+      percentile_30,
+      percentile_70,
+      percentile_90,
+      min_value,
+      median_91_20,
+      median_por,
+      max_value,
+      median_peak_swe
+    FROM basin_plots_data
+    WHERE year >= $1
+    ORDER BY water_year_date ASC, year ASC
+  `, [oldestYear])
+  
+  return result.rows.map(row => ({
+    date_str: row.date_str,
+    water_year_date: row.water_year_date.toISOString().split('T')[0],
+    year: parseInt(row.year),
+    swe_value: row.swe_value ? parseFloat(row.swe_value) : null,
+    percentile_10: row.percentile_10 ? parseFloat(row.percentile_10) : null,
+    percentile_30: row.percentile_30 ? parseFloat(row.percentile_30) : null,
+    percentile_70: row.percentile_70 ? parseFloat(row.percentile_70) : null,
+    percentile_90: row.percentile_90 ? parseFloat(row.percentile_90) : null,
+    min_value: row.min_value ? parseFloat(row.min_value) : null,
+    median_91_20: row.median_91_20 ? parseFloat(row.median_91_20) : null,
+    median_por: row.median_por ? parseFloat(row.median_por) : null,
+    max_value: row.max_value ? parseFloat(row.max_value) : null,
+    median_peak_swe: row.median_peak_swe ? parseFloat(row.median_peak_swe) : null
+  }))
+}
+
 export interface SNOTELSite {
   site_id: string
   name: string

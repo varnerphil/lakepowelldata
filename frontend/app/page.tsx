@@ -7,13 +7,16 @@ import {
   getElevationStorageCapacity,
   getHistoricalWaterYearLows,
   getHistoricalDropsToLow,
-  getBasinPlotsData,
+  getBasinPlotsDataOptimized,
   getPreRunoffLow,
   getWaterYearPeakSoFar,
   getSimilarSnowpackYears,
   type BasinPlotsDataPoint,
   type WaterYearAnalysis
 } from '@/lib/db'
+
+// Use optimized basin plots data for home page (5 recent years instead of all 40)
+const getBasinPlotsData = () => getBasinPlotsDataOptimized(5)
 import { unstable_cache } from 'next/cache'
 import { getSeasonalStatus, getCurrentWaterYear, type SeasonalStatus } from '@/lib/seasonal-utils'
 import { projectFromSnowpack, type SnowpackProjection } from '@/lib/calculations'
@@ -643,64 +646,69 @@ export default async function HomePage({
   const startDate = dateRange.start
   const endDate = dateRange.end
   
-  // For large date ranges, use sampled data to avoid cache size limits (2MB max)
-  // alltime = ~22,600 days, 40years = ~14,600 days - too big for cache
-  let measurements: Awaited<ReturnType<typeof getWaterMeasurementsByRange>> = []
-  if (current) {
-    if (currentRange === 'alltime' || currentRange === '40years') {
-      // Use sampled data directly (every 7th day for alltime, every 3rd for 40years)
-      const sampleInterval = currentRange === 'alltime' ? 7 : 3
-      measurements = await getWaterMeasurementsByRangeSampled(startDate, endDate, sampleInterval)
-    } else {
-      measurements = await getCachedWaterMeasurements(startDate, endDate)
-    }
-  }
-  
-  // Get recent measurements for CurrentStatus (use cached with specific range)
+  // Prepare date values for queries
   const recentStartDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const recent = current 
-    ? await getCachedWaterMeasurements(recentStartDate, current.date)
-    : []
-  
-  // Get data for elevation projection (use cached version)
-  const historicalLows = current 
-    ? await getCachedHistoricalWaterYearLows(current.elevation)
-    : []
-  
-  // Get last 30 days of historical data for projection chart
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  
-  // Get historical drops for projection - use last available water data date, not actual today
   const today = current?.date || new Date().toISOString().split('T')[0]
+  const currentYear = new Date().getFullYear()
+  const currentWaterYear = getCurrentWaterYear(new Date())
+  
+  // Get current snowpack percentage for runoff projection (from already-fetched basin data)
+  const currentSnowpackPercent = basinPlotsData?.currentStats?.percentOfMedian ?? 100
+  
+  // OPTIMIZATION: Run all dependent queries in parallel
+  // This significantly reduces load time by not waiting for each query sequentially
+  const [
+    measurements,
+    recent,
+    historicalLows,
+    preRunoffLow,
+    peakSoFar,
+    similarSnowpackYears,
+    recentHistoricalDataRaw
+  ] = await Promise.all([
+    // Measurements for chart
+    current
+      ? (currentRange === 'alltime' || currentRange === '40years')
+        ? getWaterMeasurementsByRangeSampled(startDate, endDate, currentRange === 'alltime' ? 7 : 3)
+        : getCachedWaterMeasurements(startDate, endDate)
+      : Promise.resolve([]),
+    // Recent measurements for CurrentStatus
+    current 
+      ? getCachedWaterMeasurements(recentStartDate, current.date)
+      : Promise.resolve([]),
+    // Historical water year lows
+    current 
+      ? getCachedHistoricalWaterYearLows(current.elevation)
+      : Promise.resolve([]),
+    // Pre-runoff low
+    getPreRunoffLow(currentWaterYear),
+    // Peak so far
+    getWaterYearPeakSoFar(currentWaterYear),
+    // Similar snowpack years
+    getSimilarSnowpackYears(currentSnowpackPercent, 20, 10),
+    // Recent historical data for projection
+    current
+      ? getCachedWaterMeasurements(thirtyDaysAgo.toISOString().split('T')[0], endDate)
+      : Promise.resolve([])
+  ])
+  
+  // Process recent historical data
+  const recentHistoricalData = recentHistoricalDataRaw.map(d => ({ date: d.date, elevation: d.elevation }))
   
   // Get typical low date - use median historical low date's month/day, but apply to CURRENT year
-  const currentYear = new Date().getFullYear()
   let typicalLowDate: string
   if (historicalLows.length > 0 && historicalLows[Math.floor(historicalLows.length / 2)]?.date_of_min) {
     const medianLowDate = new Date(historicalLows[Math.floor(historicalLows.length / 2)].date_of_min)
-    // Apply the month and day to the current year
     typicalLowDate = new Date(currentYear, medianLowDate.getMonth(), medianLowDate.getDate()).toISOString().split('T')[0]
   } else {
-    // Default to April 21 if no historical data
     typicalLowDate = new Date(currentYear, 3, 21).toISOString().split('T')[0]
   }
   
+  // This query depends on typicalLowDate, so it runs after the parallel batch
   const historicalDrops = current
-    ? await getHistoricalDropsToLow(
-        today,
-        current.elevation,
-        typicalLowDate,
-        50,
-        undefined
-      )
-    : []
-  
-  const recentHistoricalData = current
-    ? (await getCachedWaterMeasurements(
-        thirtyDaysAgo.toISOString().split('T')[0],
-        endDate
-      )).map(d => ({ date: d.date, elevation: d.elevation }))
+    ? await getHistoricalDropsToLow(today, current.elevation, typicalLowDate, 50, undefined)
     : []
   
   // Calculate projected drop and daily projections
@@ -722,7 +730,6 @@ export default async function HomePage({
   // Calculate weekly change for current trend line
   let weeklyChange: number | null = null
   if (current && recent.length > 0) {
-    // Find measurement closest to 7 days ago (within 2 days tolerance)
     const sevenDaysAgo = new Date(current.date)
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const sevenDaysAgoTime = sevenDaysAgo.getTime()
@@ -733,7 +740,6 @@ export default async function HomePage({
     for (const measurement of recent) {
       const measurementDate = new Date(measurement.date).getTime()
       const diff = Math.abs(measurementDate - sevenDaysAgoTime)
-      // Accept measurements within 2 days of 7 days ago
       if (diff < minDiff && diff <= 2 * 24 * 60 * 60 * 1000) {
         minDiff = diff
         measurement7DaysAgo = measurement
@@ -746,40 +752,18 @@ export default async function HomePage({
   }
   
   // Get seasonal status for conditional rendering
-  const currentWaterYear = getCurrentWaterYear(new Date())
-  const preRunoffLow = await getPreRunoffLow(currentWaterYear)
-  const peakSoFar = await getWaterYearPeakSoFar(currentWaterYear)
-  
   const seasonalStatus = current 
-    ? getSeasonalStatus(
-        new Date(),
-        current.elevation,
-        weeklyChange,
-        preRunoffLow,
-        peakSoFar
-      )
+    ? getSeasonalStatus(new Date(), current.elevation, weeklyChange, preRunoffLow, peakSoFar)
     : null
   
-  // Get current snowpack percentage for runoff projection
-  let currentSnowpackPercent = 100
-  if (basinPlotsData?.currentStats?.percentOfMedian) {
-    currentSnowpackPercent = basinPlotsData.currentStats.percentOfMedian
-  }
-  
-  // Get similar historical years for snowpack projection
-  const similarSnowpackYears = await getSimilarSnowpackYears(currentSnowpackPercent, 20, 10)
-  
-  // Get elevation storage capacity for projection calculations
-  const elevationStorageCapacityForProjection = await getCachedElevationStorageCapacity()
-  
-  // Calculate snowpack projection
+  // Calculate snowpack projection (reuse elevationStorageData instead of fetching again)
   let snowpackProjection: SnowpackProjection | null = null
   if (current && similarSnowpackYears.length > 0) {
     snowpackProjection = projectFromSnowpack(
       currentSnowpackPercent,
       current.elevation,
       similarSnowpackYears,
-      elevationStorageCapacityForProjection
+      elevationStorageData  // Reuse instead of duplicate fetch
     )
   }
 
