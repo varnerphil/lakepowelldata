@@ -13,7 +13,7 @@ import {
   ReferenceLine
 } from 'recharts'
 import type { SimulationDayResult } from '@/lib/calculations'
-import { formatDateString } from '@/lib/date-utils'
+import { formatDateString, parseLocalDate } from '@/lib/date-utils'
 import type { Ramp } from '@/lib/db'
 
 interface SimulationChartProps {
@@ -42,7 +42,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
         const actual = d.actualElevation
         return {
           date: d.date,
-          timestamp: new Date(d.date).getTime(),
+          timestamp: parseLocalDate(d.date).getTime(),
           actual: actual,
           simulated: simulated,
           // Split simulated into above (green) and below (orange) segments

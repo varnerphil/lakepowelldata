@@ -766,9 +766,12 @@ export function simulateOutflow(
   const firstDay = filtered[0]
   let simulatedContent = Math.min(firstDay.content || 0, FULL_POOL_CAPACITY)
   
+  // Conversion factor: 1 cfs for 1 day = 1.9835 acre-feet
+  const CFS_TO_AF_PER_DAY = 1.9835
+  
   const dailyData: SimulationDayResult[] = []
-  let totalActualOutflow = 0
-  let totalSimulatedOutflow = 0
+  let totalActualOutflowAF = 0  // Track in acre-feet
+  let totalSimulatedOutflowAF = 0  // Track in acre-feet
   let totalEvaporation = 0
   let totalSpillway = 0 // Track forced spillway releases when at full pool
   
@@ -794,9 +797,9 @@ export function simulateOutflow(
     spillway: Math.round(firstDaySpillway)
   })
   
-  // Track first day's outflows
-  totalActualOutflow += firstDay.outflow || 0
-  totalSimulatedOutflow += (firstDay.outflow || 0) * (outflowPercentage / 100)
+  // Track first day's outflows (convert cfs to acre-feet per day)
+  totalActualOutflowAF += (firstDay.outflow || 0) * CFS_TO_AF_PER_DAY
+  totalSimulatedOutflowAF += (firstDay.outflow || 0) * (outflowPercentage / 100) * CFS_TO_AF_PER_DAY
   
   // Process from SECOND day onwards - apply daily changes
   for (let i = 1; i < filtered.length; i++) {
@@ -823,12 +826,14 @@ export function simulateOutflow(
     // At 100%: simulated change should equal actual change (perfect tracking)
     // At other %: account for the outflow difference
     
-    // The outflow difference (positive = water saved, negative = extra released)
-    const outflowDiff = outflow - adjustedOutflow
+    // The outflow difference in cfs (positive = water saved, negative = extra released)
+    const outflowDiffCfs = outflow - adjustedOutflow
+    // Convert cfs to acre-feet per day
+    const outflowDiffAF = outflowDiffCfs * CFS_TO_AF_PER_DAY
     
-    // Simulated change = actual change + outflow difference
+    // Simulated change = actual change + outflow difference (in acre-feet)
     // This is because if we release less water, we keep more
-    const simulatedChange = actualChange + outflowDiff
+    const simulatedChange = actualChange + outflowDiffAF
     
     // Update simulated content
     let newSimulatedContent = Math.max(0, simulatedContent + simulatedChange)
@@ -850,9 +855,9 @@ export function simulateOutflow(
     // This gives a realistic evaporation estimate for the simulated scenario
     const modeledEvaporation = getDailyEvaporation(date, simulatedElevation)
     
-    // Track totals
-    totalActualOutflow += outflow
-    totalSimulatedOutflow += adjustedOutflow
+    // Track totals (convert cfs to acre-feet per day)
+    totalActualOutflowAF += outflow * CFS_TO_AF_PER_DAY
+    totalSimulatedOutflowAF += adjustedOutflow * CFS_TO_AF_PER_DAY
     totalEvaporation += modeledEvaporation
     
     dailyData.push({
@@ -881,9 +886,9 @@ export function simulateOutflow(
     actualEndingContent: lastDay.actualContent,
     simulatedEndingContent: lastDay.simulatedContent,
     contentDifference: lastDay.simulatedContent - lastDay.actualContent,
-    totalActualOutflow: Math.round(totalActualOutflow),
-    totalSimulatedOutflow: Math.round(totalSimulatedOutflow + totalSpillway), // Include spillway in simulated outflow
-    outflowDifference: Math.round(totalActualOutflow - totalSimulatedOutflow - totalSpillway),
+    totalActualOutflow: Math.round(totalActualOutflowAF),
+    totalSimulatedOutflow: Math.round(totalSimulatedOutflowAF + totalSpillway), // Include spillway in simulated outflow
+    outflowDifference: Math.round(totalActualOutflowAF - totalSimulatedOutflowAF - totalSpillway),
     totalEvaporation: Math.round(totalEvaporation),
     totalSpillway: Math.round(totalSpillway)
   }
