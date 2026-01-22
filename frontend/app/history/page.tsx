@@ -1,4 +1,5 @@
 import { getWaterMeasurementsByRange, getWaterMeasurementsByRangeSampled, getEarliestWaterMeasurement, getLatestWaterMeasurement, getWaterYearSummaries, getAllRamps, getWaterYearAnalysis } from '@/lib/db'
+import { formatDateString } from '@/lib/date-utils'
 import { HistoricalChartWithFavorites, WaterYearTable } from '@/components/data-display'
 import { unstable_cache } from 'next/cache'
 
@@ -205,7 +206,7 @@ export default async function HistoryPage({
                 {measurements.map((measurement) => (
                   <tr key={measurement.date} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-900 font-light">
-                      {new Date(measurement.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {formatDateString(measurement.date, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-6 py-4 text-sm text-right text-gray-900 font-light">
                       {measurement.elevation.toFixed(2)}

@@ -1,4 +1,5 @@
 import { WaterMeasurement, Ramp } from '@/lib/db'
+import { parseLocalDate, formatDateString } from '@/lib/date-utils'
 import CompactRampList from './CompactRampList'
 
 interface CurrentStatusProps {
@@ -14,7 +15,7 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
 
   // Calculate weekly change (7 days ago)
   // Find the measurement closest to 7 days ago (within 2 days tolerance)
-  const sevenDaysAgo = new Date(current.date)
+  const sevenDaysAgo = parseLocalDate(current.date)
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   const sevenDaysAgoTime = sevenDaysAgo.getTime()
   
@@ -22,7 +23,7 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
   let minDiff = Infinity
   
   for (const measurement of recent) {
-    const measurementDate = new Date(measurement.date).getTime()
+    const measurementDate = parseLocalDate(measurement.date).getTime()
     const diff = Math.abs(measurementDate - sevenDaysAgoTime)
     // Accept measurements within 2 days of 7 days ago
     if (diff < minDiff && diff <= 2 * 24 * 60 * 60 * 1000) {
@@ -38,7 +39,7 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 lg:mb-8 gap-2">
         <h2 className="text-xl lg:text-2xl font-light text-gray-900">Current Water Level</h2>
         <span className="text-xs lg:text-sm text-gray-500 font-light">
-          Last updated: {new Date(current.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          Last updated: {formatDateString(current.date, { year: 'numeric', month: 'long', day: 'numeric' })}
         </span>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 lg:gap-4">

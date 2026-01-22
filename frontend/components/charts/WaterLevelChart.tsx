@@ -230,12 +230,9 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
             // value is timestamp, but we can get date from payload
             // Use the date string directly and parse as local date to avoid timezone issues
             if (payload && payload[0] && payload[0].payload && payload[0].payload.date) {
-              const dateStr = payload[0].payload.date
-              // Parse YYYY-MM-DD as local date (not UTC) by using date parts
-              const [year, month, day] = dateStr.split('-').map(Number)
-              const localDate = new Date(year, month - 1, day)
-              return localDate.toLocaleDateString()
+              return parseLocalDate(payload[0].payload.date).toLocaleDateString()
             }
+            // Fallback: value is already a timestamp in local time
             return new Date(value).toLocaleDateString()
           }}
           formatter={(value: any) => {

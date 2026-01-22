@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { simulateOutflow, SimulationResult } from '@/lib/calculations'
+import { formatDateString } from '@/lib/date-utils'
 import SimulationChart from './SimulationChart'
 import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
 
@@ -227,8 +228,8 @@ export default function OutflowSimulator({
             {/* Period Info */}
             <div className="mt-4 lg:mt-5 pt-4 lg:pt-5 border-t border-gray-100">
               <p className="text-sm text-gray-500 font-light">
-                Simulating from <span className="font-medium text-gray-700">{new Date(simulationResult.summary.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                {' '}to <span className="font-medium text-gray-700">{new Date(simulationResult.summary.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                Simulating from <span className="font-medium text-gray-700">{formatDateString(simulationResult.summary.startDate, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                {' '}to <span className="font-medium text-gray-700">{formatDateString(simulationResult.summary.endDate, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 {' '}({simulationResult.dailyData.length.toLocaleString()} days)
                 {' '}with <span className="font-medium text-[#4a90a4]">{outflowPercentage}%</span> of actual outflow.
               </p>

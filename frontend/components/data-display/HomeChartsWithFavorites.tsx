@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { HistoricalChart, SnowpackProjection } from '@/components/data-display'
 import HistoricalDropsChart from '@/components/charts/HistoricalDropsChart'
 import HistoricalAnalysisExpandable from '@/components/data-display/HistoricalAnalysisExpandable'
+import { formatDateString } from '@/lib/date-utils'
 import type { WaterMeasurement, Ramp } from '@/lib/db'
 import type { HistoricalDropToLow } from '@/lib/db'
 import type { SeasonalStatus } from '@/lib/seasonal-utils'
@@ -268,7 +269,7 @@ export default function HomeChartsWithFavorites({
             {/* Projection Chart */}
             <div className="mb-4 lg:mb-6">
               <p className="text-xs lg:text-sm text-gray-500 mb-0 lg:mb-6 font-light">
-                Projected elevation from {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}. 
+                Projected elevation from {formatDateString(today, { month: 'long', day: 'numeric' })} to {formatDateString(typicalLowDate, { month: 'long', day: 'numeric' })}. 
                 <span className="text-blue-600"> Historical Avg</span> shows the typical drop based on similar years.
                 {weeklyChange !== null && (
                   <> <span className="text-[#d4a574]">Current Trend</span> shows what happens if the current weekly rate continues.</>
@@ -294,7 +295,7 @@ export default function HomeChartsWithFavorites({
                     {seasonalStatus?.dropProjectionLabel || 'Projected Drop to Annual Low'}
                   </h3>
                   <p className="text-xs lg:text-sm text-gray-500 font-light mt-1 lg:mt-2">
-                    Based on {historicalDrops.length} similar historical years starting near this elevation on {new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    Based on {historicalDrops.length} similar historical years starting near this elevation on {formatDateString(today, { month: 'long', day: 'numeric' })}
                   </p>
                 </div>
                 {projectedDrop > 0 && (
@@ -304,7 +305,7 @@ export default function HomeChartsWithFavorites({
                     </div>
                     <div className="text-xs lg:text-sm text-gray-500 font-light">
                       to ~{projectedLowElevation.toFixed(1)} ft by{' '}
-                      {new Date(typicalLowDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                      {formatDateString(typicalLowDate, { month: 'long', day: 'numeric' })}
                     </div>
                   </div>
                 )}
@@ -354,7 +355,7 @@ export default function HomeChartsWithFavorites({
                                 </span>{' '}
                                 {currentTrendDate ? (
                                   <span className="text-[#d4a574]">
-                                    {new Date(currentTrendDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    {formatDateString(currentTrendDate, { month: 'short', day: 'numeric' })}
                                   </span>
                                 ) : (
                                   <span className="text-gray-400">—</span>
@@ -368,7 +369,7 @@ export default function HomeChartsWithFavorites({
                               </span>{' '}
                               {historicalAvgDate ? (
                                 <span className="text-blue-600">
-                                  {new Date(historicalAvgDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  {formatDateString(historicalAvgDate, { month: 'short', day: 'numeric' })}
                                 </span>
                               ) : (
                                 <span className="text-gray-400">—</span>
@@ -433,7 +434,7 @@ export default function HomeChartsWithFavorites({
                     <h4 className="text-sm uppercase tracking-wider text-gray-500 mb-1 font-light">Current Progress</h4>
                     <p className="text-xs text-gray-400 font-light">
                       Since pre-runoff low on {seasonalStatus.preRunoffLowDate 
-                        ? new Date(seasonalStatus.preRunoffLowDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        ? formatDateString(seasonalStatus.preRunoffLowDate, { month: 'short', day: 'numeric' })
                         : 'N/A'}
                     </p>
                   </div>

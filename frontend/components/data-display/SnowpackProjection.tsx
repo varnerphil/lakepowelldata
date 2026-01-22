@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateString } from '@/lib/date-utils'
 import type { WaterYearAnalysis } from '@/lib/db'
 import type { SnowpackProjection as SnowpackProjectionType } from '@/lib/calculations'
 
@@ -173,7 +174,7 @@ export default function SnowpackProjection({ projection, currentElevation }: Sno
                   +{year.runoff_gain.toFixed(1)} ft
                 </span>
                 <span className="text-gray-400 text-xs">
-                  {year.peak_date ? new Date(year.peak_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  {year.peak_date ? formatDateString(year.peak_date, { month: 'short', day: 'numeric' }) : '—'}
                 </span>
               </div>
             ))}

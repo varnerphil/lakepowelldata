@@ -1,4 +1,5 @@
 import type { WaterYearSummary, WaterYearAnalysis } from '@/lib/db'
+import { formatDateString } from '@/lib/date-utils'
 
 interface WaterYearTableProps {
   summaries: WaterYearSummary[]
@@ -87,14 +88,14 @@ export default function WaterYearTable({ summaries, analysis }: WaterYearTablePr
                         </td>
                         <td className="px-4 py-4 text-sm text-right text-gray-600 font-light hidden sm:table-cell">
                           {lowDate ? (
-                            new Date(lowDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            formatDateString(lowDate, { month: 'short', day: 'numeric' })
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm text-right text-gray-600 font-light hidden sm:table-cell">
                           {peakDate ? (
-                            new Date(peakDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            formatDateString(peakDate, { month: 'short', day: 'numeric' })
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}

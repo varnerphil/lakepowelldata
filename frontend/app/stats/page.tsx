@@ -2,6 +2,7 @@ import { getStatisticalSummary, getCurrentData, getHistoricalData } from '@/lib/
 import { CurrentStatus, HistoricalChart, WaterYearTable, RecentMeasurements, HistoricalAverages, ElevationStorageCapacity, SnowpackProjection } from '@/components/data-display'
 import { getHistoricalWaterYearLows, getRunoffSeasonOutflow, getHistoricalWaterYearHighs, getWaterMeasurementsByRange, getHistoricalDropsToLow, getAllRamps, getElevationStorageCapacity, getWaterYearAnalysis, getSimilarSnowpackYears } from '@/lib/db'
 import { projectFromSnowpack } from '@/lib/calculations'
+import { formatDateString } from '@/lib/date-utils'
 import StatsTabs from '@/components/stats/StatsTabs'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
 
@@ -435,7 +436,7 @@ export default async function StatsPage({
                         {statsSummary.storageAnalysis.slice(-365).reverse().map((storage) => (
                           <tr key={storage.date} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 text-sm text-gray-900 font-light">
-                              {new Date(storage.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              {formatDateString(storage.date, { month: 'short', day: 'numeric', year: 'numeric' })}
                             </td>
                             <td className="px-6 py-4 text-sm text-right text-gray-900 font-light">
                               {storage.elevation.toFixed(2)}

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { parseLocalDate } from '@/lib/date-utils'
 
 interface ElevationProjectionChartProps {
   historicalData: Array<{
@@ -109,7 +110,9 @@ export default function ElevationProjectionChart({
         />
         <Tooltip 
           labelFormatter={(value) => {
-            return new Date(value).toLocaleDateString('en-US', { 
+            // Parse as local date to avoid timezone issues
+            const date = typeof value === 'string' ? parseLocalDate(value) : new Date(value)
+            return date.toLocaleDateString('en-US', { 
               month: 'short', 
               day: 'numeric',
               year: 'numeric'

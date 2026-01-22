@@ -13,6 +13,7 @@ import {
   ReferenceLine
 } from 'recharts'
 import type { SimulationDayResult } from '@/lib/calculations'
+import { formatDateString } from '@/lib/date-utils'
 import type { Ramp } from '@/lib/db'
 
 interface SimulationChartProps {
@@ -122,7 +123,7 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
   
   // Format date for tooltip
   const formatTooltipDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return formatDateString(dateStr, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'

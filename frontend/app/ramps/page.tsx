@@ -1,4 +1,5 @@
 import { getAllRamps, getLatestWaterMeasurement, calculateRampStatus } from '@/lib/db'
+import { formatDateString } from '@/lib/date-utils'
 import { unstable_cache } from 'next/cache'
 import RampStatusCard from '@/components/ramp-status/RampStatusCard'
 
@@ -72,7 +73,7 @@ export default async function RampsPage() {
           {currentMeasurement.elevation.toFixed(2)} <span className="text-xl sm:text-2xl text-gray-500">ft</span>
         </div>
         <div className="text-xs sm:text-sm text-gray-500 font-light">
-          As of: {new Date(currentMeasurement.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          As of: {formatDateString(currentMeasurement.date, { year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
       </div>
 
