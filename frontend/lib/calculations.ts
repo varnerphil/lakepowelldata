@@ -818,9 +818,18 @@ export function simulateOutflow(
     const prevActualContent = filtered[i - 1].content || 0
     const actualChange = actualContent - prevActualContent
     
-    // The actual change = inflow - outflow - evaporation - other_losses
-    // So: actual_evap_and_losses = inflow - outflow - actualChange
-    const actualEvapAndLosses = inflow - outflow - actualChange
+    // Calculate expected change based on inflow/outflow (convert cfs to AF/day)
+    const expectedChangeFromFlows = (inflow - outflow) * CFS_TO_AF_PER_DAY
+    
+    // Detect anomalous content changes (e.g., methodology changes in USBR reporting)
+    // If the actual change differs from expected by more than 50,000 AF, it's likely
+    // not due to real water movement (e.g., bathymetric survey updates)
+    const ANOMALY_THRESHOLD = 50000 // acre-feet
+    const isAnomalous = Math.abs(actualChange - expectedChangeFromFlows) > ANOMALY_THRESHOLD
+    
+    // For anomalous days, use flow-based change instead of reported content change
+    // This prevents methodology changes from affecting the simulation
+    const effectiveActualChange = isAnomalous ? expectedChangeFromFlows : actualChange
     
     // For the simulation:
     // At 100%: simulated change should equal actual change (perfect tracking)
@@ -831,9 +840,9 @@ export function simulateOutflow(
     // Convert cfs to acre-feet per day
     const outflowDiffAF = outflowDiffCfs * CFS_TO_AF_PER_DAY
     
-    // Simulated change = actual change + outflow difference (in acre-feet)
+    // Simulated change = effective actual change + outflow difference (in acre-feet)
     // This is because if we release less water, we keep more
-    const simulatedChange = actualChange + outflowDiffAF
+    const simulatedChange = effectiveActualChange + outflowDiffAF
     
     // Update simulated content
     let newSimulatedContent = Math.max(0, simulatedContent + simulatedChange)
