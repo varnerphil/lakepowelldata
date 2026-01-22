@@ -23,6 +23,12 @@ const RIVER_BOTTOM = 3200  // Approximate river bottom level
 const DEADPOOL = 3370      // Minimum pool elevation (deadpool)
 const NO_POWER = 3490      // Minimum power pool elevation (no power generation)
 
+// Helper to parse YYYY-MM-DD as local date (not UTC) to avoid timezone issues
+const parseLocalDate = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }: WaterLevelChartProps) {
   // Detect mobile viewport - default to true to avoid hydration mismatch
   const [isMobile, setIsMobile] = useState(true)
@@ -40,7 +46,7 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
     
     // Sort by date and ensure dates are in ISO format
     const sorted = [...data]
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime())
       .map(item => {
         // Ensure date is in YYYY-MM-DD format
         const dateStr = item.date.includes('T') ? item.date.split('T')[0] : item.date
@@ -53,7 +59,7 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         return {
           date: dateStr,
           elevation: validElevation,
-          timestamp: new Date(dateStr).getTime() // Add timestamp for X-axis
+          timestamp: parseLocalDate(dateStr).getTime() // Add timestamp for X-axis (local time)
         }
       })
       // Don't filter out null elevations - we need them for placeholder points
@@ -101,9 +107,9 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
   // Determine date range for better X-axis formatting
   // Use the requested date range, not just the data range
   const dateRange = actualStartDate && actualEndDate
-    ? new Date(actualEndDate).getTime() - new Date(actualStartDate).getTime()
+    ? parseLocalDate(actualEndDate).getTime() - parseLocalDate(actualStartDate).getTime()
     : chartData.length > 0 
-      ? new Date(chartData[chartData.length - 1].date).getTime() - new Date(chartData[0].date).getTime()
+      ? parseLocalDate(chartData[chartData.length - 1].date).getTime() - parseLocalDate(chartData[0].date).getTime()
       : 0
   const daysInRange = dateRange / (1000 * 60 * 60 * 24)
   
@@ -121,7 +127,7 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         result.unshift({ 
           date: actualStartDate, 
           elevation: null,
-          timestamp: new Date(actualStartDate).getTime()
+          timestamp: parseLocalDate(actualStartDate).getTime()
         })
       }
     }
@@ -132,7 +138,7 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         result.push({ 
           date: actualEndDate, 
           elevation: null,
-          timestamp: new Date(actualEndDate).getTime()
+          timestamp: parseLocalDate(actualEndDate).getTime()
         })
       }
     }
@@ -143,9 +149,9 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
   
   // Calculate X-axis domain using timestamps for proper scaling
   const xAxisDomain = actualStartDate && actualEndDate
-    ? [new Date(actualStartDate).getTime(), new Date(actualEndDate).getTime()]
+    ? [parseLocalDate(actualStartDate).getTime(), parseLocalDate(actualEndDate).getTime()]
     : chartDataWithRange.length > 0
-      ? [new Date(chartDataWithRange[0].date).getTime(), new Date(chartDataWithRange[chartDataWithRange.length - 1].date).getTime()]
+      ? [parseLocalDate(chartDataWithRange[0].date).getTime(), parseLocalDate(chartDataWithRange[chartDataWithRange.length - 1].date).getTime()]
       : undefined
 
   // Calculate water year start dates (October 1st) within the date range
