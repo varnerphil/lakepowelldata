@@ -222,8 +222,13 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
         <Tooltip 
           labelFormatter={(value, payload) => {
             // value is timestamp, but we can get date from payload
+            // Use the date string directly and parse as local date to avoid timezone issues
             if (payload && payload[0] && payload[0].payload && payload[0].payload.date) {
-              return new Date(payload[0].payload.date).toLocaleDateString()
+              const dateStr = payload[0].payload.date
+              // Parse YYYY-MM-DD as local date (not UTC) by using date parts
+              const [year, month, day] = dateStr.split('-').map(Number)
+              const localDate = new Date(year, month - 1, day)
+              return localDate.toLocaleDateString()
             }
             return new Date(value).toLocaleDateString()
           }}
