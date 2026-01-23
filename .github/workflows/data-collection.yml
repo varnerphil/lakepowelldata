@@ -51,10 +51,11 @@ jobs:
       - name: Run water data collection
         working-directory: ./data-collection
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
         run: |
           echo "📊 Starting daily water data collection..."
-          python collectors/scheduler.py
+          python -m collectors.scheduler
           echo "✅ Water data collection complete"
 
   # ============================================
@@ -81,6 +82,8 @@ jobs:
       
       - name: Update SNOTEL data
         working-directory: ./data-collection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "❄️ Updating SNOTEL data..."
           python -m migrations.import_snotel_historical_data --end-date $(date +%Y-%m-%d) || echo "⚠️ SNOTEL update had issues (may be upstream data quality)"
@@ -88,6 +91,8 @@ jobs:
       
       - name: Update Basin Plots data
         working-directory: ./data-collection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "📈 Updating Basin Plots data..."
           python -m migrations.import_basin_plots_data
@@ -117,6 +122,8 @@ jobs:
       
       - name: Update Basin Plots data
         working-directory: ./data-collection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "📈 Updating Basin Plots data..."
           python -m migrations.import_basin_plots_data
@@ -147,6 +154,8 @@ jobs:
       
       - name: Calculate Water Year Analysis
         working-directory: ./data-collection
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "📅 Calculating water year analysis..."
           echo "This analyzes runoff patterns and creates snowpack-to-elevation correlations"
