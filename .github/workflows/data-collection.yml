@@ -22,15 +22,13 @@ on:
           - basin-plots
           - water-year-analysis
 
-env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
 jobs:
   # ============================================
   # Daily Water Measurements (runs every day)
   # ============================================
   water-data:
     runs-on: ubuntu-latest
+    environment: Production
     if: github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'water-data'
     
     steps:
@@ -63,6 +61,7 @@ jobs:
   # ============================================
   snowpack-data:
     runs-on: ubuntu-latest
+    environment: Production
     if: github.event_name == 'schedule' || github.event.inputs.job == 'all' || github.event.inputs.job == 'snowpack-data'
     
     steps:
@@ -103,6 +102,7 @@ jobs:
   # ============================================
   basin-plots:
     runs-on: ubuntu-latest
+    environment: Production
     if: github.event.inputs.job == 'basin-plots'
     
     steps:
@@ -135,6 +135,7 @@ jobs:
   # ============================================
   water-year-analysis:
     runs-on: ubuntu-latest
+    environment: Production
     if: github.event.inputs.job == 'water-year-analysis'
     
     steps:
