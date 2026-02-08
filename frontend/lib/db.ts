@@ -1293,7 +1293,8 @@ export async function getSimilarSnowpackYears(
   tolerance: number = 15,
   limit: number = 10
 ): Promise<WaterYearAnalysis[]> {
-  const result = await query(`
+  // First, try to find years within the tolerance
+  let result = await query(`
     SELECT 
       water_year,
       peak_swe, peak_swe_date, peak_swe_percent_of_median,
@@ -1312,6 +1313,31 @@ export async function getSimilarSnowpackYears(
     ORDER BY diff ASC
     LIMIT $3
   `, [targetPercent, tolerance, limit])
+  
+  // If no matches found and targetPercent is below all historical data,
+  // get ONLY the 2 lowest snowpack years on record (true drought years)
+  // Using a minimal limit ensures we only compare to actual drought conditions
+  if (result.rows.length === 0) {
+    const droughtYearLimit = 2 // Only use the 2 worst drought years for unprecedented conditions
+    result = await query(`
+      SELECT 
+        water_year,
+        peak_swe, peak_swe_date, peak_swe_percent_of_median,
+        april_1_swe, april_1_percent_of_median,
+        pre_runoff_low_elevation, pre_runoff_low_date,
+        runoff_start_date, runoff_start_elevation,
+        peak_elevation, peak_date, end_of_year_elevation,
+        runoff_gain_ft, had_runoff_rise, days_of_rise,
+        runoff_inflow_af, runoff_outflow_af, runoff_net_af,
+        total_inflow_af, total_outflow_af, net_flow_af,
+        inflow_per_inch_swe, ft_gained_per_inch_swe,
+        ABS(peak_swe_percent_of_median - $1) as diff
+      FROM water_year_analysis
+      WHERE peak_swe_percent_of_median IS NOT NULL
+      ORDER BY peak_swe_percent_of_median ASC
+      LIMIT $2
+    `, [targetPercent, droughtYearLimit])
+  }
   
   return result.rows.map(row => ({
     water_year: parseInt(row.water_year),

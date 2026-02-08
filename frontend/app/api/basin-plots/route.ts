@@ -54,6 +54,27 @@ function getCurrentWaterYear(): number {
   return now.getFullYear()
 }
 
+/**
+ * Convert date_str (MM-DD) to a water year day number for proper sorting
+ * Water year runs Oct 1 (day 1) to Sep 30 (day 365)
+ */
+function dateStrToWaterYearDay(dateStr: string): number {
+  const [monthStr, dayStr] = dateStr.split('-')
+  const month = parseInt(monthStr, 10)
+  const day = parseInt(dayStr, 10)
+  
+  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  const waterYearMonth = month >= 10 ? month - 10 : month + 2
+  
+  let cumulativeDays = 0
+  const monthOrder = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  for (let i = 0; i < waterYearMonth; i++) {
+    cumulativeDays += daysInMonth[monthOrder[i] - 1]
+  }
+  
+  return cumulativeDays + day
+}
+
 function calculateCurrentStats(
   data: BasinPlotsDataPoint[],
   currentYear: number,
@@ -65,9 +86,10 @@ function calculateCurrentStats(
   percentile: number | null
 } {
   // Find the most recent data point for the current year
+  // Sort by water year day (Oct 1 = day 1, Sep 30 = day 365)
   const currentYearData = data
     .filter(d => d.year === currentYear && d.swe_value !== null)
-    .sort((a, b) => new Date(b.water_year_date).getTime() - new Date(a.water_year_date).getTime())
+    .sort((a, b) => dateStrToWaterYearDay(b.date_str) - dateStrToWaterYearDay(a.date_str))
   
   if (currentYearData.length === 0) {
     return {

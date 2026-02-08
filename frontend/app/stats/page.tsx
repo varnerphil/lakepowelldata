@@ -76,8 +76,8 @@ export default async function StatsPage({
     currentSnowpackPercent = basinPlotsData.currentStats.percentOfMedian
   }
   
-  // Get similar historical years for snowpack projection
-  const similarSnowpackYears = await getSimilarSnowpackYears(currentSnowpackPercent, 20, 10)
+  // Get similar historical years for snowpack projection (15% tolerance for low snowpack years)
+  const similarSnowpackYears = await getSimilarSnowpackYears(currentSnowpackPercent, 15, 10)
   
   // Get last 30 days of historical data for chart
   const thirtyDaysAgo = new Date()
@@ -401,7 +401,8 @@ export default async function StatsPage({
                     currentSnowpackPercent,
                     currentData.current.elevation,
                     similarSnowpackYears,
-                    elevationStorageCapacity
+                    elevationStorageCapacity,
+                    currentData.current.elevation - 6.5  // Approximate projected drop to spring low
                   )}
                   currentElevation={currentData.current.elevation}
                 />

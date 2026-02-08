@@ -491,17 +491,33 @@ export interface SnowpackProjection {
 
 /**
  * Project runoff gain and peak elevation based on current snowpack percentage
- * Uses historical correlation from similar snowpack years
+ * Uses historical correlation from similar snowpack years with VOLUME-BASED calculations
+ * 
+ * Key insight: The same acre-feet of water produces more feet of elevation gain
+ * at lower elevations because the lake is V-shaped. This function:
+ * 1. Uses historical runoff_gain_ft from similar years as base
+ * 2. Adjusts for the different storage capacity at current vs historical starting elevations
+ * 
+ * The adjustment factor accounts for: if historical year started at 3610ft and gained 3ft,
+ * that same volume of water at 3530ft (where storage per foot is smaller) would produce MORE feet.
+ * 
+ * @param projectedSpringLowElevation - The expected elevation at the start of runoff season
  */
 export function projectFromSnowpack(
   currentSnowpackPercent: number,
   currentElevation: number,
   similarYears: WaterYearAnalysis[],
-  elevationStorageCapacity: Array<{ elevation: number; storage_per_foot: number | null }>
+  elevationStorageCapacity: Array<{ elevation: number; storage_per_foot: number | null }>,
+  projectedSpringLowElevation?: number
 ): SnowpackProjection {
+  // Use projected spring low if provided, otherwise current elevation
+  const startingElevation = projectedSpringLowElevation ?? currentElevation
+  
   // Filter to years with valid runoff data
   const validYears = similarYears.filter(
-    y => y.runoff_gain_ft !== null && y.peak_swe_percent_of_median !== null
+    y => y.runoff_gain_ft !== null && 
+         y.peak_swe_percent_of_median !== null &&
+         y.pre_runoff_low_elevation !== null
   )
   
   if (validYears.length === 0) {
@@ -509,7 +525,7 @@ export function projectFromSnowpack(
       currentSnowpackPercent,
       currentElevation,
       projectedRunoffGain: 0,
-      projectedPeakElevation: currentElevation,
+      projectedPeakElevation: startingElevation,
       projectedPeakDate: 'Jun-15',
       projectedRunoffInflow: 0,
       minGain: 0,
@@ -519,17 +535,87 @@ export function projectFromSnowpack(
     }
   }
   
-  // Calculate statistics from similar years
-  const gains = validYears.map(y => y.runoff_gain_ft!)
-  const avgGain = gains.reduce((a, b) => a + b, 0) / gains.length
-  const minGain = Math.min(...gains)
-  const maxGain = Math.max(...gains)
+  // Helper function to get average storage per foot for an elevation range
+  const getAvgStoragePerFoot = (elevation: number, range: number = 15): number => {
+    const storageRange = elevationStorageCapacity.filter(
+      s => s.elevation >= elevation && s.elevation <= elevation + range && s.storage_per_foot !== null
+    )
+    return storageRange.length > 0
+      ? storageRange.reduce((sum, s) => sum + (s.storage_per_foot || 0), 0) / storageRange.length
+      : 75000 // Default fallback
+  }
   
-  // Average runoff inflow
+  // Get storage capacity at our projected starting elevation
+  const currentStoragePerFoot = getAvgStoragePerFoot(startingElevation)
+  
+  // Calculate volume-adjusted gains for each similar year
+  const adjustedGains = validYears.map(y => {
+    const historicalGain = y.runoff_gain_ft!
+    const historicalStartElev = y.pre_runoff_low_elevation!
+    
+    // Get storage capacity at the historical starting elevation
+    const historicalStoragePerFoot = getAvgStoragePerFoot(historicalStartElev)
+    
+    // Calculate the volume of water that produced the historical gain
+    // Volume (af) = gain (ft) * storage_per_foot at historical elevation
+    const volumeAf = historicalGain * historicalStoragePerFoot
+    
+    // Convert that same volume to gain at our current elevation
+    // Gain (ft) = Volume (af) / storage_per_foot at current elevation
+    // At lower elevations, storage per foot is smaller, so same volume = more feet gained
+    const adjustedGain = volumeAf / currentStoragePerFoot
+    
+    return {
+      year: y,
+      historicalGain,
+      historicalStartElev,
+      volumeAf,
+      adjustedGain
+    }
+  })
+  
+  // Weight by similarity to current snowpack (closer = more weight)
+  const weightedGains = adjustedGains.map(item => {
+    const diff = Math.abs(item.year.peak_swe_percent_of_median! - currentSnowpackPercent)
+    // Inverse weighting: closer matches get higher weight
+    const weight = 1 / (1 + diff / 10) // diff of 10% = weight of 0.5, diff of 0% = weight of 1
+    return { ...item, weight }
+  })
+  
+  const totalWeight = weightedGains.reduce((sum, item) => sum + item.weight, 0)
+  
+  // Calculate average snowpack of similar years
+  // If current snowpack is below all historical years, we need to scale down proportionally
+  const avgSimilarSnowpack = validYears.reduce((sum, y) => sum + y.peak_swe_percent_of_median!, 0) / validYears.length
+  const minSimilarSnowpack = Math.min(...validYears.map(y => y.peak_swe_percent_of_median!))
+  
+  // Calculate scaling factor for unprecedented low snowpack
+  // If current (56%) is below minimum historical (77%), scale proportionally
+  // This accounts for the fact that we're extrapolating to conditions not in the historical record
+  let snowpackScalingFactor = 1.0
+  if (currentSnowpackPercent < minSimilarSnowpack) {
+    // Scale by the ratio of current to minimum historical
+    // e.g., 56% / 77% = 0.73 scaling factor
+    snowpackScalingFactor = currentSnowpackPercent / minSimilarSnowpack
+  }
+  
+  // Calculate weighted average gain (volume-adjusted, with snowpack scaling)
+  const rawWeightedAvgGain = totalWeight > 0
+    ? weightedGains.reduce((sum, item) => sum + item.adjustedGain * item.weight, 0) / totalWeight
+    : 0
+  const weightedAvgGain = rawWeightedAvgGain * snowpackScalingFactor
+  
+  // For min/max, use volume-adjusted gains with scaling
+  const volumeAdjustedGains = adjustedGains.map(item => item.adjustedGain * snowpackScalingFactor)
+  const minGain = Math.min(...volumeAdjustedGains)
+  const maxGain = Math.max(...volumeAdjustedGains)
+  
+  // Average runoff inflow (gross, for display) - also scaled for unprecedented snowpack
   const inflows = validYears.filter(y => y.runoff_inflow_af).map(y => y.runoff_inflow_af!)
-  const avgInflow = inflows.length > 0 
+  const rawAvgInflow = inflows.length > 0 
     ? inflows.reduce((a, b) => a + b, 0) / inflows.length 
     : 0
+  const avgInflow = rawAvgInflow * snowpackScalingFactor
   
   // Typical peak date (extract month-day from peak_date)
   const peakDates = validYears.filter(y => y.peak_date).map(y => {
@@ -545,21 +631,21 @@ export function projectFromSnowpack(
     projectedPeakDate = `${monthNames[avgMonth - 1]}-${avgDay.toString().padStart(2, '0')}`
   }
   
-  // Project peak elevation
-  const projectedPeakElevation = currentElevation + avgGain
+  // Project peak elevation from the starting elevation
+  const projectedPeakElevation = startingElevation + weightedAvgGain
   
-  // Build similar years summary
-  const similarYearsSummary = validYears.map(y => ({
-    water_year: y.water_year,
-    snowpack_percent: y.peak_swe_percent_of_median!,
-    runoff_gain: y.runoff_gain_ft!,
-    peak_date: y.peak_date || ''
+  // Build similar years summary with scaled gains
+  const similarYearsSummary = adjustedGains.map(item => ({
+    water_year: item.year.water_year,
+    snowpack_percent: item.year.peak_swe_percent_of_median!,
+    runoff_gain: Math.round(item.adjustedGain * snowpackScalingFactor * 10) / 10, // Show scaled gain
+    peak_date: item.year.peak_date || ''
   }))
   
   return {
     currentSnowpackPercent,
-    currentElevation,
-    projectedRunoffGain: Math.round(avgGain * 10) / 10,
+    currentElevation: startingElevation, // Use starting elevation (projected low)
+    projectedRunoffGain: Math.round(weightedAvgGain * 10) / 10,
     projectedPeakElevation: Math.round(projectedPeakElevation * 10) / 10,
     projectedPeakDate,
     projectedRunoffInflow: Math.round(avgInflow),

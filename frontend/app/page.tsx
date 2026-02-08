@@ -160,6 +160,32 @@ interface BasinPlotsData {
   }
 }
 
+/**
+ * Convert date_str (MM-DD) to a water year day number for proper sorting
+ * Water year runs Oct 1 (day 1) to Sep 30 (day 365)
+ * Oct=1-31, Nov=32-61, Dec=62-92, Jan=93-123, Feb=124-151, etc.
+ */
+function dateStrToWaterYearDay(dateStr: string): number {
+  const [monthStr, dayStr] = dateStr.split('-')
+  const month = parseInt(monthStr, 10)
+  const day = parseInt(dayStr, 10)
+  
+  // Days in each month
+  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  
+  // Calculate cumulative days from October 1
+  // Water year months: Oct(10)=0, Nov(11)=1, Dec(12)=2, Jan(1)=3, Feb(2)=4, etc.
+  const waterYearMonth = month >= 10 ? month - 10 : month + 2
+  
+  let cumulativeDays = 0
+  const monthOrder = [10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9] // Water year month order
+  for (let i = 0; i < waterYearMonth; i++) {
+    cumulativeDays += daysInMonth[monthOrder[i] - 1]
+  }
+  
+  return cumulativeDays + day
+}
+
 function calculateCurrentStats(
   data: BasinPlotsDataPoint[],
   currentYear: number,
@@ -171,9 +197,10 @@ function calculateCurrentStats(
   percentile: number | null
 } {
   // Find the most recent data point for the current year
+  // Sort by water year day (Oct 1 = day 1, Sep 30 = day 365)
   const currentYearData = data
     .filter(d => d.year === currentYear && d.swe_value !== null)
-    .sort((a, b) => new Date(b.water_year_date).getTime() - new Date(a.water_year_date).getTime())
+    .sort((a, b) => dateStrToWaterYearDay(b.date_str) - dateStrToWaterYearDay(a.date_str))
   
   if (currentYearData.length === 0) {
     return {
@@ -673,8 +700,47 @@ export default async function HomePage({
   const currentYear = new Date().getFullYear()
   const currentWaterYear = getCurrentWaterYear(new Date())
   
-  // Get current snowpack percentage for runoff projection (from already-fetched basin data)
-  const currentSnowpackPercent = basinPlotsData?.currentStats?.percentOfMedian ?? 100
+  // Calculate current snowpack percentage from SNOTEL tributary data
+  // This is more accurate for Lake Powell as it uses direct measurements from sites that feed the lake
+  // Weighted by flow contribution: Colorado River 65%, San Juan 20%, SE Utah 15%
+  let currentSnowpackPercent = 100 // Default fallback
+  
+  // Calculate from site-level data for accuracy (same approach as TributarySnowpack)
+  if (sitesWithData.length > 0) {
+    // Define tributary configurations with weights
+    const tributaries = [
+      { name: 'Colorado River', basins: ['UPPER COLORADO', 'COLORADO'], weight: 0.65 },
+      { name: 'San Juan River', basins: ['SAN JUAN'], weight: 0.20 },
+      { name: 'South Eastern Utah', basins: ['SOUTH EASTERN UTAH', 'GREEN RIVER', 'DIRTY DEVIL', 'ESCALANTE'], weight: 0.15 }
+    ]
+    
+    let weightedSum = 0
+    let totalWeight = 0
+    
+    for (const trib of tributaries) {
+      // Find sites matching this tributary
+      const tribSites = sitesWithData.filter(site => 
+        trib.basins.some(basinName => 
+          site.basin.toUpperCase().includes(basinName)
+        )
+      )
+      
+      // Calculate average from sites with percentOfMedian
+      const tribSitesWithPct = tribSites.filter(s => s.snowWaterEquivalent.percentOfMedian !== null)
+      if (tribSitesWithPct.length > 0) {
+        const avgPct = tribSitesWithPct.reduce((sum, s) => sum + (s.snowWaterEquivalent.percentOfMedian || 0), 0) / tribSitesWithPct.length
+        weightedSum += avgPct * trib.weight
+        totalWeight += trib.weight
+      }
+    }
+    
+    if (totalWeight > 0) {
+      currentSnowpackPercent = weightedSum / totalWeight
+    }
+  } else if (basinPlotsData?.currentStats?.percentOfMedian) {
+    // Fallback to basin plots if SNOTEL data not available
+    currentSnowpackPercent = basinPlotsData.currentStats.percentOfMedian
+  }
   
   // OPTIMIZATION: Run all dependent queries in parallel
   // This significantly reduces load time by not waiting for each query sequentially
@@ -705,8 +771,8 @@ export default async function HomePage({
     getPreRunoffLow(currentWaterYear),
     // Peak so far
     getWaterYearPeakSoFar(currentWaterYear),
-    // Similar snowpack years
-    getSimilarSnowpackYears(currentSnowpackPercent, 20, 10),
+    // Similar snowpack years (15% tolerance to ensure matches for low snowpack years)
+    getSimilarSnowpackYears(currentSnowpackPercent, 15, 10),
     // Recent historical data for projection
     current
       ? getCachedWaterMeasurements(thirtyDaysAgo.toISOString().split('T')[0], endDate)
@@ -775,14 +841,36 @@ export default async function HomePage({
     ? getSeasonalStatus(new Date(), current.elevation, weeklyChange, preRunoffLow, peakSoFar)
     : null
   
+  // Calculate projected spring low for runoff projection
+  // Use average of historical projection and current trend projection for balance
+  let projectedSpringLowElevation: number | undefined = undefined
+  if (current && typicalLowDate) {
+    // Historical average projection
+    const historicalProjectedLow = projectedLowElevation > 0 ? projectedLowElevation : current.elevation
+    
+    // Current trend projection (if we have weekly change data)
+    let trendProjectedLow = historicalProjectedLow
+    if (weeklyChange !== null) {
+      const today = new Date()
+      const lowDate = new Date(typicalLowDate)
+      const weeksUntilLow = Math.max(0, (lowDate.getTime() - today.getTime()) / (7 * 24 * 60 * 60 * 1000))
+      trendProjectedLow = current.elevation + (weeklyChange * weeksUntilLow)
+    }
+    
+    // Average of historical and trend projections for a balanced estimate
+    projectedSpringLowElevation = (historicalProjectedLow + trendProjectedLow) / 2
+  }
+  
   // Calculate snowpack projection (reuse elevationStorageData instead of fetching again)
+  // Uses volume-based calculation starting from projected spring low
   let snowpackProjection: SnowpackProjection | null = null
   if (current && similarSnowpackYears.length > 0) {
     snowpackProjection = projectFromSnowpack(
       currentSnowpackPercent,
       current.elevation,
       similarSnowpackYears,
-      elevationStorageData  // Reuse instead of duplicate fetch
+      elevationStorageData,  // Reuse instead of duplicate fetch
+      projectedSpringLowElevation  // Start projection from expected spring low
     )
   }
 
@@ -863,7 +951,11 @@ export default async function HomePage({
                 percentiles={basinPlotsData.percentiles}
                 statistics={basinPlotsData.statistics}
                 currentYear={basinPlotsData.currentYear}
-                currentStats={basinPlotsData.currentStats}
+                currentStats={{
+                  ...basinPlotsData.currentStats,
+                  // Override with SNOTEL-derived weighted average for consistency
+                  percentOfMedian: currentSnowpackPercent
+                }}
               />
               <p className="text-xs text-gray-400 mt-4 font-light">
                 Statistical shading percentiles are calculated from period of record (POR) data, excluding the current water year. 
