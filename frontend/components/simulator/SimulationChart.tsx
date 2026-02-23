@@ -21,8 +21,11 @@ interface SimulationChartProps {
   ramps?: Ramp[]
 }
 
+const FULL_POOL = 3700
+const DEADPOOL = 3370
+const MIN_POWER = 3490
+
 export default function SimulationChart({ data, ramps = [] }: SimulationChartProps) {
-  // Detect mobile screen size
   const [isMobile, setIsMobile] = useState(false)
   
   useEffect(() => {
@@ -63,12 +66,12 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     )
   }, [data])
   
-  // Calculate Y-axis domain
+  // Calculate Y-axis domain — always include critical elevations
   const { yMin, yMax } = useMemo(() => {
     const allValues = chartData.flatMap(d => [d.actual, d.simulated])
-    const min = Math.min(...allValues)
-    const max = Math.max(...allValues)
-    const padding = (max - min) * 0.1
+    const min = Math.min(...allValues, DEADPOOL)
+    const max = Math.max(...allValues, FULL_POOL)
+    const padding = (max - min) * 0.05
     return {
       yMin: Math.floor((min - padding) / 10) * 10,
       yMax: Math.ceil((max + padding) / 10) * 10
@@ -147,11 +150,6 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
     })
   }
 
-  // Key elevations
-  const FULL_POOL = 3700
-  const DEADPOOL = 3370  // Dead Pool - below this, no water can be released
-  const MIN_POWER = 3490  // Minimum Power Pool - below this, no hydroelectric generation
-  
   // Colors for ramp reference lines
   const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
   
@@ -301,52 +299,43 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             iconType="line"
           />
           
-          {/* Reference lines for key elevations */}
-          {yMin <= MIN_POWER && (
-            <ReferenceLine 
-              y={MIN_POWER} 
-              stroke="#f59e0b" 
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={isMobile ? undefined : { 
-                value: 'Min Power', 
-                position: 'right', 
-                fill: '#f59e0b', 
-                fontSize: 11 
-              }}
-            />
-          )}
-          
-          {yMin <= DEADPOOL && (
-            <ReferenceLine 
-              y={DEADPOOL} 
-              stroke="#ef4444" 
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={isMobile ? undefined : { 
-                value: 'Dead Pool', 
-                position: 'right', 
-                fill: '#ef4444', 
-                fontSize: 11 
-              }}
-            />
-          )}
-          
-          {/* Full Pool reference line */}
-          {yMax >= FULL_POOL && (
-            <ReferenceLine 
-              y={FULL_POOL} 
-              stroke="#3b82f6" 
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={isMobile ? undefined : { 
-                value: 'Full Pool', 
-                position: 'right', 
-                fill: '#3b82f6', 
-                fontSize: 11 
-              }}
-            />
-          )}
+          {/* Critical reference lines — always visible */}
+          <ReferenceLine 
+            y={MIN_POWER} 
+            stroke="#f59e0b" 
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={isMobile ? undefined : { 
+              value: 'Min Power', 
+              position: 'right', 
+              fill: '#f59e0b', 
+              fontSize: 11 
+            }}
+          />
+          <ReferenceLine 
+            y={DEADPOOL} 
+            stroke="#ef4444" 
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={isMobile ? undefined : { 
+              value: 'Dead Pool', 
+              position: 'right', 
+              fill: '#ef4444', 
+              fontSize: 11 
+            }}
+          />
+          <ReferenceLine 
+            y={FULL_POOL} 
+            stroke="#3b82f6" 
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={isMobile ? undefined : { 
+              value: 'Full Pool', 
+              position: 'right', 
+              fill: '#3b82f6', 
+              fontSize: 11 
+            }}
+          />
           
           {/* Favorite ramp reference lines */}
           {ramps.map((ramp, index) => {

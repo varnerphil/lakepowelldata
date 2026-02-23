@@ -215,6 +215,44 @@ test.describe('Projections — API Endpoints', () => {
   })
 })
 
+test.describe('Projections — Critical Reference Lines', () => {
+  test('projection chart always shows Dead Pool, Min Power, and Full Pool reference lines', async ({ page }) => {
+    await page.goto(PROJECTIONS_URL)
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+
+    const chart = page.locator('.recharts-wrapper').first()
+    await expect(chart).toBeVisible()
+
+    const refLines = chart.locator('.recharts-reference-line')
+    const count = await refLines.count()
+    expect(count).toBeGreaterThanOrEqual(3)
+
+    const refLineLabels = await chart.locator('.recharts-reference-line text').allTextContents()
+    const labelText = refLineLabels.join(' ')
+    expect(labelText).toContain('Dead Pool')
+    expect(labelText).toContain('Min Power')
+    expect(labelText).toContain('Full Pool')
+  })
+
+  test('historical chart always shows Dead Pool, Min Power, and Full Pool reference lines', async ({ page }) => {
+    await page.goto('/simulator?tab=historical')
+    await page.waitForLoadState('networkidle')
+
+    const chart = page.locator('.recharts-wrapper').first()
+    await expect(chart).toBeVisible({ timeout: 15000 })
+
+    const refLines = chart.locator('.recharts-reference-line')
+    const count = await refLines.count()
+    expect(count).toBeGreaterThanOrEqual(3)
+
+    const refLineLabels = await chart.locator('.recharts-reference-line text').allTextContents()
+    const labelText = refLineLabels.join(' ')
+    expect(labelText).toContain('Dead Pool')
+    expect(labelText).toContain('Min Power')
+    expect(labelText).toContain('Full Pool')
+  })
+})
+
 test.describe('Projections — Navigation', () => {
   test('simulator link is in the navigation bar', async ({ page }) => {
     await page.goto(PROJECTIONS_URL)

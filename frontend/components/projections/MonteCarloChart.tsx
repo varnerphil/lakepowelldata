@@ -22,6 +22,10 @@ interface MonteCarloChartProps {
   policyTiers?: Array<{ aboveElevation: number; percent: number }>
 }
 
+const FULL_POOL = 3700
+const DEAD_POOL = 3370
+const MIN_POWER = 3490
+
 export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: MonteCarloChartProps) {
   const [isMobile, setIsMobile] = useState(false)
 
@@ -44,11 +48,11 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
   }, [data])
 
   const { yMin, yMax } = useMemo(() => {
-    if (chartData.length === 0) return { yMin: 3400, yMax: 3700 }
+    if (chartData.length === 0) return { yMin: DEAD_POOL - 20, yMax: FULL_POOL + 20 }
     const allVals = chartData.flatMap((d) => [d.p10, d.p90])
-    const min = Math.min(...allVals)
-    const max = Math.max(...allVals)
-    const pad = (max - min) * 0.1 || 20
+    const min = Math.min(...allVals, DEAD_POOL)
+    const max = Math.max(...allVals, FULL_POOL)
+    const pad = (max - min) * 0.05 || 20
     return {
       yMin: Math.floor((min - pad) / 10) * 10,
       yMax: Math.ceil((max + pad) / 10) * 10,
@@ -93,10 +97,6 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
     }
     return formatDateString(dateStr, { month: 'short', day: 'numeric', year: 'numeric' })
   }
-
-  const FULL_POOL = 3700
-  const DEAD_POOL = 3370
-  const MIN_POWER = 3490
 
   const rampColors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
 
@@ -219,46 +219,40 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
           <Area type="monotone" stackId="bands" dataKey="band25to75" stroke="none" fill="#4a90a4" fillOpacity={0.25} legendType="none" isAnimationActive={false} />
           <Area type="monotone" stackId="bands" dataKey="band75to90" stroke="none" fill="#4a90a4" fillOpacity={0.12} legendType="none" isAnimationActive={false} />
 
-          {/* Reference lines */}
-          {yMin <= MIN_POWER && (
-            <ReferenceLine
-              y={MIN_POWER}
-              stroke="#f59e0b"
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={
-                isMobile
-                  ? undefined
-                  : { value: 'Min Power Pool', position: 'right', fill: '#f59e0b', fontSize: 11 }
-              }
-            />
-          )}
-          {yMin <= DEAD_POOL && (
-            <ReferenceLine
-              y={DEAD_POOL}
-              stroke="#ef4444"
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={
-                isMobile
-                  ? undefined
-                  : { value: 'Dead Pool', position: 'right', fill: '#ef4444', fontSize: 11 }
-              }
-            />
-          )}
-          {yMax >= FULL_POOL && (
-            <ReferenceLine
-              y={FULL_POOL}
-              stroke="#3b82f6"
-              strokeDasharray="5 5"
-              strokeOpacity={0.7}
-              label={
-                isMobile
-                  ? undefined
-                  : { value: 'Full Pool', position: 'right', fill: '#3b82f6', fontSize: 11 }
-              }
-            />
-          )}
+          {/* Critical reference lines — always visible */}
+          <ReferenceLine
+            y={MIN_POWER}
+            stroke="#f59e0b"
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={
+              isMobile
+                ? undefined
+                : { value: 'Min Power Pool', position: 'right', fill: '#f59e0b', fontSize: 11 }
+            }
+          />
+          <ReferenceLine
+            y={DEAD_POOL}
+            stroke="#ef4444"
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={
+              isMobile
+                ? undefined
+                : { value: 'Dead Pool', position: 'right', fill: '#ef4444', fontSize: 11 }
+            }
+          />
+          <ReferenceLine
+            y={FULL_POOL}
+            stroke="#3b82f6"
+            strokeDasharray="5 5"
+            strokeOpacity={0.7}
+            label={
+              isMobile
+                ? undefined
+                : { value: 'Full Pool', position: 'right', fill: '#3b82f6', fontSize: 11 }
+            }
+          />
 
           {/* Ramp reference lines */}
           {ramps.map((ramp, i) => {
