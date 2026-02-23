@@ -305,11 +305,11 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             stroke="#f59e0b" 
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={isMobile ? undefined : { 
+            label={{ 
               value: 'Min Power', 
-              position: 'right', 
+              position: isMobile ? 'insideTopLeft' : 'right', 
               fill: '#f59e0b', 
-              fontSize: 11 
+              fontSize: isMobile ? 9 : 11,
             }}
           />
           <ReferenceLine 
@@ -317,11 +317,11 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             stroke="#ef4444" 
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={isMobile ? undefined : { 
+            label={{ 
               value: 'Dead Pool', 
-              position: 'right', 
+              position: isMobile ? 'insideTopLeft' : 'right', 
               fill: '#ef4444', 
-              fontSize: 11 
+              fontSize: isMobile ? 9 : 11,
             }}
           />
           <ReferenceLine 
@@ -329,11 +329,11 @@ export default function SimulationChart({ data, ramps = [] }: SimulationChartPro
             stroke="#3b82f6" 
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={isMobile ? undefined : { 
+            label={{ 
               value: 'Full Pool', 
-              position: 'right', 
+              position: isMobile ? 'insideTopLeft' : 'right', 
               fill: '#3b82f6', 
-              fontSize: 11 
+              fontSize: isMobile ? 9 : 11,
             }}
           />
           

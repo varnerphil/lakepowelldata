@@ -225,33 +225,36 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
             stroke="#f59e0b"
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={
-              isMobile
-                ? undefined
-                : { value: 'Min Power Pool', position: 'right', fill: '#f59e0b', fontSize: 11 }
-            }
+            label={{
+              value: isMobile ? 'Min Power' : 'Min Power Pool',
+              position: isMobile ? 'insideTopLeft' : 'right',
+              fill: '#f59e0b',
+              fontSize: isMobile ? 9 : 11,
+            }}
           />
           <ReferenceLine
             y={DEAD_POOL}
             stroke="#ef4444"
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={
-              isMobile
-                ? undefined
-                : { value: 'Dead Pool', position: 'right', fill: '#ef4444', fontSize: 11 }
-            }
+            label={{
+              value: 'Dead Pool',
+              position: isMobile ? 'insideTopLeft' : 'right',
+              fill: '#ef4444',
+              fontSize: isMobile ? 9 : 11,
+            }}
           />
           <ReferenceLine
             y={FULL_POOL}
             stroke="#3b82f6"
             strokeDasharray="5 5"
             strokeOpacity={0.7}
-            label={
-              isMobile
-                ? undefined
-                : { value: 'Full Pool', position: 'right', fill: '#3b82f6', fontSize: 11 }
-            }
+            label={{
+              value: 'Full Pool',
+              position: isMobile ? 'insideTopLeft' : 'right',
+              fill: '#3b82f6',
+              fontSize: isMobile ? 9 : 11,
+            }}
           />
 
           {/* Ramp reference lines */}
