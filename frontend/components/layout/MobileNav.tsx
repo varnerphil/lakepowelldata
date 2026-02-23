@@ -76,7 +76,7 @@ export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {
                 key={link.href}
                 href={link.href} 
                 className={`text-sm font-light transition-colors ${
-                  pathname === link.href 
+                  pathname === link.href || (link.href === '/simulator' && pathname === '/projections')
                     ? 'text-gray-900' 
                     : 'text-gray-600 hover:text-gray-900'
                 }`}

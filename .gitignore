@@ -18,6 +18,12 @@ out/
 build/
 dist/
 
+# Test fixture (facebook-group-scan e2e)
+.test-fixture-url
+
+# Chrome debug profile copy (facebook-group-scan run-chrome-debug.sh)
+.chrome-debug-profile/
+
 # Testing
 coverage/
 .nyc_output/

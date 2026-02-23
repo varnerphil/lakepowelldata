@@ -153,6 +153,62 @@ export async function getLatestWaterMeasurement(): Promise<WaterMeasurement | nu
   }
 }
 
+/**
+ * Total inflow in acre-feet from Oct 1 of the current water year
+ * through the most recent measurement.  Used to condition the first
+ * year of Monte Carlo simulations on actual conditions.
+ */
+export async function getCurrentWaterYearInflowToDate(): Promise<number> {
+  const result = await query(`
+    SELECT COALESCE(SUM(inflow * 1.9835), 0) AS ytd_inflow_af
+    FROM water_measurements
+    WHERE date >= (
+      CASE
+        WHEN EXTRACT(MONTH FROM CURRENT_DATE) >= 10
+          THEN DATE_TRUNC('year', CURRENT_DATE) + INTERVAL '9 months'
+        ELSE DATE_TRUNC('year', CURRENT_DATE) - INTERVAL '3 months'
+      END
+    )
+    AND inflow IS NOT NULL
+  `)
+  return Math.round(parseFloat(result.rows[0]?.ytd_inflow_af ?? '0'))
+}
+
+/**
+ * Current snowpack as a percentage of median for today's date.
+ * Uses basin_plots_data to compare the current water year's SWE
+ * against the historical median for the same calendar day.
+ */
+export async function getCurrentSnowpackPercent(): Promise<number | null> {
+  const now = new Date()
+  const month = now.getMonth()
+  const currentWaterYear = month >= 9 ? now.getFullYear() + 1 : now.getFullYear()
+  const dateStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+  const result = await query(`
+    WITH current_swe AS (
+      SELECT swe_value
+      FROM basin_plots_data
+      WHERE year = $1 AND date_str = $2 AND swe_value IS NOT NULL
+      LIMIT 1
+    ),
+    historical_median AS (
+      SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY swe_value) as median_swe
+      FROM basin_plots_data
+      WHERE date_str = $2 AND year != $1 AND swe_value IS NOT NULL
+    )
+    SELECT c.swe_value, h.median_swe,
+           CASE WHEN h.median_swe > 0
+                THEN (c.swe_value / h.median_swe) * 100
+                ELSE NULL END as percent_of_median
+    FROM current_swe c, historical_median h
+  `, [currentWaterYear, dateStr])
+
+  if (result.rows.length === 0) return null
+  const pct = parseFloat(result.rows[0]?.percent_of_median)
+  return isNaN(pct) ? null : Math.round(pct * 10) / 10
+}
+
 export async function getEarliestWaterMeasurement(): Promise<WaterMeasurement | null> {
   const result = await query(
     'SELECT date, elevation, change, content, inflow, outflow FROM water_measurements ORDER BY date ASC LIMIT 1'
@@ -1466,5 +1522,170 @@ export async function getWaterYearPeakSoFar(waterYear: number): Promise<{
     elevation: parseFloat(result.rows[0].elevation),
     date: result.rows[0].date?.toISOString().split('T')[0] || null
   }
+}
+
+// ============================================================================
+// MONTE CARLO PROJECTION QUERIES
+// ============================================================================
+
+export interface WaterYearDailyPattern {
+  waterYear: number
+  dailyInflows: Array<{ dayOfWaterYear: number; inflowCfs: number }>
+  totalInflowAf: number
+}
+
+/**
+ * Get daily inflow patterns grouped by water year (Oct 1 - Sep 30).
+ * Each day gets a dayOfWaterYear (1-366) so patterns can be aligned across years.
+ * Only returns complete water years (at least 360 days of data).
+ */
+export async function getWaterYearDailyPatterns(): Promise<WaterYearDailyPattern[]> {
+  const result = await query(`
+    WITH water_year_days AS (
+      SELECT
+        date,
+        inflow,
+        CASE
+          WHEN EXTRACT(MONTH FROM date) >= 10
+            THEN EXTRACT(YEAR FROM date) + 1
+          ELSE EXTRACT(YEAR FROM date)
+        END AS water_year,
+        date - MAKE_DATE(
+          CASE WHEN EXTRACT(MONTH FROM date) >= 10 THEN EXTRACT(YEAR FROM date)::int ELSE EXTRACT(YEAR FROM date)::int - 1 END,
+          10, 1
+        ) + 1 AS day_of_water_year
+      FROM water_measurements
+      WHERE inflow IS NOT NULL AND inflow > 0
+    ),
+    year_counts AS (
+      SELECT water_year, COUNT(*) as day_count, SUM(inflow * 1.9835) as total_inflow_af
+      FROM water_year_days
+      GROUP BY water_year
+      HAVING COUNT(*) >= 360
+    )
+    SELECT d.water_year, d.day_of_water_year, d.inflow, yc.total_inflow_af
+    FROM water_year_days d
+    JOIN year_counts yc ON d.water_year = yc.water_year
+    ORDER BY d.water_year, d.day_of_water_year
+  `)
+
+  const yearMap = new Map<number, WaterYearDailyPattern>()
+
+  for (const row of result.rows) {
+    const wy = parseInt(row.water_year)
+    if (!yearMap.has(wy)) {
+      yearMap.set(wy, {
+        waterYear: wy,
+        dailyInflows: [],
+        totalInflowAf: Math.round(parseFloat(row.total_inflow_af))
+      })
+    }
+    yearMap.get(wy)!.dailyInflows.push({
+      dayOfWaterYear: parseInt(row.day_of_water_year),
+      inflowCfs: parseInt(row.inflow)
+    })
+  }
+
+  return Array.from(yearMap.values()).sort((a, b) => a.waterYear - b.waterYear)
+}
+
+export interface MonteCarloResultRow {
+  id: number
+  policy_type: string
+  policy_config: any
+  start_date: string
+  start_elevation: number
+  start_content: number
+  years_to_project: number
+  iterations: number
+  result: any
+  computed_at: string
+  compute_time_ms: number
+  lake_state_date: string
+}
+
+/**
+ * Look up a cached Monte Carlo result matching the given parameters.
+ * Returns null if no fresh result exists.
+ */
+export async function getCachedMonteCarloResult(
+  policyType: string,
+  policyConfig: object,
+  startDate: string,
+  yearsToProject: number,
+  maxAgeDays: number = 1
+): Promise<MonteCarloResultRow | null> {
+  const result = await query(`
+    SELECT *
+    FROM monte_carlo_results
+    WHERE policy_type = $1
+      AND policy_config = $2::jsonb
+      AND start_date = $3
+      AND years_to_project = $4
+      AND lake_state_date >= (CURRENT_DATE - $5 * INTERVAL '1 day')
+    ORDER BY computed_at DESC
+    LIMIT 1
+  `, [policyType, JSON.stringify(policyConfig), startDate, yearsToProject, maxAgeDays])
+
+  if (result.rows.length === 0) return null
+
+  const row = result.rows[0]
+  return {
+    id: row.id,
+    policy_type: row.policy_type,
+    policy_config: row.policy_config,
+    start_date: row.start_date?.toISOString?.()?.split('T')[0] ?? row.start_date,
+    start_elevation: parseFloat(row.start_elevation),
+    start_content: parseInt(row.start_content),
+    years_to_project: row.years_to_project,
+    iterations: row.iterations,
+    result: row.result,
+    computed_at: row.computed_at,
+    compute_time_ms: row.compute_time_ms,
+    lake_state_date: row.lake_state_date?.toISOString?.()?.split('T')[0] ?? row.lake_state_date
+  }
+}
+
+/**
+ * Save a Monte Carlo result to the cache, upserting on the unique constraint.
+ */
+export async function saveMonteCarloResult(params: {
+  policyType: string
+  policyConfig: object
+  startDate: string
+  startElevation: number
+  startContent: number
+  yearsToProject: number
+  iterations: number
+  result: object
+  computeTimeMs: number
+  lakeStateDate: string
+}): Promise<void> {
+  await query(`
+    INSERT INTO monte_carlo_results
+      (policy_type, policy_config, start_date, start_elevation, start_content,
+       years_to_project, iterations, result, compute_time_ms, lake_state_date)
+    VALUES ($1, $2::jsonb, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
+    ON CONFLICT (policy_type, policy_config, start_date, years_to_project)
+    DO UPDATE SET
+      start_elevation = EXCLUDED.start_elevation,
+      start_content = EXCLUDED.start_content,
+      iterations = EXCLUDED.iterations,
+      result = EXCLUDED.result,
+      compute_time_ms = EXCLUDED.compute_time_ms,
+      lake_state_date = EXCLUDED.lake_state_date,
+      computed_at = NOW()
+  `, [
+    params.policyType,
+    JSON.stringify(params.policyConfig),
+    params.startDate,
+    params.startElevation,
+    params.startContent,
+    params.yearsToProject,
+    params.iterations,
+    JSON.stringify(params.result),
+    params.computeTimeMs,
+    params.lakeStateDate
+  ])
 }
 
