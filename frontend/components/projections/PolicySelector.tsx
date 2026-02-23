@@ -100,6 +100,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
   const [savedPolicies, setSavedPolicies] = useState<SavedPolicy[]>([])
   const [saveName, setSaveName] = useState('')
   const [showSaveInput, setShowSaveInput] = useState(false)
+  const [activeSavedName, setActiveSavedName] = useState<string | null>(null)
 
   useEffect(() => {
     setSavedPolicies(loadSavedPolicies())
@@ -143,10 +144,12 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
   const handlePresetChange = (name: string) => {
     if (name === '__custom__') {
       setIsCustom(true)
+      setActiveSavedName(null)
       seedFromPreset(value)
       return
     }
     setIsCustom(false)
+    setActiveSavedName(null)
     const preset = POLICY_PRESETS.find((p) => p.name === name)
     if (preset) onChange(preset)
   }
@@ -219,12 +222,25 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     persistSavedPolicies(updated)
     setShowSaveInput(false)
     setSaveName('')
+    setActiveSavedName(trimmed)
+    onChange({ type: 'tiered', name: trimmed, tiers: customTiers })
+  }
+
+  const updateActiveSaved = () => {
+    if (!activeSavedName) return
+    const updated = savedPolicies.map((p) =>
+      p.name === activeSavedName ? { ...p, tiers: customTiers } : p
+    )
+    setSavedPolicies(updated)
+    persistSavedPolicies(updated)
+    onChange({ type: 'tiered', name: activeSavedName, tiers: customTiers })
   }
 
   const deleteSavedPolicy = (name: string) => {
     const updated = savedPolicies.filter((p) => p.name !== name)
     setSavedPolicies(updated)
     persistSavedPolicies(updated)
+    if (activeSavedName === name) setActiveSavedName(null)
   }
 
   const loadSavedPolicy = (saved: SavedPolicy) => {
@@ -234,7 +250,10 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setEditingIndex(null)
     setEditDraft(null)
     setAddDraft(null)
-    onChange({ type: 'tiered', name: 'Custom tiered', tiers: saved.tiers })
+    setActiveSavedName(saved.name)
+    setShowSaveInput(false)
+    setSaveName('')
+    onChange({ type: 'tiered', name: saved.name, tiers: saved.tiers })
   }
 
   const inputClass = 'bg-white border border-gray-200 rounded px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-1 focus:ring-teal-400'
@@ -328,7 +347,8 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                       setEditingIndex(null)
                       setEditDraft(null)
                       setAddDraft(null)
-                      onChange({ type: 'tiered', name: 'Custom tiered', tiers: saved.tiers })
+                      setActiveSavedName(name)
+                      onChange({ type: 'tiered', name, tiers: saved.tiers })
                     }
                   } else {
                     const preset = POLICY_PRESETS.find((p) => p.name === val)
@@ -337,6 +357,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                       setEditingIndex(null)
                       setEditDraft(null)
                       setAddDraft(null)
+                      setActiveSavedName(null)
                       onChange({ type: 'tiered', name: 'Custom tiered', tiers: preset.tiers })
                     }
                   }
@@ -514,13 +535,20 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
 
               {/* Save / manage saved configs */}
               <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
+                {activeSavedName && (
+                  <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 rounded px-2 py-1.5 border border-teal-100">
+                    <Pencil className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate flex-1">Editing <strong>{activeSavedName}</strong></span>
+                  </div>
+                )}
+
                 {showSaveInput ? (
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
                       value={saveName}
                       onChange={(e) => setSaveName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') saveCurrentTiers(); if (e.key === 'Escape') setShowSaveInput(false) }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveCurrentTiers(); if (e.key === 'Escape') { setShowSaveInput(false); setSaveName('') } }}
                       placeholder="Name this configuration..."
                       className="flex-1 bg-white border border-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-teal-400"
                       autoFocus
@@ -542,20 +570,42 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setShowSaveInput(true)}
-                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-teal-600 transition-colors"
-                  >
-                    <Bookmark className="w-3.5 h-3.5" />
-                    Save this configuration
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {activeSavedName ? (
+                      <>
+                        <button
+                          onClick={updateActiveSaved}
+                          className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 transition-colors"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          Update
+                        </button>
+                        <span className="text-gray-300">|</span>
+                        <button
+                          onClick={() => setShowSaveInput(true)}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-teal-600 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Save as new
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setShowSaveInput(true)}
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-teal-600 transition-colors"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" />
+                        Save this configuration
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {savedPolicies.length > 0 && (
                   <div className="space-y-1">
                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">Saved</span>
                     {savedPolicies.map((sp) => (
-                      <div key={sp.name} className="flex items-center justify-between text-xs text-gray-600 bg-white rounded px-2 py-1.5 border border-gray-100">
+                      <div key={sp.name} className={`flex items-center justify-between text-xs text-gray-600 rounded px-2 py-1.5 border ${activeSavedName === sp.name ? 'bg-teal-50 border-teal-200' : 'bg-white border-gray-100'}`}>
                         <button
                           onClick={() => loadSavedPolicy(sp)}
                           className="text-left hover:text-teal-600 transition-colors truncate flex-1"
