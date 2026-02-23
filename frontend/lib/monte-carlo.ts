@@ -47,36 +47,6 @@ export const POLICY_PRESETS: OutflowPolicy[] = [
   { type: 'simple', name: '95% of compact (7.82 MAF)', simplePercent: 95 },
   { type: 'simple', name: '90% of compact (7.41 MAF)', simplePercent: 90 },
   { type: 'simple', name: '85% of compact (6.99 MAF)', simplePercent: 85 },
-  {
-    type: 'tiered',
-    name: 'Lower Basin proposal (approx.)',
-    tiers: [
-      { aboveElevation: 3525, percent: 100 },
-      { aboveElevation: 3490, percent: 95 },
-      { aboveElevation: 0, percent: 90 },
-    ],
-  },
-  {
-    type: 'tiered',
-    name: 'Upper Basin proposal (approx.)',
-    tiers: [
-      { aboveElevation: 3600, percent: 100 },
-      { aboveElevation: 3525, percent: 85 },
-      { aboveElevation: 3490, percent: 73 },
-      { aboveElevation: 0, percent: 61 },
-    ],
-  },
-  {
-    type: 'tiered',
-    name: 'Federal proposal (approx.)',
-    tiers: [
-      { aboveElevation: 3640, percent: 115 },
-      { aboveElevation: 3600, percent: 100 },
-      { aboveElevation: 3525, percent: 85 },
-      { aboveElevation: 3490, percent: 73 },
-      { aboveElevation: 0, percent: 61 },
-    ],
-  },
 ]
 
 /** Restrict which historical water years can be sampled. Shorter windows = drier, less optimistic. */
