@@ -46,6 +46,7 @@ export default function MonteCarloSimulator({
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
   const workerRef = useRef<Worker | null>(null)
+  const mountedRef = useRef(true)
 
   // Load favorite ramps from localStorage
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function MonteCarloSimulator({
         fetch('/api/ramps/status')
           .then((r) => r.json())
           .then((ramps: any[]) => {
+            if (!mountedRef.current) return
             const favs = ramps
               .filter((r) => ids.includes(r.id))
               .map((r) => ({
@@ -72,7 +74,11 @@ export default function MonteCarloSimulator({
   // Clean up worker on unmount
   useEffect(() => {
     return () => {
-      workerRef.current?.terminate()
+      mountedRef.current = false
+      if (workerRef.current) {
+        workerRef.current.terminate()
+        workerRef.current = null
+      }
     }
   }, [])
 
@@ -81,9 +87,11 @@ export default function MonteCarloSimulator({
     setError(null)
     setLoadingStatus('Fetching data...')
 
-    // Terminate any running worker
-    workerRef.current?.terminate()
-    workerRef.current = null
+    // Terminate any running worker before starting a new one
+    if (workerRef.current) {
+      workerRef.current.terminate()
+      workerRef.current = null
+    }
 
     try {
       const startParam = startMode === 'custom' ? `elevation:${customElevation}` : 'today'
@@ -94,6 +102,9 @@ export default function MonteCarloSimulator({
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || `Server error (${res.status})`)
       }
+
+      // Bail out if component unmounted while fetch was in progress
+      if (!mountedRef.current) return
 
       const data = await res.json()
 
@@ -109,27 +120,34 @@ export default function MonteCarloSimulator({
       const worker = new Worker(
         new URL('../../workers/monte-carlo.worker.ts', import.meta.url)
       )
+
+      // Double-check mount status — if unmounted between lines, terminate immediately
+      if (!mountedRef.current) {
+        worker.terminate()
+        return
+      }
+
       workerRef.current = worker
 
       worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+        worker.terminate()
+        workerRef.current = null
+        if (!mountedRef.current) return
         if (e.data.type === 'result') {
           setResult(e.data.result as MonteCarloResult)
           setIsLoading(false)
-          worker.terminate()
-          workerRef.current = null
         } else if (e.data.type === 'error') {
           setError(e.data.error || 'Simulation failed')
           setIsLoading(false)
-          worker.terminate()
-          workerRef.current = null
         }
       }
 
       worker.onerror = () => {
-        setError('Simulation worker failed')
-        setIsLoading(false)
         worker.terminate()
         workerRef.current = null
+        if (!mountedRef.current) return
+        setError('Simulation worker failed')
+        setIsLoading(false)
       }
 
       worker.postMessage({
@@ -151,6 +169,7 @@ export default function MonteCarloSimulator({
         ramps: favoriteRamps,
       })
     } catch (err: any) {
+      if (!mountedRef.current) return
       setError(err.message || 'Failed to run projection')
       setIsLoading(false)
     }
@@ -350,13 +369,19 @@ export default function MonteCarloSimulator({
             ramps={favoriteRamps}
             policyTiers={policy.type === 'tiered' ? policy.tiers : undefined}
           />
+          <div className="mt-4 flex justify-end">
+            <ShareButton getShareUrl={getShareUrl} label="Share this projection" />
+          </div>
         </div>
       )}
 
       {/* Outcome Report */}
       {thresholds && summary && (
         <div className="space-y-4">
-          <h3 className="text-lg font-light text-gray-900">Projection Summary</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-light text-gray-900">Projection Summary</h3>
+            <ShareButton getShareUrl={getShareUrl} variant="compact" />
+          </div>
 
           {/* Executive summary — the quick read */}
           {(() => {

@@ -61,12 +61,20 @@ export default function PolicyComparison({
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const workersRef = useRef<Worker[]>([])
+  const mountedRef = useRef(true)
 
   useEffect(() => {
     return () => {
+      mountedRef.current = false
       workersRef.current.forEach((w) => w.terminate())
+      workersRef.current = []
     }
   }, [])
+
+  const terminateAllWorkers = () => {
+    workersRef.current.forEach((w) => w.terminate())
+    workersRef.current = []
+  }
 
   const togglePolicy = (name: string) => {
     setSelected((prev) => {
@@ -85,13 +93,15 @@ export default function PolicyComparison({
     setProgress(0)
     setResults([])
 
-    workersRef.current.forEach((w) => w.terminate())
-    workersRef.current = []
+    terminateAllWorkers()
 
     try {
       const startParam = startMode === 'custom' ? `elevation:${customElevation}` : 'today'
       const res = await fetch(`/api/projections?start=${encodeURIComponent(startParam)}`)
       if (!res.ok) throw new Error('Failed to fetch data')
+
+      if (!mountedRef.current) return
+
       const data = await res.json()
 
       let completed = 0
@@ -99,29 +109,35 @@ export default function PolicyComparison({
         policies.map(
           (policy, idx) =>
             new Promise<CompareResult>((resolve, reject) => {
+              if (!mountedRef.current) {
+                reject(new Error('Unmounted'))
+                return
+              }
+
               const worker = new Worker(
                 new URL('../../workers/monte-carlo.worker.ts', import.meta.url)
               )
               workersRef.current.push(worker)
 
               worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+                worker.terminate()
                 if (e.data.type === 'result') {
                   completed++
-                  setProgress(Math.round((completed / policies.length) * 100))
+                  if (mountedRef.current) {
+                    setProgress(Math.round((completed / policies.length) * 100))
+                  }
                   resolve({
                     policy,
                     result: e.data.result as MonteCarloResult,
                     color: COMPARE_COLORS[idx % COMPARE_COLORS.length],
                   })
-                  worker.terminate()
                 } else {
                   reject(new Error(e.data.error))
-                  worker.terminate()
                 }
               }
               worker.onerror = () => {
-                reject(new Error('Worker failed'))
                 worker.terminate()
+                reject(new Error('Worker failed'))
               }
 
               worker.postMessage({
@@ -146,11 +162,11 @@ export default function PolicyComparison({
         )
       )
 
-      setResults(all)
+      if (mountedRef.current) setResults(all)
     } catch (err: any) {
-      console.error('Comparison failed:', err)
+      if (mountedRef.current) console.error('Comparison failed:', err)
     } finally {
-      setIsRunning(false)
+      if (mountedRef.current) setIsRunning(false)
       workersRef.current = []
     }
   }, [selected, startMode, customElevation, inflowScenario, favoriteRamps])
