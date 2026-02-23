@@ -947,30 +947,30 @@ export default function MonteCarloSimulator({
               </summary>
               <div className="mt-3 space-y-4">
                 {/* Ending elevation distribution */}
-                <div>
+                <div className="overflow-x-auto">
                   <h5 className="text-[10px] uppercase tracking-wide font-medium text-gray-500 mb-2">Ending elevation distribution</h5>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-gray-400 border-b border-gray-100">
                         <th className="text-left py-1 font-medium">Percentile</th>
-                        <th className="text-left py-1 font-medium">Meaning</th>
+                        <th className="text-left py-1 font-medium hidden sm:table-cell">Meaning</th>
                         <th className="text-right py-1 font-medium">Elevation</th>
                       </tr>
                     </thead>
                     <tbody className="text-gray-600">
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">90th</td>
-                        <td className="py-1.5 text-gray-400">Only 10% of scenarios do better</td>
+                        <td className="py-1.5 text-gray-400 hidden sm:table-cell">Only 10% of scenarios do better</td>
                         <td className="py-1.5 text-right font-medium">{summary.p90EndingElevation.toFixed(1)} ft</td>
                       </tr>
                       <tr className="border-b border-gray-50 bg-teal-50/40">
                         <td className="py-1.5 font-medium text-teal-700">50th (median)</td>
-                        <td className="py-1.5 text-gray-400">The middle outcome</td>
+                        <td className="py-1.5 text-gray-400 hidden sm:table-cell">The middle outcome</td>
                         <td className="py-1.5 text-right font-medium text-teal-700">{summary.medianEndingElevation.toFixed(1)} ft</td>
                       </tr>
                       <tr>
                         <td className="py-1.5">10th</td>
-                        <td className="py-1.5 text-gray-400">Only 10% of scenarios do worse</td>
+                        <td className="py-1.5 text-gray-400 hidden sm:table-cell">Only 10% of scenarios do worse</td>
                         <td className="py-1.5 text-right font-medium">{summary.p10EndingElevation.toFixed(1)} ft</td>
                       </tr>
                     </tbody>
@@ -978,7 +978,7 @@ export default function MonteCarloSimulator({
                 </div>
 
                 {/* Extremes reached */}
-                <div>
+                <div className="overflow-x-auto">
                   <h5 className="text-[10px] uppercase tracking-wide font-medium text-gray-500 mb-2">Extremes reached during projection</h5>
                   <table className="w-full text-xs">
                     <thead>
@@ -1007,46 +1007,46 @@ export default function MonteCarloSimulator({
                 </div>
 
                 {/* Threshold probabilities */}
-                <div>
+                <div className="overflow-x-auto">
                   <h5 className="text-[10px] uppercase tracking-wide font-medium text-gray-500 mb-2">Threshold probabilities</h5>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-gray-400 border-b border-gray-100">
                         <th className="text-left py-1 font-medium">Condition</th>
-                        <th className="text-left py-1 font-medium">Elevation</th>
+                        <th className="text-left py-1 font-medium hidden sm:table-cell">Elevation</th>
                         <th className="text-right py-1 font-medium">Probability</th>
                       </tr>
                     </thead>
                     <tbody className="text-gray-600">
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">Stay above dead pool</td>
-                        <td className="py-1.5">3,370 ft</td>
+                        <td className="py-1.5 hidden sm:table-cell">3,370 ft</td>
                         <td className="py-1.5 text-right font-medium">{thresholds.stayAboveDeadPool}%</td>
                       </tr>
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">Stay above min power pool</td>
-                        <td className="py-1.5">3,490 ft</td>
+                        <td className="py-1.5 hidden sm:table-cell">3,490 ft</td>
                         <td className="py-1.5 text-right font-medium">{thresholds.stayAboveMinPower}%</td>
                       </tr>
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">Stay above mid-elevation target</td>
-                        <td className="py-1.5">3,525 ft</td>
+                        <td className="py-1.5 hidden sm:table-cell">3,525 ft</td>
                         <td className="py-1.5 text-right font-medium">{thresholds.stayAbove3525}%</td>
                       </tr>
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">Reach 90% capacity</td>
-                        <td className="py-1.5">3,660 ft</td>
+                        <td className="py-1.5 hidden sm:table-cell">3,660 ft</td>
                         <td className="py-1.5 text-right font-medium">{thresholds.reachRecoveryTarget}%</td>
                       </tr>
                       <tr className="border-b border-gray-50">
                         <td className="py-1.5">Reach full pool</td>
-                        <td className="py-1.5">3,700 ft</td>
+                        <td className="py-1.5 hidden sm:table-cell">3,700 ft</td>
                         <td className="py-1.5 text-right font-medium">{thresholds.reachFullPool}%</td>
                       </tr>
                       {thresholds.rampProbabilities.map((ramp) => (
                         <tr key={`detail-${ramp.rampName}`} className="border-b border-gray-50">
                           <td className="py-1.5">{ramp.rampName} stays accessible</td>
-                          <td className="py-1.5">{ramp.elevation.toLocaleString()} ft</td>
+                          <td className="py-1.5 hidden sm:table-cell">{ramp.elevation.toLocaleString()} ft</td>
                           <td className="py-1.5 text-right font-medium">{ramp.probabilityAccessible}%</td>
                         </tr>
                       ))}
@@ -1060,15 +1060,15 @@ export default function MonteCarloSimulator({
                   const stab = analyzeStabilization(result!.dailyPercentiles, startElev, yearsToProject)
                   if (stab.yearlyTrend.length === 0) return null
                   return (
-                    <div>
+                    <div className="overflow-x-auto">
                       <h5 className="text-[10px] uppercase tracking-wide font-medium text-gray-500 mb-2">Year-by-year stabilization trend</h5>
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b text-gray-400">
                             <th className="text-left py-1 font-medium">Year</th>
-                            <th className="text-right py-1 font-medium">Median elevation</th>
+                            <th className="text-right py-1 font-medium">Median</th>
                             <th className="text-right py-1 font-medium">Change</th>
-                            <th className="text-right py-1 font-medium">Cumulative</th>
+                            <th className="text-right py-1 font-medium hidden sm:table-cell">Cumulative</th>
                           </tr>
                         </thead>
                         <tbody className="text-gray-600">
@@ -1079,7 +1079,7 @@ export default function MonteCarloSimulator({
                               <td className={`py-1.5 text-right font-medium ${yr.change > 0 ? 'text-emerald-600' : yr.change < -1 ? 'text-red-600' : 'text-gray-500'}`}>
                                 {yr.change > 0 ? '+' : ''}{yr.change.toFixed(1)} ft
                               </td>
-                              <td className={`py-1.5 text-right ${(yr.medianElev - startElev) > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                              <td className={`py-1.5 text-right hidden sm:table-cell ${(yr.medianElev - startElev) > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 {(yr.medianElev - startElev) > 0 ? '+' : ''}{(yr.medianElev - startElev).toFixed(1)} ft
                               </td>
                             </tr>

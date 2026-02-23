@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { parseLocalDate } from '@/lib/date-utils'
 
@@ -86,12 +86,20 @@ export default function ElevationProjectionChart({
   
   const dateRange = new Date(endDate).getTime() - new Date(startDate).getTime()
   const daysInRange = dateRange / (1000 * 60 * 60 * 24)
+
+  const [isMobile, setIsMobile] = useState(true)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   
   return (
-    <ResponsiveContainer width="100%" height={500}>
+    <ResponsiveContainer width="100%" height={isMobile ? 300 : 500}>
       <LineChart 
         data={chartData}
-        margin={{ top: 5, right: 30, left: 20, bottom: 20 }}
+        margin={isMobile ? { top: 5, right: 10, left: 0, bottom: 10 } : { top: 5, right: 30, left: 20, bottom: 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
@@ -102,11 +110,14 @@ export default function ElevationProjectionChart({
           }}
           angle={-45}
           textAnchor="end"
-          height={80}
+          height={isMobile ? 60 : 80}
+          tick={{ fontSize: isMobile ? 10 : 12 }}
         />
         <YAxis 
           domain={[yAxisMin, yAxisMax]}
-          label={{ value: 'Elevation (ft)', angle: -90, position: 'insideLeft' }}
+          label={isMobile ? undefined : { value: 'Elevation (ft)', angle: -90, position: 'insideLeft' }}
+          tick={{ fontSize: isMobile ? 10 : 12 }}
+          width={isMobile ? 40 : 60}
         />
         <Tooltip 
           labelFormatter={(value) => {

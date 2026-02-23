@@ -42,47 +42,47 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
           Last updated: {formatDateString(current.date, { year: 'numeric', month: 'long', day: 'numeric' })}
         </span>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 lg:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Elevation</div>
-          <div className="text-2xl lg:text-4xl font-light text-gray-900 whitespace-nowrap">
-            {current.elevation.toFixed(2)} <span className="text-base lg:text-xl text-gray-500">ft</span>
+          <div className="text-xl sm:text-2xl lg:text-4xl font-light text-gray-900">
+            {current.elevation.toFixed(2)} <span className="text-sm sm:text-base lg:text-xl text-gray-500">ft</span>
           </div>
         </div>
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Daily Change</div>
-          <div className={`text-2xl lg:text-4xl font-light whitespace-nowrap ${dailyChange >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]'}`}>
-            {dailyChange >= 0 ? '+' : ''}{dailyChange.toFixed(2)} <span className="text-base lg:text-xl text-gray-500">ft</span>
+          <div className={`text-xl sm:text-2xl lg:text-4xl font-light ${dailyChange >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]'}`}>
+            {dailyChange >= 0 ? '+' : ''}{dailyChange.toFixed(2)} <span className="text-sm sm:text-base lg:text-xl text-gray-500">ft</span>
           </div>
         </div>
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Weekly Change</div>
-          <div className={`text-2xl lg:text-4xl font-light whitespace-nowrap ${weeklyChange !== null ? (weeklyChange >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]') : 'text-gray-500'}`}>
+          <div className={`text-xl sm:text-2xl lg:text-4xl font-light ${weeklyChange !== null ? (weeklyChange >= 0 ? 'text-[#8b9a6b]' : 'text-[#c99a7a]') : 'text-gray-500'}`}>
             {weeklyChange !== null ? (
               <>
-                {weeklyChange >= 0 ? '+' : ''}{weeklyChange.toFixed(2)} <span className="text-base lg:text-xl text-gray-500">ft</span>
+                {weeklyChange >= 0 ? '+' : ''}{weeklyChange.toFixed(2)} <span className="text-sm sm:text-base lg:text-xl text-gray-500">ft</span>
               </>
             ) : (
-              <span className="text-base lg:text-xl">—</span>
+              <span className="text-sm sm:text-base lg:text-xl">—</span>
             )}
           </div>
         </div>
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Content</div>
-          <div className="text-2xl lg:text-4xl font-light text-gray-900">
-            {(current.content / 1000000).toFixed(2)}<span className="text-base lg:text-xl text-gray-500">M af</span>
+          <div className="text-xl sm:text-2xl lg:text-4xl font-light text-gray-900">
+            {(current.content / 1000000).toFixed(2)}<span className="text-sm sm:text-base lg:text-xl text-gray-500">M af</span>
           </div>
         </div>
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Inflow</div>
-          <div className="text-2xl lg:text-4xl font-light text-gray-900">
-            {current.inflow.toLocaleString()} <span className="text-base lg:text-xl text-gray-500">cfs</span>
+          <div className="text-xl sm:text-2xl lg:text-4xl font-light text-gray-900">
+            {current.inflow.toLocaleString()} <span className="text-sm sm:text-base lg:text-xl text-gray-500">cfs</span>
           </div>
         </div>
         <div className="text-center lg:text-left">
           <div className="text-xs uppercase tracking-wider text-gray-500 mb-1 lg:mb-2 font-light">Outflow</div>
-          <div className="text-2xl lg:text-4xl font-light text-gray-900">
-            {current.outflow.toLocaleString()} <span className="text-base lg:text-xl text-gray-500">cfs</span>
+          <div className="text-xl sm:text-2xl lg:text-4xl font-light text-gray-900">
+            {current.outflow.toLocaleString()} <span className="text-sm sm:text-base lg:text-xl text-gray-500">cfs</span>
           </div>
         </div>
       </div>

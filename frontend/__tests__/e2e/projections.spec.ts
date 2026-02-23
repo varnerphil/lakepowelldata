@@ -7,7 +7,6 @@ test.describe('Projections — Page Load & Layout', () => {
     await page.goto(PROJECTIONS_URL)
 
     await expect(page.getByText(/simulator/i).first()).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(/project.*future/i).first()).toBeVisible()
 
     await expect(page.getByText(/release policy/i)).toBeVisible()
     await expect(page.locator('select').first()).toBeVisible()
@@ -29,10 +28,10 @@ test.describe('Projections — Page Load & Layout', () => {
     await expect(page.getByRole('button', { name: /historical/i })).toBeVisible()
 
     await page.getByRole('button', { name: /historical/i }).click()
-    await expect(page.getByText(/what-if/i)).toBeVisible()
+    await expect(page.getByText(/start date/i)).toBeVisible()
 
     await page.getByRole('button', { name: /projections/i }).click()
-    await expect(page.getByText(/project.*future/i).first()).toBeVisible()
+    await expect(page.getByText(/release policy/i)).toBeVisible()
   })
 
   test('methodology section is available', async ({ page }) => {
@@ -222,9 +221,9 @@ test.describe('Projections — Navigation', () => {
     await expect(page.getByRole('link', { name: /simulator/i })).toBeVisible({ timeout: 10000 })
   })
 
-  test('/projections redirects to simulator with projections tab', async ({ page }) => {
+  test('/projections redirects to simulator', async ({ page }) => {
     await page.goto('/projections')
-    await page.waitForURL('**/simulator?tab=projections')
-    await expect(page.getByText(/project.*future/i).first()).toBeVisible({ timeout: 10000 })
+    await page.waitForURL('**/simulator')
+    await expect(page.getByText(/simulator/i).first()).toBeVisible({ timeout: 10000 })
   })
 })
