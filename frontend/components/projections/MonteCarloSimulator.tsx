@@ -11,22 +11,32 @@ import type { WorkerResponse } from '@/workers/monte-carlo.worker'
 import MonteCarloChart from './MonteCarloChart'
 import PolicySelector from './PolicySelector'
 import PolicyComparison from './PolicyComparison'
-import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Share2, Check, Link2 } from 'lucide-react'
+
+export interface SharedSimConfig {
+  policy: OutflowPolicy
+  yearsToProject: number
+  inflowScenario: InflowScenario
+  startMode: 'today' | 'custom'
+  customElevation?: number
+}
 
 interface MonteCarloSimulatorProps {
   currentElevation: number
   currentDate: string
+  sharedConfig?: SharedSimConfig | null
 }
 
 export default function MonteCarloSimulator({
   currentElevation,
   currentDate,
+  sharedConfig,
 }: MonteCarloSimulatorProps) {
-  const [policy, setPolicy] = useState<OutflowPolicy>(POLICY_PRESETS[0])
-  const [yearsToProject, setYearsToProject] = useState(10)
-  const [inflowScenario, setInflowScenario] = useState<InflowScenario>('last30')
-  const [startMode, setStartMode] = useState<'today' | 'custom'>('today')
-  const [customElevation, setCustomElevation] = useState(currentElevation)
+  const [policy, setPolicy] = useState<OutflowPolicy>(sharedConfig?.policy ?? POLICY_PRESETS[0])
+  const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 10)
+  const [inflowScenario, setInflowScenario] = useState<InflowScenario>(sharedConfig?.inflowScenario ?? 'last30')
+  const [startMode, setStartMode] = useState<'today' | 'custom'>(sharedConfig?.startMode ?? 'today')
+  const [customElevation, setCustomElevation] = useState(sharedConfig?.customElevation ?? currentElevation)
 
   const [result, setResult] = useState<MonteCarloResult | null>(null)
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
@@ -34,6 +44,8 @@ export default function MonteCarloSimulator({
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
+  const [shareStatus, setShareStatus] = useState<'idle' | 'saving' | 'copied'>('idle')
+  const [sharedId, setSharedId] = useState<string | null>(null)
   const workerRef = useRef<Worker | null>(null)
 
   // Load favorite ramps from localStorage
@@ -144,6 +156,34 @@ export default function MonteCarloSimulator({
       setIsLoading(false)
     }
   }, [policy, yearsToProject, inflowScenario, startMode, customElevation, favoriteRamps])
+
+  const shareSimulation = useCallback(async () => {
+    setShareStatus('saving')
+    try {
+      const config: SharedSimConfig = {
+        policy,
+        yearsToProject,
+        inflowScenario,
+        startMode,
+        ...(startMode === 'custom' ? { customElevation } : {}),
+      }
+      const res = await fetch('/api/simulations/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config }),
+      })
+      if (!res.ok) throw new Error('Failed to save')
+      const { id } = await res.json()
+      setSharedId(id)
+
+      const url = `${window.location.origin}/simulator?share=${id}`
+      await navigator.clipboard.writeText(url)
+      setShareStatus('copied')
+      setTimeout(() => setShareStatus('idle'), 3000)
+    } catch {
+      setShareStatus('idle')
+    }
+  }, [policy, yearsToProject, inflowScenario, startMode, customElevation])
 
   // Auto-run on mount
   useEffect(() => {
@@ -280,8 +320,42 @@ export default function MonteCarloSimulator({
               )}
             </div>
           )}
+          {result && (
+            <button
+              onClick={shareSimulation}
+              disabled={shareStatus === 'saving'}
+              className="w-full mt-2 py-2 text-xs font-light rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              {shareStatus === 'copied' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-emerald-600">Link copied!</span>
+                </>
+              ) : shareStatus === 'saving' ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5" />
+                  Share these settings
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Shared config banner */}
+      {sharedConfig && (
+        <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-4 py-3">
+          <Link2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+          <p className="text-sm text-teal-800 font-light">
+            You&apos;re viewing a shared projection. The simulation has been re-run with the latest lake data using the shared settings.
+          </p>
+        </div>
+      )}
 
       {/* Error */}
       {error && (

@@ -1689,3 +1689,38 @@ export async function saveMonteCarloResult(params: {
   ])
 }
 
+// ─── Shared Simulations ─────────────────────────────────────────
+
+export interface SharedSimulation {
+  id: string
+  config: object
+  created_at: string
+  view_count: number
+}
+
+export async function saveSharedSimulation(id: string, config: object): Promise<void> {
+  await query(`
+    INSERT INTO shared_simulations (id, config)
+    VALUES ($1, $2::jsonb)
+    ON CONFLICT (id) DO NOTHING
+  `, [id, JSON.stringify(config)])
+}
+
+export async function getSharedSimulation(id: string): Promise<SharedSimulation | null> {
+  const result = await query(`
+    UPDATE shared_simulations
+    SET view_count = view_count + 1, last_viewed_at = NOW()
+    WHERE id = $1
+    RETURNING id, config, created_at, view_count
+  `, [id])
+
+  if (result.rows.length === 0) return null
+  const row = result.rows[0]
+  return {
+    id: row.id,
+    config: row.config,
+    created_at: row.created_at,
+    view_count: row.view_count,
+  }
+}
+

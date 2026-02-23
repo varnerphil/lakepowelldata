@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { History, TrendingUp } from 'lucide-react'
 import OutflowSimulator from './OutflowSimulator'
-import MonteCarloSimulator from '@/components/projections/MonteCarloSimulator'
+import MonteCarloSimulator, { type SharedSimConfig } from '@/components/projections/MonteCarloSimulator'
 import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
 
 type TabId = 'historical' | 'projections'
@@ -30,13 +30,35 @@ export default function SimulatorTabs({
 }: SimulatorTabsProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const shareId = searchParams.get('share')
   const initialTab = searchParams.get('tab') === 'historical' ? 'historical' : 'projections'
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
+  const [sharedConfig, setSharedConfig] = useState<SharedSimConfig | null>(null)
+  const [shareLoading, setShareLoading] = useState(!!shareId)
+
+  useEffect(() => {
+    if (!shareId) return
+    setShareLoading(true)
+    fetch(`/api/simulations/${shareId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error('Not found')
+        return r.json()
+      })
+      .then((data) => {
+        setSharedConfig(data.config as SharedSimConfig)
+        setActiveTab('projections')
+        setShareLoading(false)
+      })
+      .catch(() => {
+        setShareLoading(false)
+      })
+  }, [shareId])
 
   const switchTab = (tab: TabId) => {
     setActiveTab(tab)
     const url = tab === 'historical' ? '/simulator?tab=historical' : '/simulator'
     router.replace(url, { scroll: false })
+    if (sharedConfig) setSharedConfig(null)
   }
 
   const tabs: { id: TabId; label: string; sublabel: string; icon: typeof History }[] = [
@@ -80,7 +102,11 @@ export default function SimulatorTabs({
       </div>
 
       {/* Content */}
-      {activeTab === 'historical' ? (
+      {shareLoading ? (
+        <div className="text-center py-12 text-gray-400 text-sm font-light">
+          Loading shared simulation...
+        </div>
+      ) : activeTab === 'historical' ? (
         <OutflowSimulator
           measurements={measurements}
           storageCapacity={storageCapacity}
@@ -93,6 +119,7 @@ export default function SimulatorTabs({
           <MonteCarloSimulator
             currentElevation={currentElevation}
             currentDate={currentDate}
+            sharedConfig={sharedConfig}
           />
 
           {/* Methodology note */}

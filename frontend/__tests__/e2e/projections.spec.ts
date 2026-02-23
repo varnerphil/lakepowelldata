@@ -265,3 +265,51 @@ test.describe('Projections — Navigation', () => {
     await expect(page.getByText(/simulator/i).first()).toBeVisible({ timeout: 10000 })
   })
 })
+
+test.describe('Projections — Share Simulation', () => {
+  test('share button appears after simulation completes', async ({ page }) => {
+    await page.goto(PROJECTIONS_URL)
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+
+    const shareBtn = page.getByRole('button', { name: /share these settings/i })
+    await expect(shareBtn).toBeVisible()
+  })
+
+  test('clicking share copies a link and creates a shareable URL', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto(PROJECTIONS_URL)
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+
+    const shareBtn = page.getByRole('button', { name: /share these settings/i })
+    await shareBtn.click()
+
+    await expect(page.getByText(/link copied/i)).toBeVisible({ timeout: 10000 })
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+    expect(clipboardText).toContain('/simulator?share=')
+  })
+
+  test('shared link loads simulation with correct settings', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto(PROJECTIONS_URL)
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+
+    const shareBtn = page.getByRole('button', { name: /share these settings/i })
+    await shareBtn.click()
+    await expect(page.getByText(/link copied/i)).toBeVisible({ timeout: 10000 })
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText())
+    const shareUrl = new URL(clipboardText)
+
+    await page.goto(shareUrl.pathname + shareUrl.search)
+    await expect(page.getByText(/shared projection/i)).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+  })
+
+  test('invalid share ID shows simulator without crash', async ({ page }) => {
+    await page.goto('/simulator?share=invalid_nonexistent_id')
+    await expect(page.getByText(/simulator/i).first()).toBeVisible({ timeout: 15000 })
+
+    await expect(page.getByRole('button', { name: /run projection/i })).toBeVisible({ timeout: 15000 })
+  })
+})
