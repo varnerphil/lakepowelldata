@@ -312,7 +312,162 @@ export default function MonteCarloSimulator({
         <div className="space-y-4">
           <h3 className="text-lg font-light text-gray-900">Projection Summary</h3>
 
-          {/* Plain-language overview */}
+          {/* Executive summary — the quick read */}
+          {(() => {
+            const startElev = startMode === 'today' ? currentElevation : customElevation
+            const stab = analyzeStabilization(result!.dailyPercentiles, startElev, yearsToProject)
+            const dp = result!.dailyPercentiles
+            const totalDays = yearsToProject * 365
+            const daysPerPoint = totalDays / (dp.length - 1)
+
+            // Direction phrase
+            const dirPhrase = stab.direction === 'rising'
+              ? `rise roughly ${Math.abs(stab.netChange).toFixed(0)} ft to around ${summary.medianEndingElevation.toFixed(0)} ft`
+              : stab.direction === 'falling'
+                ? `decline roughly ${Math.abs(stab.netChange).toFixed(0)} ft to around ${summary.medianEndingElevation.toFixed(0)} ft`
+                : `hold roughly steady around ${summary.medianEndingElevation.toFixed(0)} ft`
+
+            // Power risk
+            const powerOk = thresholds.stayAboveMinPower >= 90
+            const fullPowerOk = thresholds.stayAbove3525 >= 90
+            let powerPhrase = ''
+            if (!powerOk) {
+              const pctRisk = (100 - thresholds.stayAboveMinPower).toFixed(0)
+              powerPhrase = `There is a ${pctRisk}% chance of losing all power generation.`
+            } else if (!fullPowerOk) {
+              powerPhrase = 'Full power generation is at risk, though partial generation is likely maintained.'
+            }
+
+            // Recovery
+            const recoveryChance = thresholds.reachRecoveryTarget
+            const recoveryPhrase = recoveryChance >= 50
+              ? `There is a ${recoveryChance.toFixed(0)}% chance the lake reaches healthy recovery (3,660 ft).`
+              : recoveryChance >= 10
+                ? `Recovery to 3,660 ft is possible but unlikely (${recoveryChance.toFixed(0)}% chance).`
+                : ''
+
+            // Drought note
+            const p10Low = summary.lowestElevationReached.p10
+            const droughtPhrase = p10Low < 3490
+              ? ` In a worst-case drought, the lake could drop as low as ${p10Low.toFixed(0)} ft.`
+              : ''
+
+            // --- Phase-based outlook ---
+            // Short: 0-5yr, Medium: 5-15yr, Long: 15+yr
+            // Only show phases that fall within the projection window
+            interface PhaseAssessment {
+              label: string
+              rangeLabel: string
+              medianStart: number
+              medianEnd: number
+              p10Low: number
+              direction: 'rising' | 'falling' | 'stable'
+              change: number
+              verdict: string
+            }
+
+            const getPointAtYear = (yr: number) => {
+              const idx = Math.min(Math.round((yr * 365) / daysPerPoint), dp.length - 1)
+              return dp[idx]
+            }
+
+            const getP10LowInRange = (startYr: number, endYr: number) => {
+              const startIdx = Math.round((startYr * 365) / daysPerPoint)
+              const endIdx = Math.min(Math.round((endYr * 365) / daysPerPoint), dp.length - 1)
+              let low = Infinity
+              for (let i = Math.max(0, startIdx); i <= endIdx; i++) {
+                if (dp[i].p10 < low) low = dp[i].p10
+              }
+              return low
+            }
+
+            const buildPhase = (label: string, rangeLabel: string, startYr: number, endYr: number): PhaseAssessment => {
+              const pStart = getPointAtYear(startYr)
+              const pEnd = getPointAtYear(endYr)
+              const change = pEnd.p50 - pStart.p50
+              const direction: 'rising' | 'falling' | 'stable' =
+                change > 5 ? 'rising' : change < -5 ? 'falling' : 'stable'
+              const low = getP10LowInRange(startYr, endYr)
+
+              let verdict: string
+              if (direction === 'rising' && low >= 3490) {
+                verdict = 'the lake improves — power generation is secure and the trend is positive.'
+              } else if (direction === 'rising' && low >= 3370) {
+                verdict = 'the lake trends upward, but drought could still threaten power generation.'
+              } else if (direction === 'rising') {
+                verdict = 'the lake is rising overall, but severe drought could push it dangerously low.'
+              } else if (direction === 'stable' && low >= 3490) {
+                verdict = 'the lake holds steady with power generation secure.'
+              } else if (direction === 'stable') {
+                verdict = 'the lake holds steady, but drought vulnerability remains.'
+              } else if (low >= 3490) {
+                verdict = 'the lake is declining, though power generation stays online in most scenarios.'
+              } else if (low >= 3370) {
+                verdict = 'the lake is declining with significant risk to power generation.'
+              } else {
+                verdict = 'the lake faces serious decline with risk of reaching dead pool.'
+              }
+
+              return { label, rangeLabel, medianStart: pStart.p50, medianEnd: pEnd.p50, p10Low: low, direction, change, verdict }
+            }
+
+            const phases: PhaseAssessment[] = []
+
+            if (yearsToProject <= 5) {
+              phases.push(buildPhase('Short-term', `1–${yearsToProject} yr`, 0, yearsToProject))
+            } else if (yearsToProject <= 15) {
+              phases.push(buildPhase('Short-term', '1–5 yr', 0, 5))
+              phases.push(buildPhase('Medium-term', `5–${yearsToProject} yr`, 5, yearsToProject))
+            } else {
+              phases.push(buildPhase('Short-term', '1–5 yr', 0, 5))
+              phases.push(buildPhase('Medium-term', '5–15 yr', 5, 15))
+              phases.push(buildPhase('Long-term', `15–${yearsToProject} yr`, 15, yearsToProject))
+            }
+
+            const dirColor = (d: 'rising' | 'falling' | 'stable') =>
+              d === 'rising' ? 'text-emerald-700' : d === 'falling' ? 'text-red-700' : 'text-gray-700'
+
+            const dirArrow = (d: 'rising' | 'falling' | 'stable') =>
+              d === 'rising' ? '↑' : d === 'falling' ? '↓' : '→'
+
+            return (
+              <div className="bg-gray-50 rounded-xl border border-gray-200 px-4 sm:px-5 py-3.5 space-y-3">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  <span className="font-semibold text-gray-900">Bottom line: </span>
+                  Under the <span className="font-medium">{policy.name}</span> policy over {yearsToProject} years,
+                  the lake is projected to {dirPhrase}.
+                  {powerPhrase ? ` ${powerPhrase}` : ''}
+                  {recoveryPhrase ? ` ${recoveryPhrase}` : ''}
+                  {droughtPhrase}
+                </p>
+
+                <div className="space-y-2 pt-1 border-t border-gray-200">
+                  {phases.map((phase) => (
+                    <div key={phase.label} className="flex items-start gap-2">
+                      <span className={`text-sm font-semibold mt-px ${dirColor(phase.direction)}`}>
+                        {dirArrow(phase.direction)}
+                      </span>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        <span className="font-semibold text-gray-900">{phase.label}</span>
+                        <span className="text-gray-400"> ({phase.rangeLabel})</span>
+                        {': '}
+                        <span className={`font-medium ${dirColor(phase.direction)}`}>
+                          {phase.direction === 'rising'
+                            ? `+${phase.change.toFixed(0)} ft`
+                            : phase.direction === 'falling'
+                              ? `${phase.change.toFixed(0)} ft`
+                              : 'steady'}
+                        </span>
+                        {' to ~'}{phase.medianEnd.toFixed(0)} ft — {phase.verdict}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Detailed breakdown */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-5">
             {/* Where the lake ends up */}
             <div>

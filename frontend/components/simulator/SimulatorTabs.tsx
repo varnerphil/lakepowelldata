@@ -30,35 +30,29 @@ export default function SimulatorTabs({
 }: SimulatorTabsProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const initialTab = searchParams.get('tab') === 'projections' ? 'projections' : 'historical'
+  const initialTab = searchParams.get('tab') === 'historical' ? 'historical' : 'projections'
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
 
   const switchTab = (tab: TabId) => {
     setActiveTab(tab)
-    const url = tab === 'projections' ? '/simulator?tab=projections' : '/simulator'
+    const url = tab === 'historical' ? '/simulator?tab=historical' : '/simulator'
     router.replace(url, { scroll: false })
   }
 
   const tabs: { id: TabId; label: string; sublabel: string; icon: typeof History }[] = [
-    { id: 'historical', label: 'Historical', sublabel: 'Replay the past with different outflow', icon: History },
     { id: 'projections', label: 'Projections', sublabel: 'Simulate future scenarios', icon: TrendingUp },
+    { id: 'historical', label: 'Historical', sublabel: 'Replay the past with different policies', icon: History },
   ]
 
   return (
     <>
-      {/* Header */}
+      {/* Header + Tab toggle */}
       <div className="mb-6 sm:mb-10 text-center">
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-gray-900 mb-2 sm:mb-4">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-gray-900 mb-4 sm:mb-6">
           Simulator
         </h1>
-        <p className="text-sm sm:text-lg text-gray-500 font-light max-w-2xl mx-auto">
-          {activeTab === 'historical'
-            ? 'Explore "what-if" scenarios by adjusting historical outflow percentages'
-            : 'Project Lake Powell\u2019s future levels under different outflow policies'}
-        </p>
       </div>
 
-      {/* Tab toggle */}
       <div className="flex justify-center mb-8 sm:mb-10">
         <div className="inline-flex bg-gray-100 rounded-xl p-1 gap-1">
           {tabs.map((tab) => {

@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { simulateOutflow, SimulationResult } from '@/lib/calculations'
+import { simulateOutflow, simulateWithPolicy, SimulationResult } from '@/lib/calculations'
+import { POLICY_PRESETS, COMPACT_RELEASE_AF, type OutflowPolicy } from '@/lib/monte-carlo'
 import { formatDateString } from '@/lib/date-utils'
 import SimulationChart from './SimulationChart'
+import PolicySelector from '@/components/projections/PolicySelector'
 import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
 
 interface OutflowSimulatorProps {
@@ -30,7 +32,9 @@ export default function OutflowSimulator({
   ]
   
   const [startDate, setStartDate] = useState('2005-04-13')
+  const [outflowMode, setOutflowMode] = useState<'percentage' | 'policy'>('percentage')
   const [outflowPercentage, setOutflowPercentage] = useState(95)
+  const [selectedPolicy, setSelectedPolicy] = useState<OutflowPolicy>(POLICY_PRESETS[0])
   const [hasCalculated, setHasCalculated] = useState(true) // Auto-run on load
   const [favoriteRampIds, setFavoriteRampIds] = useState<number[]>([])
   
@@ -54,8 +58,11 @@ export default function OutflowSimulator({
   // Run simulation whenever inputs change (memoized for performance)
   const simulationResult = useMemo<SimulationResult | null>(() => {
     if (!hasCalculated) return null
+    if (outflowMode === 'policy') {
+      return simulateWithPolicy(startDate, selectedPolicy, measurements, storageCapacity)
+    }
     return simulateOutflow(startDate, outflowPercentage, measurements, storageCapacity)
-  }, [startDate, outflowPercentage, measurements, storageCapacity, hasCalculated])
+  }, [startDate, outflowMode, outflowPercentage, selectedPolicy, measurements, storageCapacity, hasCalculated])
   
   const handleCalculate = () => {
     setHasCalculated(true)
@@ -122,6 +129,47 @@ export default function OutflowSimulator({
             <p className="text-xs text-gray-400 mt-1 font-light lg:hidden">
               Simulation runs from this date to present
             </p>
+          </div>
+
+          {/* Outflow mode toggle */}
+          <div className="mt-4">
+            <label className="block text-sm font-light text-gray-600 mb-2">
+              Outflow Method
+            </label>
+            <div className="inline-flex bg-gray-100 rounded-lg p-0.5 gap-0.5 mb-3">
+              <button
+                onClick={() => { setOutflowMode('percentage'); setHasCalculated(true) }}
+                className={`px-3 py-1.5 text-xs font-light rounded-md transition-colors ${
+                  outflowMode === 'percentage'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                % of actual
+              </button>
+              <button
+                onClick={() => { setOutflowMode('policy'); setHasCalculated(true) }}
+                className={`px-3 py-1.5 text-xs font-light rounded-md transition-colors ${
+                  outflowMode === 'policy'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Policy-based
+              </button>
+            </div>
+
+            {outflowMode === 'policy' && (
+              <div>
+                <PolicySelector
+                  value={selectedPolicy}
+                  onChange={(p) => { setSelectedPolicy(p); setHasCalculated(true) }}
+                />
+                <p className="text-xs text-gray-400 mt-2 font-light">
+                  Applies this policy&apos;s release schedule to historical inflows — see how the lake would have responded.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -231,7 +279,10 @@ export default function OutflowSimulator({
                 Simulating from <span className="font-medium text-gray-700">{formatDateString(simulationResult.summary.startDate, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 {' '}to <span className="font-medium text-gray-700">{formatDateString(simulationResult.summary.endDate, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 {' '}({simulationResult.dailyData.length.toLocaleString()} days)
-                {' '}with <span className="font-medium text-[#4a90a4]">{outflowPercentage}%</span> of actual outflow.
+                {outflowMode === 'policy'
+                  ? <> using <span className="font-medium text-[#4a90a4]">{selectedPolicy.name}</span> policy.</>
+                  : <> with <span className="font-medium text-[#4a90a4]">{outflowPercentage}%</span> of actual outflow.</>
+                }
               </p>
             </div>
           </div>
@@ -249,42 +300,50 @@ export default function OutflowSimulator({
             
             <SimulationChart data={simulationResult.dailyData} ramps={favoriteRamps} />
             
-            {/* Outflow Percentage Slider */}
-            <div>
-              <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
-                Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="range"
-                  id="outflowPercentage"
-                  min={70}
-                  max={110}
-                  step={1}
-                  value={outflowPercentage}
-                  onChange={(e) => {
-                    setOutflowPercentage(Number(e.target.value))
-                    setHasCalculated(true) // Auto-run when slider changes
-                  }}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
-                />
-              </div>
-              <div className="mt-1">
-                {/* Static labels - only edges */}
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>70%</span>
-                  <span>110%</span>
+            {/* Outflow Percentage Slider — only in percentage mode */}
+            {outflowMode === 'percentage' && (() => {
+              const annualAf = COMPACT_RELEASE_AF * (outflowPercentage / 100)
+              const annualMaf = (annualAf / 1_000_000).toFixed(1)
+              const diffAf = Math.abs(COMPACT_RELEASE_AF - annualAf)
+              const diffMaf = (diffAf / 1_000_000).toFixed(1)
+              return (
+                <div>
+                  <label htmlFor="outflowPercentage" className="block text-sm font-light text-gray-600 mb-2">
+                    Outflow Percentage: <span className="font-medium text-gray-900">{outflowPercentage}%</span>
+                    <span className="text-gray-400"> — {annualMaf} MAF/yr{outflowPercentage !== 100 && ` (${outflowPercentage < 100 ? '-' : '+'}${diffMaf} MAF/yr)`}</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      id="outflowPercentage"
+                      min={70}
+                      max={110}
+                      step={1}
+                      value={outflowPercentage}
+                      onChange={(e) => {
+                        setOutflowPercentage(Number(e.target.value))
+                        setHasCalculated(true)
+                      }}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#4a90a4]"
+                    />
+                  </div>
+                  <div className="mt-1">
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>70%</span>
+                      <span>110%</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2 font-light">
+                    {outflowPercentage < 100
+                      ? <><strong>Releases {100 - outflowPercentage}% less water than actually occurred</strong> — saving ~{diffMaf} MAF/yr</>
+                      : outflowPercentage > 100
+                        ? <><strong>Releases {outflowPercentage - 100}% more water than actually occurred</strong> — an extra ~{diffMaf} MAF/yr</>
+                        : 'Matches actual historical releases (8.2 MAF/yr compact obligation)'
+                    }
+                  </p>
                 </div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2 font-light">
-                {outflowPercentage < 100 
-                  ? <><strong>Releases {100 - outflowPercentage}% less water than actually occurred</strong></>
-                  : outflowPercentage > 100
-                  ? <><strong>Releases {outflowPercentage - 100}% more water than actually occurred</strong></>
-                  : 'Matches actual historical releases'
-                }
-              </p>
-            </div>
+              )
+            })()}
           </div>
         </div>
       )}

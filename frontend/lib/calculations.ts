@@ -1,4 +1,5 @@
 import { WaterMeasurement, ElevationStorageCapacity } from './db'
+import { type OutflowPolicy, applyPolicy } from './monte-carlo'
 
 /**
  * Calculate projected runoff based on snowpack percentage and historical data
@@ -925,10 +926,16 @@ export function simulateOutflow(
     const outflowDiffCfs = outflow - adjustedOutflow
     // Convert cfs to acre-feet per day
     const outflowDiffAF = outflowDiffCfs * CFS_TO_AF_PER_DAY
+
+    // Evaporation correction: the actual content change already includes evaporation
+    // at the ACTUAL elevation. If the simulated lake is at a different elevation,
+    // it has a different surface area and loses a different amount to evaporation.
+    const evapAtActual = getDailyEvaporation(date, actualElevation)
+    const evapAtSimulated = getDailyEvaporation(date, contentToElevation(simulatedContent, storageCapacity))
+    const evapDiff = evapAtSimulated - evapAtActual
     
-    // Simulated change = effective actual change + outflow difference (in acre-feet)
-    // This is because if we release less water, we keep more
-    const simulatedChange = effectiveActualChange + outflowDiffAF
+    // Simulated change = actual change + outflow savings - extra evaporation
+    const simulatedChange = effectiveActualChange + outflowDiffAF - evapDiff
     
     // Update simulated content
     let newSimulatedContent = Math.max(0, simulatedContent + simulatedChange)
@@ -946,8 +953,6 @@ export function simulateOutflow(
     // Convert to elevation
     const simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
     
-    // For evaporation display, use our monthly model based on simulated elevation
-    // This gives a realistic evaporation estimate for the simulated scenario
     const modeledEvaporation = getDailyEvaporation(date, simulatedElevation)
     
     // Track totals (convert cfs to acre-feet per day)
@@ -991,3 +996,143 @@ export function simulateOutflow(
   return { dailyData, summary }
 }
 
+/**
+ * Simulate historical lake levels using a policy-based outflow schedule instead
+ * of a flat percentage. The policy determines daily outflow based on the simulated
+ * elevation at each step, using the same tier logic as the Monte Carlo projections.
+ */
+export function simulateWithPolicy(
+  startDate: string,
+  policy: OutflowPolicy,
+  measurements: WaterMeasurement[],
+  storageCapacity: ElevationStorageCapacity[]
+): SimulationResult | null {
+  const FULL_POOL_CAPACITY = 24322000
+  const CFS_TO_AF_PER_DAY = 1.9835
+
+  const filtered = measurements
+    .filter(m => m.date >= startDate)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  if (filtered.length === 0) return null
+
+  const firstDay = filtered[0]
+  let simulatedContent = Math.min(firstDay.content || 0, FULL_POOL_CAPACITY)
+  let simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+
+  const dailyData: SimulationDayResult[] = []
+  let totalActualOutflowAF = 0
+  let totalSimulatedOutflowAF = 0
+  let totalEvaporation = 0
+  let totalSpillway = 0
+
+  let firstDaySpillway = 0
+  if ((firstDay.content || 0) > FULL_POOL_CAPACITY) {
+    firstDaySpillway = (firstDay.content || 0) - FULL_POOL_CAPACITY
+    totalSpillway += firstDaySpillway
+  }
+
+  const firstDayPolicyOutflow = applyPolicy(firstDay.inflow || 0, simulatedElevation, policy)
+
+  dailyData.push({
+    date: firstDay.date,
+    actualElevation: firstDay.elevation,
+    actualContent: firstDay.content || 0,
+    actualInflow: firstDay.inflow || 0,
+    actualOutflow: firstDay.outflow || 0,
+    simulatedElevation,
+    simulatedContent: Math.round(simulatedContent),
+    adjustedOutflow: Math.round(firstDayPolicyOutflow),
+    evaporation: 0,
+    spillway: Math.round(firstDaySpillway)
+  })
+
+  totalActualOutflowAF += (firstDay.outflow || 0) * CFS_TO_AF_PER_DAY
+  totalSimulatedOutflowAF += firstDayPolicyOutflow * CFS_TO_AF_PER_DAY
+
+  for (let i = 1; i < filtered.length; i++) {
+    const measurement = filtered[i]
+    const date = new Date(measurement.date)
+    const inflow = measurement.inflow || 0
+    const outflow = measurement.outflow || 0
+    const actualContent = measurement.content || 0
+    const actualElevation = measurement.elevation
+
+    // Policy-determined outflow based on current simulated elevation
+    const policyOutflowCfs = applyPolicy(inflow, simulatedElevation, policy)
+
+    // Differential approach: use the ACTUAL content change (which captures
+    // all real-world effects: bank storage, seepage, precipitation, etc.)
+    // and only swap out the outflow component.
+    const prevActualContent = filtered[i - 1].content || 0
+    const actualChange = actualContent - prevActualContent
+
+    const expectedChangeFromFlows = (inflow - outflow) * CFS_TO_AF_PER_DAY
+    const ANOMALY_THRESHOLD = 50000
+    const isAnomalous = Math.abs(actualChange - expectedChangeFromFlows) > ANOMALY_THRESHOLD
+    const effectiveActualChange = isAnomalous ? expectedChangeFromFlows : actualChange
+
+    // Replace actual outflow with policy outflow: positive = water saved
+    const outflowDiffAF = (outflow - policyOutflowCfs) * CFS_TO_AF_PER_DAY
+
+    // Evaporation correction: actual content change includes evaporation at the
+    // ACTUAL elevation. Adjust for the different surface area at our simulated elevation.
+    const evapAtActual = getDailyEvaporation(date, actualElevation)
+    const evapAtSimulated = getDailyEvaporation(date, simulatedElevation)
+    const evapDiff = evapAtSimulated - evapAtActual
+
+    const simulatedChange = effectiveActualChange + outflowDiffAF - evapDiff
+
+    let newContent = Math.max(0, simulatedContent + simulatedChange)
+
+    let spillway = 0
+    if (newContent > FULL_POOL_CAPACITY) {
+      spillway = newContent - FULL_POOL_CAPACITY
+      newContent = FULL_POOL_CAPACITY
+      totalSpillway += spillway
+    }
+
+    simulatedContent = newContent
+    simulatedElevation = contentToElevation(simulatedContent, storageCapacity)
+
+    const policyOutflowAf = policyOutflowCfs * CFS_TO_AF_PER_DAY
+    const modeledEvaporation = getDailyEvaporation(date, simulatedElevation)
+
+    totalActualOutflowAF += outflow * CFS_TO_AF_PER_DAY
+    totalSimulatedOutflowAF += policyOutflowAf
+    totalEvaporation += modeledEvaporation
+
+    dailyData.push({
+      date: measurement.date,
+      actualElevation,
+      actualContent,
+      actualInflow: inflow,
+      actualOutflow: outflow,
+      simulatedElevation: Math.round(simulatedElevation * 100) / 100,
+      simulatedContent: Math.round(simulatedContent),
+      adjustedOutflow: Math.round(policyOutflowCfs),
+      evaporation: Math.round(modeledEvaporation),
+      spillway: Math.round(spillway)
+    })
+  }
+
+  const lastDay = dailyData[dailyData.length - 1]
+  const summary: SimulationSummary = {
+    startDate,
+    endDate: lastDay.date,
+    outflowPercentage: 0,
+    actualEndingElevation: Math.round(lastDay.actualElevation * 100) / 100,
+    simulatedEndingElevation: lastDay.simulatedElevation,
+    elevationDifference: Math.round((lastDay.simulatedElevation - lastDay.actualElevation) * 100) / 100,
+    actualEndingContent: lastDay.actualContent,
+    simulatedEndingContent: lastDay.simulatedContent,
+    contentDifference: lastDay.simulatedContent - lastDay.actualContent,
+    totalActualOutflow: Math.round(totalActualOutflowAF),
+    totalSimulatedOutflow: Math.round(totalSimulatedOutflowAF + totalSpillway),
+    outflowDifference: Math.round(totalActualOutflowAF - totalSimulatedOutflowAF - totalSpillway),
+    totalEvaporation: Math.round(totalEvaporation),
+    totalSpillway: Math.round(totalSpillway)
+  }
+
+  return { dailyData, summary }
+}
