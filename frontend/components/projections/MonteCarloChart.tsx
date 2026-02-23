@@ -26,6 +26,22 @@ const FULL_POOL = 3700
 const DEAD_POOL = 3370
 const MIN_POWER = 3490
 
+const RAMP_SHORT_NAMES: Record<string, string> = {
+  'Castle Rock Cut-Off': 'The Cut',
+  'Castle Rock': 'The Cut',
+  'Antelope Point Business Ramp': 'Antelope Pt',
+  'Antelope Point Public Ramp': 'Antelope Pub',
+  'Bullfrog Main Ramp': 'Bullfrog',
+  'Bullfrog Main Launch': 'Bullfrog',
+  'Bullfrog North Ramp': 'Bullfrog N',
+  'Stateline Launch': 'Stateline',
+  'Halls Crossing (use at own risk)': 'Halls Crossing',
+}
+
+function shortenRampName(name: string): string {
+  return RAMP_SHORT_NAMES[name] ?? name.replace(/ Ramp$/, '').replace(/ \(.*\)$/, '')
+}
+
 export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: MonteCarloChartProps) {
   const [isMobile, setIsMobile] = useState(false)
 
@@ -261,6 +277,7 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
           {ramps.map((ramp, i) => {
             if (ramp.elevation < yMin || ramp.elevation > yMax) return null
             const color = rampColors[i % rampColors.length]
+            const shortName = shortenRampName(ramp.name)
             return (
               <ReferenceLine
                 key={ramp.name}
@@ -269,7 +286,7 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
                 strokeDasharray="3 3"
                 strokeOpacity={0.5}
                 label={{
-                  value: `${ramp.name} ${ramp.elevation}ft`,
+                  value: `${shortName} ${ramp.elevation}ft`,
                   position: 'right',
                   fill: color,
                   fontSize: isMobile ? 8 : 10,
