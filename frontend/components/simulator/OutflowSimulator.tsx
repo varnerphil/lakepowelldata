@@ -1,12 +1,20 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { simulateOutflow, simulateWithPolicy, SimulationResult } from '@/lib/calculations'
 import { POLICY_PRESETS, COMPACT_RELEASE_AF, type OutflowPolicy } from '@/lib/monte-carlo'
 import { formatDateString } from '@/lib/date-utils'
 import SimulationChart from './SimulationChart'
 import PolicySelector from '@/components/projections/PolicySelector'
+import ShareButton from '@/components/ui/ShareButton'
 import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
+
+export interface HistoricalSimDefaults {
+  startDate?: string
+  outflowMode?: 'percentage' | 'policy'
+  outflowPercentage?: number
+  policyName?: string
+}
 
 interface OutflowSimulatorProps {
   measurements: WaterMeasurement[]
@@ -14,6 +22,7 @@ interface OutflowSimulatorProps {
   minDate: string
   maxDate: string
   ramps: Ramp[]
+  defaults?: HistoricalSimDefaults
 }
 
 export default function OutflowSimulator({
@@ -21,20 +30,24 @@ export default function OutflowSimulator({
   storageCapacity,
   minDate,
   maxDate,
-  ramps
+  ramps,
+  defaults,
 }: OutflowSimulatorProps) {
-  // Preset start dates (sorted chronologically)
   const PRESET_DATES = [
     { label: 'Jan 1, 2000', value: '2000-01-01' },
     { label: 'Apr 13, 2005', value: '2005-04-13' },
     { label: 'Mar 17, 2014', value: '2014-03-17' },
     { label: 'Apr 3, 2022', value: '2022-04-03' }
   ]
-  
-  const [startDate, setStartDate] = useState('2005-04-13')
-  const [outflowMode, setOutflowMode] = useState<'percentage' | 'policy'>('percentage')
-  const [outflowPercentage, setOutflowPercentage] = useState(95)
-  const [selectedPolicy, setSelectedPolicy] = useState<OutflowPolicy>(POLICY_PRESETS[0])
+
+  const resolvedPolicy = defaults?.policyName
+    ? POLICY_PRESETS.find((p) => p.name === defaults.policyName) ?? POLICY_PRESETS[0]
+    : POLICY_PRESETS[0]
+
+  const [startDate, setStartDate] = useState(defaults?.startDate ?? '2005-04-13')
+  const [outflowMode, setOutflowMode] = useState<'percentage' | 'policy'>(defaults?.outflowMode ?? 'percentage')
+  const [outflowPercentage, setOutflowPercentage] = useState(defaults?.outflowPercentage ?? 95)
+  const [selectedPolicy, setSelectedPolicy] = useState<OutflowPolicy>(resolvedPolicy)
   const [hasCalculated, setHasCalculated] = useState(true) // Auto-run on load
   const [favoriteRampIds, setFavoriteRampIds] = useState<number[]>([])
   
@@ -67,6 +80,16 @@ export default function OutflowSimulator({
   const handleCalculate = () => {
     setHasCalculated(true)
   }
+
+  const getShareUrl = useCallback((origin: string) => {
+    const params = new URLSearchParams({ tab: 'historical', start: startDate, mode: outflowMode })
+    if (outflowMode === 'percentage') {
+      params.set('pct', String(outflowPercentage))
+    } else {
+      params.set('policy', selectedPolicy.name)
+    }
+    return `${origin}/simulator?${params.toString()}`
+  }, [startDate, outflowMode, outflowPercentage, selectedPolicy])
   
   // Format numbers for display
   const formatNumber = (num: number) => {
@@ -179,9 +202,12 @@ export default function OutflowSimulator({
         <div className="flex flex-col gap-2 sm:gap-3">
           {/* Summary Card - Always second */}
           <div className="card p-4 sm:p-6 lg:p-6 order-2">
-            <h2 className="text-lg sm:text-xl font-light text-gray-900 mb-4 sm:mb-5">
-              Simulation Results
-            </h2>
+            <div className="flex items-center justify-between mb-4 sm:mb-5">
+              <h2 className="text-lg sm:text-xl font-light text-gray-900">
+                Simulation Results
+              </h2>
+              <ShareButton getShareUrl={getShareUrl} variant="compact" />
+            </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
               {/* Actual End Elevation */}

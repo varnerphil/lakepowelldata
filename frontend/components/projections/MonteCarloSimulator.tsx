@@ -11,7 +11,8 @@ import type { WorkerResponse } from '@/workers/monte-carlo.worker'
 import MonteCarloChart from './MonteCarloChart'
 import PolicySelector from './PolicySelector'
 import PolicyComparison from './PolicyComparison'
-import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Share2, Check, Link2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Link2 } from 'lucide-react'
+import ShareButton from '@/components/ui/ShareButton'
 
 export interface SharedSimConfig {
   policy: OutflowPolicy
@@ -44,8 +45,6 @@ export default function MonteCarloSimulator({
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
-  const [shareStatus, setShareStatus] = useState<'idle' | 'saving' | 'copied'>('idle')
-  const [sharedId, setSharedId] = useState<string | null>(null)
   const workerRef = useRef<Worker | null>(null)
 
   // Load favorite ramps from localStorage
@@ -157,32 +156,22 @@ export default function MonteCarloSimulator({
     }
   }, [policy, yearsToProject, inflowScenario, startMode, customElevation, favoriteRamps])
 
-  const shareSimulation = useCallback(async () => {
-    setShareStatus('saving')
-    try {
-      const config: SharedSimConfig = {
-        policy,
-        yearsToProject,
-        inflowScenario,
-        startMode,
-        ...(startMode === 'custom' ? { customElevation } : {}),
-      }
-      const res = await fetch('/api/simulations/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config }),
-      })
-      if (!res.ok) throw new Error('Failed to save')
-      const { id } = await res.json()
-      setSharedId(id)
-
-      const url = `${window.location.origin}/simulator?share=${id}`
-      await navigator.clipboard.writeText(url)
-      setShareStatus('copied')
-      setTimeout(() => setShareStatus('idle'), 3000)
-    } catch {
-      setShareStatus('idle')
+  const getShareUrl = useCallback(async (origin: string) => {
+    const config: SharedSimConfig = {
+      policy,
+      yearsToProject,
+      inflowScenario,
+      startMode,
+      ...(startMode === 'custom' ? { customElevation } : {}),
     }
+    const res = await fetch('/api/simulations/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config }),
+    })
+    if (!res.ok) throw new Error('Failed to save')
+    const { id } = await res.json()
+    return `${origin}/simulator?share=${id}`
   }, [policy, yearsToProject, inflowScenario, startMode, customElevation])
 
   // Auto-run on mount
@@ -321,28 +310,11 @@ export default function MonteCarloSimulator({
             </div>
           )}
           {result && (
-            <button
-              onClick={shareSimulation}
-              disabled={shareStatus === 'saving'}
-              className="w-full mt-2 py-2 text-xs font-light rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              {shareStatus === 'copied' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-emerald-600">Link copied!</span>
-                </>
-              ) : shareStatus === 'saving' ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share these settings
-                </>
-              )}
-            </button>
+            <ShareButton
+              getShareUrl={getShareUrl}
+              label="Share these settings"
+              className="w-full mt-2 justify-center"
+            />
           )}
         </div>
       </div>

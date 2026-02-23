@@ -1,6 +1,7 @@
 import { WaterMeasurement, Ramp } from '@/lib/db'
 import WaterLevelChart from '@/components/charts/WaterLevelChart'
 import TimeRangeButtons from '@/components/charts/TimeRangeButtons'
+import ShareButton from '@/components/ui/ShareButton'
 import { Suspense } from 'react'
 
 interface HistoricalChartProps {
@@ -25,7 +26,10 @@ export default function HistoricalChart({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-1">
-        <h2 className="text-xl sm:text-2xl font-light text-gray-900">Elevation Trend</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-light text-gray-900">Elevation Trend</h2>
+          <ShareButton variant="compact" />
+        </div>
         <span className="text-xs sm:text-sm text-gray-500 font-light">
           {data.length.toLocaleString()} data point{data.length !== 1 ? 's' : ''}
         </span>

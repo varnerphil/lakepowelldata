@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { History, TrendingUp } from 'lucide-react'
-import OutflowSimulator from './OutflowSimulator'
+import OutflowSimulator, { type HistoricalSimDefaults } from './OutflowSimulator'
 import MonteCarloSimulator, { type SharedSimConfig } from '@/components/projections/MonteCarloSimulator'
 import type { WaterMeasurement, ElevationStorageCapacity, Ramp } from '@/lib/db'
 
@@ -35,6 +35,16 @@ export default function SimulatorTabs({
   const [activeTab, setActiveTab] = useState<TabId>(initialTab)
   const [sharedConfig, setSharedConfig] = useState<SharedSimConfig | null>(null)
   const [shareLoading, setShareLoading] = useState(!!shareId)
+
+  const historicalDefaults: HistoricalSimDefaults | undefined =
+    initialTab === 'historical'
+      ? {
+          startDate: searchParams.get('start') || undefined,
+          outflowMode: (searchParams.get('mode') as 'percentage' | 'policy') || undefined,
+          outflowPercentage: searchParams.get('pct') ? Number(searchParams.get('pct')) : undefined,
+          policyName: searchParams.get('policy') || undefined,
+        }
+      : undefined
 
   useEffect(() => {
     if (!shareId) return
@@ -113,6 +123,7 @@ export default function SimulatorTabs({
           minDate={minDate}
           maxDate={maxDate}
           ramps={ramps}
+          defaults={historicalDefaults}
         />
       ) : (
         <>

@@ -3,6 +3,7 @@ import SnowpackCharts from '@/components/snowpack/SnowpackCharts'
 import SnowpackMap from '@/components/snowpack/SnowpackMap'
 import TributarySnowpack from '@/components/snowpack/TributarySnowpack'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
+import ShareButton from '@/components/ui/ShareButton'
 
 // Revalidate every hour for updated snowpack data
 export const revalidate = 3600
@@ -182,7 +183,10 @@ export default async function SnowpackPage() {
         <p className="text-xs sm:text-sm text-gray-400 font-light">
           Based on Mountain Data from NRCS SNOTEL Sites
         </p>
-        
+        <div className="mt-3">
+          <ShareButton label="Share" />
+        </div>
+
         {/* Collapsible Explanation Section */}
         <details className="mt-6 inline-block">
           <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 font-light underline decoration-dotted underline-offset-4">

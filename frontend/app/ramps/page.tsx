@@ -2,6 +2,7 @@ import { getAllRamps, getLatestWaterMeasurement, calculateRampStatus } from '@/l
 import { formatDateString } from '@/lib/date-utils'
 import { unstable_cache } from 'next/cache'
 import RampStatusCard from '@/components/ramp-status/RampStatusCard'
+import ShareButton from '@/components/ui/ShareButton'
 
 // Cache ramps for 1 hour
 const getCachedRamps = unstable_cache(
@@ -65,6 +66,9 @@ export default async function RampsPage() {
         <p className="text-sm sm:text-lg text-gray-500 font-light max-w-2xl mx-auto">
           Check the accessibility of boat ramps based on current water levels
         </p>
+        <div className="mt-3">
+          <ShareButton label="Share" />
+        </div>
       </div>
       
       <div className="mb-8 sm:mb-12 card p-4 sm:p-6 lg:p-8 text-center">
