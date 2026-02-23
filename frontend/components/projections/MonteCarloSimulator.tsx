@@ -23,7 +23,7 @@ export default function MonteCarloSimulator({
   currentDate,
 }: MonteCarloSimulatorProps) {
   const [policy, setPolicy] = useState<OutflowPolicy>(POLICY_PRESETS[0])
-  const [yearsToProject, setYearsToProject] = useState(5)
+  const [yearsToProject, setYearsToProject] = useState(10)
   const [inflowScenario, setInflowScenario] = useState<InflowScenario>('last30')
   const [startMode, setStartMode] = useState<'today' | 'custom'>('today')
   const [customElevation, setCustomElevation] = useState(currentElevation)
