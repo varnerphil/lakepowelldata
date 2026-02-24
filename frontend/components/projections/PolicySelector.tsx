@@ -313,7 +313,13 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
       {/* Preset selector */}
       <div className="relative">
         <select
-          value={POLICY_PRESETS.some((p) => p.name === value.name) ? value.name : '__custom__'}
+          value={
+            POLICY_PRESETS.some((p) => p.name === value.name)
+              ? value.name
+              : activeSavedName
+                ? `__saved__:${activeSavedName}`
+                : '__custom__'
+          }
           onChange={(e) => {
             const val = e.target.value
             if (val.startsWith('__saved__:')) {
@@ -331,6 +337,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               {p.name}
             </option>
           ))}
+          <option value="__custom__">Custom Policy</option>
           {savedPolicies.length > 0 && (
             <optgroup label="Your saved policies">
               {savedPolicies.map((p) => (
@@ -340,7 +347,6 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               ))}
             </optgroup>
           )}
-          <option value="__custom__">Custom Policy</option>
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
       </div>
