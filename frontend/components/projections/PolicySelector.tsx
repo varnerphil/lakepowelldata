@@ -119,7 +119,12 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setCustomTiers(sorted)
     setEditingIndex(null)
     setEditDraft(null)
-    onChange({ type: 'tiered', name: 'Custom tiered', tiers: sorted })
+    setActiveSavedName(null)
+    const baseName = seedSource?.startsWith('__saved__:')
+      ? seedSource.slice('__saved__:'.length)
+      : seedSource
+    const name = baseName ? `New from ${baseName}` : 'Custom tiered'
+    onChange({ type: 'tiered', name, tiers: sorted })
   }
 
   const seedFromPreset = (preset: OutflowPolicy) => {
@@ -227,6 +232,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setShowSaveInput(false)
     setSaveName('')
     setActiveSavedName(trimmed)
+    setSeedSource(`__saved__:${trimmed}`)
     onChange({ type: 'tiered', name: trimmed, tiers: customTiers })
   }
 
@@ -237,6 +243,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     )
     setSavedPolicies(updated)
     persistSavedPolicies(updated)
+    setSeedSource(`__saved__:${activeSavedName}`)
     onChange({ type: 'tiered', name: activeSavedName, tiers: customTiers })
   }
 
