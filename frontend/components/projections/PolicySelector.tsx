@@ -107,6 +107,8 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
   }, [])
 
   const [seedSource, setSeedSource] = useState<string | null>(null)
+  const [renamingPolicy, setRenamingPolicy] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState<{ aboveElevation: number; percent: number } | null>(null)
   const [addDraft, setAddDraft] = useState<{ aboveElevation: number; percent: number } | null>(null)
@@ -254,6 +256,27 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     if (activeSavedName === name) setActiveSavedName(null)
   }
 
+  const confirmRename = (oldName: string) => {
+    const newName = renameDraft.trim()
+    if (!newName || newName === oldName) {
+      setRenamingPolicy(null)
+      setRenameDraft('')
+      return
+    }
+    const updated = savedPolicies.map((p) =>
+      p.name === oldName ? { ...p, name: newName } : p
+    )
+    setSavedPolicies(updated)
+    persistSavedPolicies(updated)
+    if (activeSavedName === oldName) {
+      setActiveSavedName(newName)
+      setSeedSource(`__saved__:${newName}`)
+      onChange({ type: 'tiered', name: newName, tiers: customTiers })
+    }
+    setRenamingPolicy(null)
+    setRenameDraft('')
+  }
+
   const loadSavedPolicy = (saved: SavedPolicy) => {
     setIsCustom(true)
     setCustomType('tiered')
@@ -306,7 +329,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               ))}
             </optgroup>
           )}
-          <option value="__custom__">Custom...</option>
+          <option value="__custom__">Custom Policy</option>
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
       </div>
@@ -625,20 +648,59 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">Saved</span>
                     {savedPolicies.map((sp) => (
                       <div key={sp.name} className={`flex items-center justify-between text-xs text-gray-600 rounded px-2 py-1.5 border ${activeSavedName === sp.name ? 'bg-teal-50 border-teal-200' : 'bg-white border-gray-100'}`}>
-                        <button
-                          onClick={() => loadSavedPolicy(sp)}
-                          className="text-left hover:text-teal-600 transition-colors truncate flex-1"
-                        >
-                          {sp.name}
-                          <span className="text-[10px] text-gray-400 ml-1">({sp.tiers.length} tiers)</span>
-                        </button>
-                        <button
-                          onClick={() => deleteSavedPolicy(sp.name)}
-                          className="p-0.5 text-gray-400 hover:text-red-500 transition-colors ml-2 flex-shrink-0"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        {renamingPolicy === sp.name ? (
+                          <div className="flex items-center gap-1 flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={renameDraft}
+                              onChange={(e) => setRenameDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') confirmRename(sp.name)
+                                if (e.key === 'Escape') { setRenamingPolicy(null); setRenameDraft('') }
+                              }}
+                              className="flex-1 min-w-0 bg-white border border-gray-200 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-teal-400"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => confirmRename(sp.name)}
+                              className="p-0.5 text-teal-600 hover:text-teal-700 transition-colors flex-shrink-0"
+                              title="Confirm"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => { setRenamingPolicy(null); setRenameDraft('') }}
+                              className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                              title="Cancel"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => loadSavedPolicy(sp)}
+                              className="text-left hover:text-teal-600 transition-colors truncate flex-1"
+                            >
+                              {sp.name}
+                              <span className="text-[10px] text-gray-400 ml-1">({sp.tiers.length} tiers)</span>
+                            </button>
+                            <button
+                              onClick={() => { setRenamingPolicy(sp.name); setRenameDraft(sp.name) }}
+                              className="p-0.5 text-gray-400 hover:text-teal-600 transition-colors ml-1 flex-shrink-0"
+                              title="Rename"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => deleteSavedPolicy(sp.name)}
+                              className="p-0.5 text-gray-400 hover:text-red-500 transition-colors ml-1 flex-shrink-0"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
