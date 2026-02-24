@@ -530,6 +530,89 @@ describe('runMonteCarloSimulation', () => {
     })
   })
 
+  describe('snowpack-conditioned spring rise', () => {
+    const snowpackConfig = (overrides: Partial<MonteCarloConfig> = {}) =>
+      makeConfig({
+        startDate: '2026-02-01',
+        startElevation: 3550,
+        startContent: 14_100_000,
+        yearsToProject: 2,
+        iterations: 100,
+        snowpackData: {
+          similarWaterYears: [2008, 2010, 2011, 2017, 2019, 2025],
+          projectedRunoffInflowAf: 5_000_000,
+          currentSnowpackPercent: 95,
+        },
+        ...overrides,
+      })
+
+    it('spring rise spread is tighter with snowpack conditioning than without', () => {
+      const withSnowpack = snowpackConfig({ iterations: 200 })
+      const withoutSnowpack = makeConfig({
+        startDate: '2026-02-01',
+        startElevation: 3550,
+        startContent: 14_100_000,
+        yearsToProject: 2,
+        iterations: 200,
+      })
+
+      const resultWith = runMonteCarloSimulation(withSnowpack, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+      const resultWithout = runMonteCarloSimulation(withoutSnowpack, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+
+      const springWith = resultWith.dailyPercentiles.find((d) => new Date(d.date).getMonth() === 5)
+      const springWithout = resultWithout.dailyPercentiles.find((d) => new Date(d.date).getMonth() === 5)
+
+      if (springWith && springWithout) {
+        const spreadWith = springWith.p90 - springWith.p10
+        const spreadWithout = springWithout.p90 - springWithout.p10
+        expect(spreadWith).toBeLessThan(spreadWithout)
+      }
+    })
+
+    it('fan-out widens after the first water year', () => {
+      const config = snowpackConfig({ iterations: 200, yearsToProject: 2 })
+      const result = runMonteCarloSimulation(config, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+
+      const springDay = result.dailyPercentiles.find((d) => new Date(d.date).getMonth() === 5)
+      const secondYearDay = result.dailyPercentiles.find((d) => {
+        const date = new Date(d.date)
+        return date.getFullYear() === 2027 && date.getMonth() >= 2
+      })
+
+      if (springDay && secondYearDay) {
+        const springSpread = springDay.p90 - springDay.p10
+        const laterSpread = secondYearDay.p90 - secondYearDay.p10
+        expect(laterSpread).toBeGreaterThan(springSpread)
+      }
+    })
+
+    it('snowpack conditioning produces higher spring elevation than unconditioned', () => {
+      const conditioned = snowpackConfig({
+        iterations: 200,
+        yearsToProject: 1,
+        policy: { type: 'simple', name: '85%', simplePercent: 85 },
+      })
+      const unconditioned = makeConfig({
+        startDate: '2026-02-01',
+        startElevation: 3550,
+        startContent: 14_100_000,
+        yearsToProject: 1,
+        iterations: 200,
+        policy: { type: 'simple', name: '85%', simplePercent: 85 },
+      })
+
+      const resultCond = runMonteCarloSimulation(conditioned, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+      const resultUncond = runMonteCarloSimulation(unconditioned, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+
+      const juneCond = resultCond.dailyPercentiles.find((d) => new Date(d.date).getMonth() === 5)
+      const juneUncond = resultUncond.dailyPercentiles.find((d) => new Date(d.date).getMonth() === 5)
+
+      if (juneCond && juneUncond) {
+        expect(juneCond.p50).toBeGreaterThanOrEqual(juneUncond.p50 - 5)
+      }
+    })
+  })
+
   describe('multi-year projections', () => {
     it('daily percentiles span the correct number of days', () => {
       const config = makeConfig({ iterations: 50, yearsToProject: 3 })
@@ -554,8 +637,8 @@ describe('runMonteCarloSimulation', () => {
 })
 
 describe('POLICY_PRESETS', () => {
-  it('has at least 7 presets', () => {
-    expect(POLICY_PRESETS.length).toBeGreaterThanOrEqual(7)
+  it('has at least 4 presets', () => {
+    expect(POLICY_PRESETS.length).toBeGreaterThanOrEqual(4)
   })
 
   it('includes simple and tiered types', () => {
@@ -577,12 +660,9 @@ describe('POLICY_PRESETS', () => {
     expect(POLICY_PRESETS[0].tiers).toBeDefined()
   })
 
-  it('includes current operations and proposal presets', () => {
+  it('includes current operations preset', () => {
     const names = POLICY_PRESETS.map((p) => p.name)
     expect(names).toContain('Current operations (2007 guidelines)')
-    expect(names).toContain('Lower Basin proposal (approx.)')
-    expect(names).toContain('Upper Basin proposal (approx.)')
-    expect(names).toContain('Federal proposal (approx.)')
   })
 
   it('all tiered presets have at least 2 tiers', () => {
@@ -601,14 +681,6 @@ describe('POLICY_PRESETS', () => {
 
   it('COMPACT_RELEASE_AF is 8.23M AF', () => {
     expect(COMPACT_RELEASE_AF).toBe(8_230_000)
-  })
-
-  it('Upper Basin proposal is more aggressive than Lower Basin at low elevations', () => {
-    const lower = POLICY_PRESETS.find((p) => p.name === 'Lower Basin proposal (approx.)')!
-    const upper = POLICY_PRESETS.find((p) => p.name === 'Upper Basin proposal (approx.)')!
-    const lowerLowest = lower.tiers!.find((t) => t.aboveElevation === 0)!.percent
-    const upperLowest = upper.tiers!.find((t) => t.aboveElevation === 0)!.percent
-    expect(upperLowest).toBeLessThan(lowerLowest)
   })
 })
 

@@ -477,6 +477,9 @@ export function runMonteCarloSimulation(
     snowpack != null ||
     (config.currentWaterYearInflowToDate != null && startDayOfWY > 30)
 
+  // Estimate the winter base flow (Oct-Mar median) for the spring scaling.
+  const WINTER_BASE_CFS = 8000
+
   for (let iter = 0; iter < config.iterations; iter++) {
     let content = config.startContent
     let elevation = config.startElevation
@@ -500,11 +503,12 @@ export function runMonteCarloSimulation(
     let springScaleFactor = 1.0
     let isFirstWaterYear = true
 
-    // Estimate the winter base flow (Oct-Mar median) for the spring scaling.
-    // Used to only scale the excess above base, preserving runoff timing.
-    const WINTER_BASE_CFS = 8000
-
-    // First partial water year: condition on snowpack / inflow-to-date
+    // ── First partial water year: condition on snowpack ──────────────────
+    // Sample from historically similar snowpack years so the spring rise
+    // timing is realistic, then scale the total spring inflow volume to
+    // match the snowpack projection.  The water balance model naturally
+    // translates that volume into the correct elevation change at the
+    // current lake level (lower elevation = bigger rise per AF).
     if (hasFirstYearConditioning) {
       sampledYear = sampleFirstYear(
         patternsToUse,
