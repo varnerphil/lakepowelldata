@@ -125,7 +125,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     const baseName = seedSource?.startsWith('__saved__:')
       ? seedSource.slice('__saved__:'.length)
       : seedSource
-    const name = baseName ? `New from ${baseName}` : 'Custom tiered'
+    const name = baseName ? `New from ${baseName}` : 'Custom Policy'
     onChange({ type: 'tiered', name, tiers: sorted })
   }
 
@@ -137,7 +137,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
       setEditDraft(null)
       setAddDraft(null)
       setSeedSource(preset.name)
-      onChange({ type: 'tiered', name: 'Custom tiered', tiers: preset.tiers })
+      onChange({ type: 'tiered', name: preset.name, tiers: preset.tiers })
     } else {
       const pct = preset.simplePercent ?? 100
       setCustomType('simple')
@@ -151,11 +151,22 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     }
   }
 
+  const DEFAULT_BLANK_TIERS = [
+    { aboveElevation: 3525, percent: 100 },
+    { aboveElevation: 0, percent: 85 },
+  ]
+
   const handlePresetChange = (name: string) => {
     if (name === '__custom__') {
       setIsCustom(true)
       setActiveSavedName(null)
-      seedFromPreset(value)
+      setSeedSource(null)
+      setCustomType('tiered')
+      setCustomTiers(DEFAULT_BLANK_TIERS)
+      setEditingIndex(null)
+      setEditDraft(null)
+      setAddDraft(null)
+      onChange({ type: 'tiered', name: 'Custom Policy', tiers: DEFAULT_BLANK_TIERS })
       return
     }
     setIsCustom(false)
@@ -355,7 +366,11 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
             <button
               onClick={() => {
                 setCustomType('tiered')
-                onChange({ type: 'tiered', name: 'Custom tiered', tiers: customTiers })
+                const baseName = seedSource?.startsWith('__saved__:')
+                  ? seedSource.slice('__saved__:'.length)
+                  : seedSource
+                const name = activeSavedName ?? (baseName ? `New from ${baseName}` : 'Custom Policy')
+                onChange({ type: 'tiered', name, tiers: customTiers })
               }}
               className={`flex-1 py-1.5 text-xs rounded-md transition-colors ${
                 customType === 'tiered'
@@ -370,7 +385,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
           {/* Seed from preset */}
           {customType === 'tiered' && (
             <div>
-              <label className="text-[10px] text-gray-500 block mb-1">Start from</label>
+              <label className="text-[10px] text-gray-500 block mb-1">Start from existing</label>
               <select
                 onChange={(e) => {
                   const val = e.target.value
@@ -395,7 +410,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                       setAddDraft(null)
                       setActiveSavedName(null)
                       setSeedSource(val)
-                      onChange({ type: 'tiered', name: 'Custom tiered', tiers: preset.tiers })
+                      onChange({ type: 'tiered', name: val, tiers: preset.tiers })
                     }
                   }
                 }}
