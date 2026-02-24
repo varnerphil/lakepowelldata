@@ -106,6 +106,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setSavedPolicies(loadSavedPolicies())
   }, [])
 
+  const [seedSource, setSeedSource] = useState<string | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState<{ aboveElevation: number; percent: number } | null>(null)
   const [addDraft, setAddDraft] = useState<{ aboveElevation: number; percent: number } | null>(null)
@@ -128,11 +129,13 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
       setEditingIndex(null)
       setEditDraft(null)
       setAddDraft(null)
+      setSeedSource(preset.name)
       onChange({ type: 'tiered', name: 'Custom tiered', tiers: preset.tiers })
     } else {
       const pct = preset.simplePercent ?? 100
       setCustomType('simple')
       setCustomPercent(pct)
+      setSeedSource(preset.name)
       onChange({
         type: 'simple',
         name: `${pct}% of compact (${pctToMaf(pct).toFixed(2)} MAF)`,
@@ -150,6 +153,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     }
     setIsCustom(false)
     setActiveSavedName(null)
+    setSeedSource(null)
     const preset = POLICY_PRESETS.find((p) => p.name === name)
     if (preset) onChange(preset)
   }
@@ -251,6 +255,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setEditDraft(null)
     setAddDraft(null)
     setActiveSavedName(saved.name)
+    setSeedSource(`__saved__:${saved.name}`)
     setShowSaveInput(false)
     setSaveName('')
     onChange({ type: 'tiered', name: saved.name, tiers: saved.tiers })
@@ -348,6 +353,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                       setEditDraft(null)
                       setAddDraft(null)
                       setActiveSavedName(name)
+                      setSeedSource(`__saved__:${name}`)
                       onChange({ type: 'tiered', name, tiers: saved.tiers })
                     }
                   } else {
@@ -358,12 +364,18 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                       setEditDraft(null)
                       setAddDraft(null)
                       setActiveSavedName(null)
+                      setSeedSource(val)
                       onChange({ type: 'tiered', name: 'Custom tiered', tiers: preset.tiers })
                     }
                   }
-                  e.target.value = ''
                 }}
-                value=""
+                value={
+                  activeSavedName
+                    ? `__saved__:${activeSavedName}`
+                    : seedSource && !seedSource.startsWith('__saved__:')
+                      ? seedSource
+                      : ''
+                }
                 className="w-full bg-white border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-teal-400"
               >
                 <option value="" disabled>Choose a proposal to edit...</option>
