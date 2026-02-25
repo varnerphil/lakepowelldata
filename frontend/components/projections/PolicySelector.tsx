@@ -121,12 +121,15 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setCustomTiers(sorted)
     setEditingIndex(null)
     setEditDraft(null)
-    setActiveSavedName(null)
-    const baseName = seedSource?.startsWith('__saved__:')
-      ? seedSource.slice('__saved__:'.length)
-      : seedSource
-    const name = baseName ? `New from ${baseName}` : 'Custom Policy'
-    onChange({ type: 'tiered', name, tiers: sorted })
+    if (activeSavedName) {
+      onChange({ type: 'tiered', name: `${activeSavedName} (modified)`, tiers: sorted })
+    } else {
+      const baseName = seedSource?.startsWith('__saved__:')
+        ? seedSource.slice('__saved__:'.length)
+        : seedSource
+      const name = baseName ? `New from ${baseName}` : 'Custom Policy'
+      onChange({ type: 'tiered', name, tiers: sorted })
+    }
   }
 
   const seedFromPreset = (preset: OutflowPolicy) => {
@@ -598,12 +601,21 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
 
               {/* Save / manage saved configs */}
               <div className="border-t border-gray-200 pt-2 mt-2 space-y-2">
-                {activeSavedName && (
-                  <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 rounded px-2 py-1.5 border border-teal-100">
-                    <Pencil className="w-3 h-3 flex-shrink-0" />
-                    <span className="truncate flex-1">Editing <strong>{activeSavedName}</strong></span>
-                  </div>
-                )}
+                {activeSavedName && (() => {
+                  const savedVersion = savedPolicies.find((p) => p.name === activeSavedName)
+                  const hasChanges = savedVersion
+                    ? JSON.stringify(savedVersion.tiers) !== JSON.stringify(customTiers)
+                    : false
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 rounded px-2 py-1.5 border border-teal-100">
+                      <Pencil className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate flex-1">
+                        Editing <strong>{activeSavedName}</strong>
+                        {hasChanges && <span className="text-amber-600 ml-1">(modified)</span>}
+                      </span>
+                    </div>
+                  )
+                })()}
 
                 {showSaveInput ? (
                   <div className="flex items-center gap-1.5">
