@@ -37,6 +37,9 @@ function pctToMaf(pct: number): number {
 
 interface PolicyComparisonProps {
   inflowScenario: InflowScenario
+  demandGrowthPctPerYear: number
+  dryingTrendPctPerYear: number
+  dryingTrendMaxReduction: number
   startMode: 'today' | 'custom'
   customElevation: number
   favoriteRamps: Array<{ name: string; elevation: number }>
@@ -50,6 +53,9 @@ interface CompareResult {
 
 export default function PolicyComparison({
   inflowScenario,
+  demandGrowthPctPerYear,
+  dryingTrendPctPerYear,
+  dryingTrendMaxReduction,
   startMode,
   customElevation,
   favoriteRamps,
@@ -154,6 +160,9 @@ export default function PolicyComparison({
                   recentYearWeight: 2.0,
                   recentYearCutoff: 20,
                   inflowScenario,
+                  demandGrowthPctPerYear,
+                  dryingTrendPctPerYear,
+                  dryingTrendMaxReduction,
                   currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
                   snowpackData: data.snowpackData ?? undefined,
                 },

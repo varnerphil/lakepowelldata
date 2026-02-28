@@ -7,6 +7,7 @@ import {
   applyPolicy,
   buildDailyLookup,
   rollingAvgInflowMaf,
+  rollingAvgNaturalFlowMaf,
   stepMead,
   POLICY_PRESETS,
   DEIS_PRESETS,
@@ -751,9 +752,9 @@ describe('DEIS_PRESETS', () => {
     expect(types.has('storageDistribution')).toBe(true)
   })
 
-  it('all presets have names starting with DEIS:', () => {
+  it('all presets have names starting with Federal Plan:', () => {
     for (const p of DEIS_PRESETS) {
-      expect(p.name).toMatch(/^DEIS:/)
+      expect(p.name).toMatch(/^Federal Plan:/)
     }
   })
 
@@ -861,8 +862,9 @@ describe('stepMead', () => {
 })
 
 describe('applyPolicy — new DEIS types', () => {
-  const makeCtx = (completedYears: number[]): SimulationContext => ({
+  const makeCtx = (completedYears: number[], naturalFlows?: number[]): SimulationContext => ({
     completedYearInflows: completedYears,
+    completedYearNaturalFlows: naturalFlows ?? completedYears,
     currentYearInflowAccum: 0,
     meadStorage: 11_543_000,
     meadElevation: 1050,
@@ -916,8 +918,9 @@ describe('applyPolicy — new DEIS types', () => {
       flowMaxMaf: 12.0,
     }
 
-    it('computes 65% of rolling average', () => {
-      const ctx = makeCtx([10_000_000, 12_000_000, 14_000_000])
+    it('computes 65% of rolling average natural flow', () => {
+      const naturalFlows = [10_000_000, 12_000_000, 14_000_000]
+      const ctx = makeCtx([8_000_000, 9_000_000, 10_000_000], naturalFlows)
       const cfs = applyPolicy(10000, 3550, policy, ctx)
       const expectedMaf = 0.65 * 12.0
       const expectedDailyCfs = (expectedMaf * 1_000_000) / 365 / 1.9835
@@ -925,14 +928,16 @@ describe('applyPolicy — new DEIS types', () => {
     })
 
     it('enforces minimum release of 4.7 MAF', () => {
-      const ctx = makeCtx([3_000_000, 3_000_000, 3_000_000])
+      const naturalFlows = [3_000_000, 3_000_000, 3_000_000]
+      const ctx = makeCtx([2_000_000, 2_000_000, 2_000_000], naturalFlows)
       const cfs = applyPolicy(10000, 3550, policy, ctx)
       const minDailyCfs = (4.7 * 1_000_000) / 365 / 1.9835
       expect(cfs).toBeCloseTo(minDailyCfs, 0)
     })
 
     it('enforces maximum release of 12.0 MAF', () => {
-      const ctx = makeCtx([25_000_000, 25_000_000, 25_000_000])
+      const naturalFlows = [25_000_000, 25_000_000, 25_000_000]
+      const ctx = makeCtx([20_000_000, 20_000_000, 20_000_000], naturalFlows)
       const cfs = applyPolicy(10000, 3550, policy, ctx)
       const maxDailyCfs = (12.0 * 1_000_000) / 365 / 1.9835
       expect(cfs).toBeCloseTo(maxDailyCfs, 0)
@@ -947,22 +952,30 @@ describe('applyPolicy — new DEIS types', () => {
   describe('dualIndicator (Max Flexibility)', () => {
     const maxFlexPreset = DEIS_PRESETS.find((p) => p.name.includes('Max Operational'))!
 
-    it('returns high release at full storage with wet hydrology', () => {
-      const ctx = makeCtx([15_000_000, 15_000_000, 15_000_000])
+    it('returns high release at full Powell storage with wet hydrology', () => {
+      const naturalFlows = [15_000_000, 15_000_000, 15_000_000]
+      const ctx = makeCtx([12_000_000, 12_000_000, 12_000_000], naturalFlows)
       const cfs = applyPolicy(10000, 3700, maxFlexPreset, ctx, 24_322_000)
-      const expectedDailyCfs = (11.0 * 1_000_000) / 365 / 1.9835
+      // CRSP storage % = (24.322M + 5M) / 30.706M ≈ 95.5%, interpolated between
+      // 100%→11.0 MAF and 70%→8.6 MAF on the above-average flow curve
+      const crspPct = (24_322_000 + 5_000_000) / 30_706_000
+      const frac = (crspPct - 0.70) / (1.00 - 0.70)
+      const expectedMaf = 8.6 + frac * (11.0 - 8.6)
+      const expectedDailyCfs = (expectedMaf * 1_000_000) / 365 / 1.9835
       expect(cfs).toBeCloseTo(expectedDailyCfs, 0)
     })
 
-    it('returns lower release at low storage with dry hydrology', () => {
-      const ctx = makeCtx([6_000_000, 6_000_000, 6_000_000])
+    it('returns lower release at low CRSP storage with dry hydrology', () => {
+      const naturalFlows = [6_000_000, 6_000_000, 6_000_000]
+      const ctx = makeCtx([4_000_000, 4_000_000, 4_000_000], naturalFlows)
       const cfs = applyPolicy(10000, 3520, maxFlexPreset, ctx, 8_000_000)
       const maxPossibleCfs = (8.6 * 1_000_000) / 365 / 1.9835
       expect(cfs).toBeLessThan(maxPossibleCfs)
     })
 
     it('applies run-of-river below 3510 ft', () => {
-      const ctx = makeCtx([15_000_000, 15_000_000, 15_000_000])
+      const naturalFlows = [15_000_000, 15_000_000, 15_000_000]
+      const ctx = makeCtx([12_000_000, 12_000_000, 12_000_000], naturalFlows)
       const lowInflow = 3000
       const cfs = applyPolicy(lowInflow, 3505, maxFlexPreset, ctx, 20_000_000)
       const inflowMafPerYear = lowInflow * 1.9835 * 365 / 1_000_000
@@ -975,7 +988,7 @@ describe('applyPolicy — new DEIS types', () => {
     const enhancedPreset = DEIS_PRESETS.find((p) => p.name.includes('Enhanced Coordination'))!
 
     it('produces release within configured bounds', () => {
-      const ctx = makeCtx([10_000_000, 10_000_000, 10_000_000])
+      const ctx = makeCtx([10_000_000, 10_000_000, 10_000_000], [13_000_000, 13_000_000, 13_000_000])
       const cfs = applyPolicy(10000, 3550, enhancedPreset, ctx, 14_100_000)
       const minCfs = (4.7 * 1_000_000) / 365 / 1.9835
       const maxCfs = (10.8 * 1_000_000) / 365 / 1.9835
@@ -984,8 +997,8 @@ describe('applyPolicy — new DEIS types', () => {
     })
 
     it('increases release when Powell is overfull relative to target', () => {
-      const ctx1 = makeCtx([10_000_000, 10_000_000, 10_000_000])
-      const ctx2 = makeCtx([10_000_000, 10_000_000, 10_000_000])
+      const ctx1 = makeCtx([10_000_000, 10_000_000, 10_000_000], [13_000_000, 13_000_000, 13_000_000])
+      const ctx2 = makeCtx([10_000_000, 10_000_000, 10_000_000], [13_000_000, 13_000_000, 13_000_000])
       const lowPowell = applyPolicy(10000, 3450, enhancedPreset, ctx1, 5_000_000)
       const highPowell = applyPolicy(10000, 3650, enhancedPreset, ctx2, 22_000_000)
       expect(highPowell).toBeGreaterThan(lowPowell)

@@ -20,17 +20,62 @@
  */
 export const COMPACT_RELEASE_AF = 8_230_000
 
+export interface DualIndicatorCurve {
+  minFlowMaf: number
+  segments: Array<{ storagePercent: number; releaseMaf: number }>
+}
+
+export interface DualIndicatorCurves {
+  /** @deprecated No longer used — CRSP_TOTAL_CAPACITY constant is used instead */
+  storageCapacityAf?: number
+  curves: DualIndicatorCurve[]
+}
+
+export interface TargetStorageDistribution {
+  curve: Array<{ combinedPercentFull: number; powellPercentOfCombined: number }>
+  minReleaseMaf: number
+  maxReleaseMaf: number
+  maxMonthlyKaf: number
+  runningAvgYears: number
+  /** Fraction of the storage discrepancy to correct per year (0-1). Default 0.33 (~3-year ramp). */
+  correctionFraction?: number
+}
+
+export interface SimulationContext {
+  completedYearInflows: number[]
+  completedYearNaturalFlows: number[]
+  currentYearInflowAccum: number
+  meadStorage: number
+  meadElevation: number
+}
+
 export interface OutflowPolicy {
-  type: 'simple' | 'tiered' | 'percentOfPolicy'
+  type: 'simple' | 'tiered' | 'percentOfPolicy' | 'flowBased' | 'dualIndicator' | 'storageDistribution'
   name: string
   /** For simple: percentage of COMPACT_RELEASE_AF to release annually */
   simplePercent?: number
   /** Each tier: percentage of COMPACT_RELEASE_AF at that elevation */
   tiers?: Array<{ aboveElevation: number; percent: number }>
+  /** For tiered: linearly interpolate between tier boundaries (DEIS Basic Coordination) */
+  interpolate?: boolean
   /** For percentOfPolicy: the policy whose release is scaled */
   basePolicy?: OutflowPolicy
   /** For percentOfPolicy: scale factor applied to base policy release */
   percent?: number
+  /** For flowBased: fraction of rolling avg natural flow to release (DEIS Section 2.8.2) */
+  flowPercent?: number
+  /** For flowBased: number of years in rolling average */
+  flowAvgYears?: number
+  /** For flowBased: minimum annual release MAF */
+  flowMinMaf?: number
+  /** For flowBased: maximum annual release MAF */
+  flowMaxMaf?: number
+  /** For dualIndicator: release curves by CRSP storage % and flow category (DEIS Table 2-6) */
+  releaseCurves?: DualIndicatorCurves
+  /** For dualIndicator: switch to run-of-river below this Powell elevation (DEIS Section 2.7.2.3) */
+  runOfRiverBelowElev?: number
+  /** For storageDistribution: target Powell/Mead storage split (DEIS Section 2.6.2, Figure 2-6) */
+  targetDistribution?: TargetStorageDistribution
 }
 
 export const POLICY_PRESETS: OutflowPolicy[] = [
@@ -52,12 +97,12 @@ export const POLICY_PRESETS: OutflowPolicy[] = [
 export const DEIS_PRESETS: OutflowPolicy[] = [
   {
     type: 'simple',
-    name: 'DEIS: No Action',
+    name: 'Federal Plan: No Action',
     simplePercent: 100,
   },
   {
     type: 'tiered',
-    name: 'DEIS: Basic Coordination',
+    name: 'Federal Plan: Basic Coordination',
     interpolate: true,
     tiers: [
       { aboveElevation: 3650, percent: 115.4 },
@@ -70,7 +115,7 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
   },
   {
     type: 'storageDistribution',
-    name: 'DEIS: Enhanced Coordination',
+    name: 'Federal Plan: Enhanced Coordination',
     targetDistribution: {
       curve: [
         { combinedPercentFull: 0.00, powellPercentOfCombined: 0.50 },
@@ -89,22 +134,22 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
       maxReleaseMaf: 10.8,
       maxMonthlyKaf: 900,
       runningAvgYears: 10,
+      correctionFraction: 0.33,
     },
   },
   {
     type: 'dualIndicator',
-    name: 'DEIS: Max Operational Flexibility',
+    name: 'Federal Plan: Max Operational Flexibility',
     runOfRiverBelowElev: 3510,
     releaseCurves: {
-      storageCapacityAf: 24_322_000,
       curves: [
         {
           minFlowMaf: 10.0,
           segments: [
             { storagePercent: 1.00, releaseMaf: 11.0 },
-            { storagePercent: 0.88, releaseMaf: 8.6 },
-            { storagePercent: 0.63, releaseMaf: 7.0 },
-            { storagePercent: 0.46, releaseMaf: 6.0 },
+            { storagePercent: 0.70, releaseMaf: 8.6 },
+            { storagePercent: 0.50, releaseMaf: 7.0 },
+            { storagePercent: 0.37, releaseMaf: 6.0 },
             { storagePercent: 0.00, releaseMaf: 6.0 },
           ],
         },
@@ -112,9 +157,9 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
           minFlowMaf: 8.0,
           segments: [
             { storagePercent: 1.00, releaseMaf: 11.0 },
-            { storagePercent: 0.88, releaseMaf: 8.6 },
-            { storagePercent: 0.63, releaseMaf: 6.5 },
-            { storagePercent: 0.46, releaseMaf: 5.5 },
+            { storagePercent: 0.70, releaseMaf: 8.6 },
+            { storagePercent: 0.50, releaseMaf: 6.5 },
+            { storagePercent: 0.37, releaseMaf: 5.5 },
             { storagePercent: 0.00, releaseMaf: 5.5 },
           ],
         },
@@ -122,9 +167,9 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
           minFlowMaf: 0,
           segments: [
             { storagePercent: 1.00, releaseMaf: 11.0 },
-            { storagePercent: 0.88, releaseMaf: 8.6 },
-            { storagePercent: 0.63, releaseMaf: 6.0 },
-            { storagePercent: 0.46, releaseMaf: 5.0 },
+            { storagePercent: 0.70, releaseMaf: 8.6 },
+            { storagePercent: 0.50, releaseMaf: 6.0 },
+            { storagePercent: 0.37, releaseMaf: 5.0 },
             { storagePercent: 0.00, releaseMaf: 5.0 },
           ],
         },
@@ -133,7 +178,7 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
   },
   {
     type: 'flowBased',
-    name: 'DEIS: Supply Driven',
+    name: 'Federal Plan: Supply Driven',
     flowPercent: 0.65,
     flowAvgYears: 3,
     flowMinMaf: 4.7,
@@ -173,6 +218,23 @@ export interface MonteCarloConfig {
   }
   /** Starting Lake Mead elevation for policies that require Mead state (default ~1062 ft). */
   meadStartElevation?: number
+  /**
+   * Annual percentage by which Upper Basin depletions grow, reducing inflow to Powell.
+   * Models increasing upstream consumption. 0.1 = 0.1% less inflow each year,
+   * compounding. Default 0.1 (~20 KAF/yr reduction on ~12 MAF average inflow).
+   * Set to 0 to disable.
+   */
+  demandGrowthPctPerYear?: number
+  /**
+   * Annual percentage by which streamflow declines, tapering over time.
+   * Applied for the first ~10-13 years then plateaus at the max reduction cap
+   * so that very long projections don't produce unrealistically low inflows.
+   * 1.0 = moderate (~10% cap), 1.5 = federal baseline (~18% cap, matching CRSS).
+   * Default 0 (disabled). Combined with demandGrowthPctPerYear.
+   */
+  dryingTrendPctPerYear?: number
+  /** Max total streamflow reduction from drying trend (0-1 fraction). Default 0.18 (18%). */
+  dryingTrendMaxReduction?: number
 }
 
 export interface WaterYearPattern {
@@ -251,6 +313,85 @@ const MONTHLY_EVAPORATION_RATES: Record<number, number> = {
 }
 
 // ============================================================================
+// CRSP (Colorado River Storage Project) constants
+// ============================================================================
+
+/** Total active capacity of all four CRSP reservoirs: Powell + Flaming Gorge + Blue Mesa + Navajo */
+const CRSP_TOTAL_CAPACITY = 30_706_000
+
+/**
+ * Assumed baseline storage in the three upper CRSP units (Flaming Gorge, Blue Mesa, Navajo).
+ * Current (2025) combined storage is ~5.0 MAF. This is used as an offset when computing
+ * CRSP storage percentage for the Max Operational Flexibility dual-indicator policy.
+ */
+const UPPER_UNITS_ASSUMED_STORAGE = 5_000_000
+
+// ============================================================================
+// USBR Lees Ferry Natural Flow data (water years 1906–2024)
+// Source: Bureau of Reclamation, provisional natural flow dataset
+// Units: acre-feet per water year
+// ============================================================================
+
+const LEES_FERRY_NATURAL_FLOW_AF: Record<number, number> = {
+  1906: 19_451_000, 1907: 22_451_000, 1908: 15_720_000, 1909: 22_170_000,
+  1910: 14_830_000, 1911: 17_190_000, 1912: 19_430_000, 1913: 14_640_000,
+  1914: 19_670_000, 1915: 13_870_000, 1916: 18_270_000, 1917: 24_030_000,
+  1918: 14_050_000, 1919: 15_110_000, 1920: 20_050_000, 1921: 20_920_000,
+  1922: 18_680_000, 1923: 16_890_000, 1924: 13_840_000, 1925: 13_440_000,
+  1926: 13_190_000, 1927: 17_640_000, 1928: 16_360_000, 1929: 20_780_000,
+  1930: 12_660_000, 1931:  8_990_000, 1932: 16_440_000, 1933: 11_410_000,
+  1934:  6_500_000, 1935: 12_600_000, 1936: 14_430_000, 1937: 13_590_000,
+  1938: 16_290_000, 1939: 11_050_000, 1940: 10_220_000, 1941: 17_280_000,
+  1942: 16_010_000, 1943: 12_850_000, 1944: 12_350_000, 1945: 12_740_000,
+  1946: 10_580_000, 1947: 14_150_000, 1948: 13_350_000, 1949: 15_120_000,
+  1950: 12_760_000, 1951: 12_090_000, 1952: 18_550_000, 1953: 11_530_000,
+  1954:  7_900_000, 1955: 10_030_000, 1956: 10_850_000, 1957: 17_170_000,
+  1958: 15_600_000, 1959:  8_930_000, 1960: 10_880_000, 1961:  9_100_000,
+  1962: 14_810_000, 1963:  8_060_000, 1964: 10_310_000, 1965: 16_250_000,
+  1966: 10_060_000, 1967: 13_350_000, 1968: 11_320_000, 1969: 15_600_000,
+  1970: 13_010_000, 1971: 13_670_000, 1972: 12_080_000, 1973: 17_120_000,
+  1974: 13_140_000, 1975: 14_510_000, 1976: 11_710_000, 1977:  7_240_000,
+  1978: 15_820_000, 1979: 16_370_000, 1980: 15_690_000, 1981: 10_060_000,
+  1982: 16_030_000, 1983: 21_410_000, 1984: 19_280_000, 1985: 14_460_000,
+  1986: 17_490_000, 1987: 10_710_000, 1988: 10_050_000, 1989:  9_370_000,
+  1990:  9_020_000, 1991: 10_490_000, 1992:  9_950_000, 1993: 16_760_000,
+  1994:  9_030_000, 1995: 16_870_000, 1996: 14_070_000, 1997: 17_410_000,
+  1998: 16_610_000, 1999: 13_080_000, 2000:  9_700_000, 2001:  8_670_000,
+  2002:  6_380_000, 2003:  8_220_000, 2004:  7_800_000, 2005: 14_690_000,
+  2006: 11_740_000, 2007:  9_530_000, 2008: 12_300_000, 2009: 10_880_000,
+  2010: 11_820_000, 2011: 16_400_000, 2012:  8_170_000, 2013:  8_610_000,
+  2014:  8_680_000, 2015:  9_670_000, 2016: 10_620_000, 2017: 13_690_000,
+  2018:  6_640_000, 2019: 13_280_000, 2020:  7_300_000, 2021:  6_140_000,
+  2022:  6_600_000, 2023: 14_590_000, 2024:  8_710_000,
+}
+
+/**
+ * Look up or estimate natural flow for a given water year.
+ * Falls back to the 30-year trailing average if the year isn't in our dataset.
+ */
+function getNaturalFlowAf(waterYear: number): number {
+  if (LEES_FERRY_NATURAL_FLOW_AF[waterYear]) {
+    return LEES_FERRY_NATURAL_FLOW_AF[waterYear]
+  }
+  const years = Object.keys(LEES_FERRY_NATURAL_FLOW_AF).map(Number).sort((a, b) => a - b)
+  const recent = years.slice(-30)
+  const sum = recent.reduce((acc, y) => acc + (LEES_FERRY_NATURAL_FLOW_AF[y] ?? 0), 0)
+  return sum / recent.length
+}
+
+/**
+ * Rolling average of completed natural flows in MAF.
+ * Used by Supply Driven and Max Operational Flexibility policies
+ * which reference "natural flow at Lees Ferry" per DEIS Sections 2.7 and 2.8.
+ */
+export function rollingAvgNaturalFlowMaf(completedNaturalFlows: number[], nYears: number): number {
+  if (completedNaturalFlows.length === 0) return 0
+  const slice = completedNaturalFlows.slice(-nYears)
+  const sum = slice.reduce((a, b) => a + b, 0)
+  return sum / slice.length / 1_000_000
+}
+
+// ============================================================================
 // Lake Mead simplified model (for Enhanced Coordination policy)
 // ============================================================================
 
@@ -291,14 +432,36 @@ function meadElevationFromStorage(storage: number): number {
   return contentToElevation(storage, MEAD_CAPACITY_TABLE)
 }
 
+/**
+ * Mead shortage tiers based on 2007 Interim Guidelines / 2019 DCP.
+ * At lower elevations, Lower Basin deliveries are reduced, which keeps
+ * Mead from draining as fast — a critical feedback loop the full CRSS
+ * model captures and that we now approximate.
+ */
+const MEAD_SHORTAGE_TIERS: Array<{ aboveElev: number; deliveryMaf: number }> = [
+  { aboveElev: 1090, deliveryMaf: 7.5 },
+  { aboveElev: 1075, deliveryMaf: 7.0 },
+  { aboveElev: 1050, deliveryMaf: 6.5 },
+  { aboveElev: 1025, deliveryMaf: 6.0 },
+  { aboveElev:  950, deliveryMaf: 5.5 },
+  { aboveElev:    0, deliveryMaf: 5.0 },
+]
+
+function meadDeliveryAfPerDay(elevation: number): number {
+  for (const tier of MEAD_SHORTAGE_TIERS) {
+    if (elevation >= tier.aboveElev) return tier.deliveryMaf * 1_000_000 / 365
+  }
+  return MEAD_SHORTAGE_TIERS[MEAD_SHORTAGE_TIERS.length - 1].deliveryMaf * 1_000_000 / 365
+}
+
 export function stepMead(
   meadStorage: number,
   powellOutflowAf: number,
   month: number
 ): { storage: number; elevation: number } {
-  const inflow = powellOutflowAf * 0.97 + MEAD_SIDE_INFLOW_AF_PER_DAY
-  const outflow = MEAD_BASE_DELIVERY_AF / 365
   const elev = meadElevationFromStorage(meadStorage)
+  const inflow = powellOutflowAf * 0.97 + MEAD_SIDE_INFLOW_AF_PER_DAY
+  const outflow = meadDeliveryAfPerDay(elev)
   const evapRate = MEAD_MONTHLY_EVAP_RATES[month] ?? 0.015
   const evap = meadSurfaceArea(elev) * evapRate
 
@@ -460,16 +623,17 @@ export function applyPolicy(
   }
 
   if (policy.type === 'flowBased' && ctx) {
-    const avgInflowMaf = rollingAvgInflowMaf(ctx.completedYearInflows, policy.flowAvgYears ?? 3)
-    let releaseMaf = avgInflowMaf * (policy.flowPercent ?? 0.65)
+    const avgNaturalFlowMaf = rollingAvgNaturalFlowMaf(ctx.completedYearNaturalFlows, policy.flowAvgYears ?? 3)
+    let releaseMaf = avgNaturalFlowMaf * (policy.flowPercent ?? 0.65)
     releaseMaf = Math.max(policy.flowMinMaf ?? 4.7, Math.min(policy.flowMaxMaf ?? 12.0, releaseMaf))
     return mafToDailyCfs(releaseMaf)
   }
 
   if (policy.type === 'dualIndicator' && ctx && policy.releaseCurves) {
     const curves = policy.releaseCurves
-    const storagePct = (powellContent ?? 0) / curves.storageCapacityAf
-    const avgFlow = rollingAvgInflowMaf(ctx.completedYearInflows, 3)
+    const crspStorage = (powellContent ?? 0) + UPPER_UNITS_ASSUMED_STORAGE
+    const storagePct = crspStorage / CRSP_TOTAL_CAPACITY
+    const avgFlow = rollingAvgNaturalFlowMaf(ctx.completedYearNaturalFlows, 3)
 
     const sorted = [...curves.curves].sort((a, b) => b.minFlowMaf - a.minFlowMaf)
     let selectedCurve = sorted[sorted.length - 1]
@@ -508,7 +672,8 @@ export function applyPolicy(
 
     const avgInflowMaf = rollingAvgInflowMaf(ctx.completedYearInflows, td.runningAvgYears)
     const storageDiscrepancyMaf = ((powellContent ?? 0) - targetPowellStorage) / 1_000_000
-    let releaseMaf = avgInflowMaf + storageDiscrepancyMaf
+    const correction = td.correctionFraction ?? 0.33
+    let releaseMaf = avgInflowMaf + storageDiscrepancyMaf * correction
 
     releaseMaf = Math.max(td.minReleaseMaf, Math.min(td.maxReleaseMaf, releaseMaf))
     return mafToDailyCfs(releaseMaf)
@@ -749,6 +914,9 @@ export function runMonteCarloSimulation(
   // Estimate the winter base flow (Oct-Mar median) for the spring scaling.
   const WINTER_BASE_CFS = 8000
 
+  const demandGrowthRate = (config.demandGrowthPctPerYear ?? 0.1) / 100
+  const dryingTrendRate = (config.dryingTrendPctPerYear ?? 0) / 100
+  const dryingMaxReduction = config.dryingTrendMaxReduction ?? 0.18
   const policyNeedsContext = ['flowBased', 'dualIndicator', 'storageDistribution'].includes(config.policy.type)
   const meadStartElev = config.meadStartElevation ?? MEAD_DEFAULT_START_ELEV
   const meadStartStorage = (() => {
@@ -782,9 +950,12 @@ export function runMonteCarloSimulation(
     let inflowLookup: number[]
     let springScaleFactor = 1.0
     let isFirstWaterYear = true
+    let projectionYear = 0
+    let demandFactor = 1.0
 
     const simCtx: SimulationContext = {
       completedYearInflows: [],
+      completedYearNaturalFlows: [],
       currentYearInflowAccum: 0,
       meadStorage: meadStartStorage,
       meadElevation: meadStartElev,
@@ -816,6 +987,7 @@ export function runMonteCarloSimulation(
 
     if (policyNeedsContext) {
       simCtx.completedYearInflows = [sampledYear.totalInflowAf]
+      simCtx.completedYearNaturalFlows = [getNaturalFlowAf(sampledYear.waterYear)]
     }
 
     for (let simDay = 0; simDay < totalDays; simDay++) {
@@ -830,6 +1002,12 @@ export function runMonteCarloSimulation(
         waterYearDay = 0
         isFirstWaterYear = false
         springScaleFactor = 1.0
+        projectionYear++
+        const demandComponent = Math.pow(1 - demandGrowthRate, projectionYear)
+        const dryingComponent = dryingTrendRate > 0
+          ? Math.max(1 - dryingMaxReduction, Math.pow(1 - dryingTrendRate, projectionYear))
+          : 1
+        demandFactor = demandComponent * dryingComponent
         sampledYear = sampleWaterYear(
           patternsToUse,
           currentWaterYear,
@@ -837,6 +1015,12 @@ export function runMonteCarloSimulation(
           config.recentYearWeight
         )
         inflowLookup = buildDailyLookup(sampledYear.dailyInflows)
+        if (policyNeedsContext) {
+          simCtx.completedYearNaturalFlows.push(getNaturalFlowAf(sampledYear.waterYear))
+          if (simCtx.completedYearNaturalFlows.length > 10) {
+            simCtx.completedYearNaturalFlows = simCtx.completedYearNaturalFlows.slice(-10)
+          }
+        }
       }
 
       let inflowCfs = inflowLookup[waterYearDay % 366]
@@ -850,6 +1034,8 @@ export function runMonteCarloSimulation(
         const excess = Math.max(0, inflowCfs - WINTER_BASE_CFS)
         inflowCfs = WINTER_BASE_CFS + excess * springScaleFactor
       }
+
+      inflowCfs *= demandFactor
 
       const month = monthByDay[simDay]
       const inflowAf = inflowCfs * CFS_TO_AF_PER_DAY

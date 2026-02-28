@@ -142,18 +142,18 @@ describe('PolicySelector', () => {
       }
     })
 
-    it('DEIS optgroup appears between existing presets and Custom Policy', () => {
+    it('Federal Plan optgroup appears between existing presets and Custom Policy', () => {
       renderSelector()
       const select = screen.getByRole('combobox')
       const options = within(select).getAllByRole('option')
       const optionTexts = options.map((o) => o.textContent)
 
       const lastExistingIdx = optionTexts.indexOf('85% of compact (6.99 MAF)')
-      const firstDeisIdx = optionTexts.indexOf('DEIS: No Action')
+      const firstFedIdx = optionTexts.indexOf('Federal Plan: No Action')
       const customIdx = optionTexts.indexOf('Custom Policy')
 
-      expect(lastExistingIdx).toBeLessThan(firstDeisIdx)
-      expect(firstDeisIdx).toBeLessThan(customIdx)
+      expect(lastExistingIdx).toBeLessThan(firstFedIdx)
+      expect(firstFedIdx).toBeLessThan(customIdx)
     })
 
     it('selecting a DEIS preset calls onChange with that preset', () => {

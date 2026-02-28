@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { POLICY_PRESETS, DEIS_PRESETS, COMPACT_RELEASE_AF, type OutflowPolicy } from '@/lib/monte-carlo'
-import { ChevronDown, Plus, Trash2, Check, Pencil, X, Save, Bookmark } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, Trash2, Check, Pencil, X, Save, Bookmark } from 'lucide-react'
 
 function pctToMaf(pct: number): number {
   return (COMPACT_RELEASE_AF * pct) / 100 / 1_000_000
@@ -79,6 +79,221 @@ function loadSavedPolicies(): SavedPolicy[] {
 
 function persistSavedPolicies(policies: SavedPolicy[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(policies))
+}
+
+function PolicyDescription({ policy }: { policy: OutflowPolicy }) {
+  const [expanded, setExpanded] = useState(false)
+  const [showCurve, setShowCurve] = useState(false)
+
+  const name = policy.name
+
+  if (policy.type === 'simple') {
+    const pct = policy.simplePercent ?? 100
+    const isNoAction = name.includes('No Action')
+    return (
+      <p className="text-xs text-gray-400">
+        {isNoAction
+          ? `Maintains the status quo \u2014 Glen Canyon Dam releases a fixed ${pctToMaf(pct).toFixed(2)} million acre-feet (MAF) per year regardless of lake levels or river conditions. This is the baseline all other alternatives are compared against.`
+          : `Fixed annual release of ${pctToMaf(pct).toFixed(2)} MAF/yr (${pct}% of the Colorado River Compact obligation \u2014 the amount the Upper Basin agreed to deliver to the Lower Basin).`}
+      </p>
+    )
+  }
+
+  if (policy.type === 'tiered') {
+    const sorted = [...(policy.tiers ?? [])].sort((a, b) => b.aboveElevation - a.aboveElevation)
+    const isCurrentOps = name.includes('2007')
+    const isBasicCoord = name.includes('Basic Coordination')
+
+    const summary = isBasicCoord
+      ? 'Adjusts releases based on Lake Powell\u2019s water level. When the lake is high (above 3,650 ft), more water is released downstream. When it drops below 3,525 ft, releases are reduced to help it recover. Releases transition smoothly between levels.'
+      : isCurrentOps
+        ? 'The rules currently governing Glen Canyon Dam. Releases are reduced when the lake drops below key elevations to protect hydropower and storage.'
+        : `Release varies by Lake Powell elevation${policy.interpolate ? ' (with smooth interpolation between tiers)' : ''}.`
+
+    return (
+      <div className="text-xs text-gray-400 space-y-1">
+        <p>{summary}</p>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-0.5 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {expanded ? 'Hide' : 'Show'} release schedule
+        </button>
+        {expanded && (
+          <div className="bg-gray-50 rounded p-2 border border-gray-100 space-y-0.5">
+            {sorted.map((t, i) => (
+              <div key={i} className="flex justify-between text-[11px]">
+                <span className="text-gray-500">
+                  {t.aboveElevation === 0 ? 'Below all tiers' : `Above ${t.aboveElevation.toLocaleString()} ft`}
+                </span>
+                <span className="text-gray-700 font-medium">
+                  {t.percent}% ({pctToMaf(t.percent).toFixed(1)} MAF)
+                </span>
+              </div>
+            ))}
+            {isBasicCoord && (
+              <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100 mt-1">
+                Source: Bureau of Reclamation Draft EIS, Table 2-4. Releases interpolated linearly between tiers.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (policy.type === 'flowBased') {
+    const pct = ((policy.flowPercent ?? 0.65) * 100).toFixed(0)
+    const yrs = policy.flowAvgYears ?? 3
+    const minMaf = policy.flowMinMaf ?? 4.7
+    const maxMaf = policy.flowMaxMaf ?? 12.0
+    return (
+      <div className="text-xs text-gray-400 space-y-1">
+        <p>
+          Ties releases directly to how much water the river is producing. The dam releases {pct}% of the
+          recent {yrs}-year average river flow &mdash; in wet periods more water goes downstream, in dry periods
+          releases automatically shrink. This is the most adaptive policy, ensuring Powell never releases more
+          than the river can sustain.
+        </p>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-0.5 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {expanded ? 'Hide' : 'Show'} details
+        </button>
+        {expanded && (
+          <div className="bg-gray-50 rounded p-2 border border-gray-100 text-[11px] space-y-1">
+            <div className="flex justify-between"><span className="text-gray-500">Share of river flow released</span><span className="text-gray-700 font-medium">{pct}%</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Based on recent</span><span className="text-gray-700 font-medium">{yrs}-year average</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Floor (minimum downstream needs)</span><span className="text-gray-700 font-medium">{minMaf} MAF/yr</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Ceiling (even in very wet years)</span><span className="text-gray-700 font-medium">{maxMaf} MAF/yr</span></div>
+            <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100 mt-1">
+              &ldquo;River flow&rdquo; refers to the natural flow at Lees Ferry &mdash; the total Colorado River flow
+              before upstream diversions and reservoir operations. Source: Draft EIS Section 2.8.2.
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (policy.type === 'dualIndicator') {
+    const curves = policy.releaseCurves?.curves ?? []
+    const storageLabel = (pct: number) =>
+      pct >= 1.0 ? '100% full' : pct >= 0.7 ? '70% full' : pct >= 0.5 ? '50% full' : pct >= 0.37 ? '37% full' : 'Nearly empty'
+    const flowLabel = (maf: number) =>
+      maf >= 10 ? 'Wet years' : maf >= 8 ? 'Normal years' : 'Dry years'
+
+    return (
+      <div className="text-xs text-gray-400 space-y-1">
+        <p>
+          Gives the government the widest range of options. Releases depend on how full the Colorado River
+          reservoirs are and whether recent river flows have been above or below average. In dry years with
+          low storage, releases can drop to 5 million acre-feet (MAF) per year. In wet years, up to 11 MAF/yr.
+          If Powell drops below {(policy.runOfRiverBelowElev ?? 3510).toLocaleString()} ft, the dam only releases
+          as much water as is flowing in.
+        </p>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-0.5 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {expanded ? 'Hide' : 'Show'} release schedule
+        </button>
+        {expanded && (
+          <div className="bg-gray-50 rounded p-2 border border-gray-100 text-[11px] space-y-2">
+            {curves.map((curve, ci) => (
+              <div key={ci}>
+                <div className="text-gray-600 font-medium mb-0.5">
+                  {flowLabel(curve.minFlowMaf)}
+                </div>
+                <div className="space-y-0.5 pl-2">
+                  {curve.segments.map((seg, si) => (
+                    <div key={si} className="flex justify-between">
+                      <span className="text-gray-500">Reservoirs {storageLabel(seg.storagePercent)}</span>
+                      <span className="text-gray-700 font-medium">{seg.releaseMaf} MAF/yr</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100 mt-1">
+              &ldquo;Reservoirs&rdquo; refers to the four Colorado River Storage Project reservoirs (Powell, Flaming
+              Gorge, Blue Mesa, and Navajo &mdash; ~30.7 MAF combined). Release is interpolated between thresholds.
+              Source: Draft EIS Table 2-6, Section 2.7.2.
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (policy.type === 'storageDistribution') {
+    const td = policy.targetDistribution
+    return (
+      <div className="text-xs text-gray-400 space-y-1">
+        <p>
+          Tries to keep Lake Powell and Lake Mead in balance. If Powell has too much water relative to
+          Mead, it releases more to share. If Powell is running low, it holds back. The goal is to prevent
+          either reservoir from getting dangerously low while the other stays comfortable.
+        </p>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-0.5 text-teal-600 hover:text-teal-700 transition-colors"
+        >
+          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          {expanded ? 'Hide' : 'Show'} how it works
+        </button>
+        {expanded && td && (
+          <div className="bg-gray-50 rounded p-2 border border-gray-100 text-[11px] space-y-1.5">
+            <p className="text-gray-600">
+              When both reservoirs are low, Powell keeps a larger share of the water (~54&ndash;56%) to maintain
+              hydropower generation at Glen Canyon Dam.
+            </p>
+            <p className="text-gray-600">
+              When both reservoirs are well-stocked, Powell keeps less (40&ndash;50%) and sends more water
+              downstream to Mead.
+            </p>
+            <div className="flex justify-between pt-1"><span className="text-gray-500">Minimum release</span><span className="text-gray-700 font-medium">{td.minReleaseMaf} MAF/yr</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Maximum release</span><span className="text-gray-700 font-medium">{td.maxReleaseMaf} MAF/yr</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Based on recent</span><span className="text-gray-700 font-medium">{td.runningAvgYears}-year average inflow</span></div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowCurve(!showCurve) }}
+              className="flex items-center gap-0.5 text-teal-600 hover:text-teal-700 transition-colors pt-0.5"
+            >
+              {showCurve ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {showCurve ? 'Hide' : 'Show'} full target curve
+            </button>
+            {showCurve && (
+              <div className="space-y-0.5 pl-2 pt-0.5">
+                {td.curve.map((pt, i) => (
+                  <div key={i} className="flex justify-between">
+                    <span className="text-gray-500">Both reservoirs {(pt.combinedPercentFull * 100).toFixed(0)}% full</span>
+                    <span className="text-gray-700 font-medium">Powell keeps {(pt.powellPercentOfCombined * 100).toFixed(0)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100 mt-1">
+              Powell and Mead hold ~50.4 MAF combined. Target curve from Draft EIS Figure 2-6, Section 2.6.2.
+            </p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (policy.type === 'percentOfPolicy' && policy.basePolicy) {
+    return (
+      <p className="text-xs text-gray-400">
+        {policy.percent ?? 100}% of {policy.basePolicy.name} release.
+      </p>
+    )
+  }
+
+  return null
 }
 
 interface PolicySelectorProps {
@@ -342,7 +557,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               {p.name}
             </option>
           ))}
-          <optgroup label="DEIS Post-2026 Proposed Alternatives">
+          <optgroup label="Federal Plan — Post-2026 Proposed Alternatives (Bureau of Reclamation)">
             {DEIS_PRESETS.map((p) => (
               <option key={p.name} value={p.name}>
                 {p.name}
@@ -754,16 +969,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
       )}
 
       {/* Current policy description */}
-      <p className="text-xs text-gray-400">
-        {value.type === 'simple'
-          ? `Release ${pctToMaf(value.simplePercent ?? 100).toFixed(2)} MAF/yr (${value.simplePercent ?? 100}% of compact)`
-          : value.type === 'tiered'
-            ? `Release varies by elevation: ${value.tiers
-                ?.sort((a, b) => b.aboveElevation - a.aboveElevation)
-                .map((t) => `${t.percent}% (${pctToMaf(t.percent).toFixed(1)} MAF) above ${t.aboveElevation} ft`)
-                .join(', ')}`
-            : `${value.percent ?? 100}% of: ${value.basePolicy?.name ?? 'selected policy'}`}
-      </p>
+      <PolicyDescription policy={value} />
     </div>
   )
 }

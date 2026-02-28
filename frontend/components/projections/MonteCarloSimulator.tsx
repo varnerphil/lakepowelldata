@@ -11,13 +11,22 @@ import type { WorkerResponse } from '@/workers/monte-carlo.worker'
 import MonteCarloChart from './MonteCarloChart'
 import PolicySelector from './PolicySelector'
 import PolicyComparison from './PolicyComparison'
-import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Link2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Link2, Info } from 'lucide-react'
 import ShareButton from '@/components/ui/ShareButton'
+
+export type StreamflowTrend = 'historical' | 'moderate_decline' | 'federal_baseline'
+
+const STREAMFLOW_TRENDS: Record<StreamflowTrend, { label: string; description: string; dryingPct: number; maxReduction: number; demandGrowthPct: number }> = {
+  historical:       { label: 'Historical',          description: 'Uses historical inflow patterns as recorded — no adjustment', dryingPct: 0, maxReduction: 0, demandGrowthPct: 0.1 },
+  moderate_decline: { label: 'Moderate decline',    description: 'Gradual ~10% reduction over 10 years, then levels off', dryingPct: 1.0, maxReduction: 0.10, demandGrowthPct: 0.15 },
+  federal_baseline: { label: 'Federal baseline',    description: 'Matches Bureau of Reclamation CRSS projections — ~18% reduction, leveling off around year 13', dryingPct: 1.5, maxReduction: 0.18, demandGrowthPct: 0.25 },
+}
 
 export interface SharedSimConfig {
   policy: OutflowPolicy
   yearsToProject: number
   inflowScenario: InflowScenario
+  streamflowTrend?: StreamflowTrend
   startMode: 'today' | 'custom'
   customElevation?: number
 }
@@ -28,16 +37,41 @@ interface MonteCarloSimulatorProps {
   sharedConfig?: SharedSimConfig | null
 }
 
+function defaultInflowScenario(policy: OutflowPolicy): InflowScenario | null {
+  const name = policy.name
+  if (name.includes('Supply Driven')) return 'last10'
+  if (name.includes('Max Operational')) return 'last20'
+  if (name.includes('Enhanced Coordination')) return 'last30'
+  if (name.includes('Basic Coordination')) return 'last30'
+  if (name.includes('No Action')) return 'last30'
+  if (POLICY_PRESETS.some(p => p.name === name)) return 'last30'
+  return null
+}
+
+function defaultStreamflowTrend(policy: OutflowPolicy): StreamflowTrend | null {
+  if (policy.name.includes('Federal Plan:')) return 'federal_baseline'
+  return null
+}
+
 export default function MonteCarloSimulator({
   currentElevation,
   currentDate,
   sharedConfig,
 }: MonteCarloSimulatorProps) {
   const [policy, setPolicy] = useState<OutflowPolicy>(sharedConfig?.policy ?? POLICY_PRESETS[0])
-  const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 10)
+  const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 20)
   const [inflowScenario, setInflowScenario] = useState<InflowScenario>(sharedConfig?.inflowScenario ?? 'last30')
+  const [streamflowTrend, setStreamflowTrend] = useState<StreamflowTrend>(sharedConfig?.streamflowTrend ?? 'historical')
   const [startMode, setStartMode] = useState<'today' | 'custom'>(sharedConfig?.startMode ?? 'today')
   const [customElevation, setCustomElevation] = useState(sharedConfig?.customElevation ?? currentElevation)
+
+  const handlePolicyChange = useCallback((p: OutflowPolicy) => {
+    setPolicy(p)
+    const recommended = defaultInflowScenario(p)
+    if (recommended) setInflowScenario(recommended)
+    const recommendedTrend = defaultStreamflowTrend(p)
+    if (recommendedTrend) setStreamflowTrend(recommendedTrend)
+  }, [])
 
   const [result, setResult] = useState<MonteCarloResult | null>(null)
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
@@ -161,6 +195,9 @@ export default function MonteCarloSimulator({
           recentYearWeight: 2.0,
           recentYearCutoff: 20,
           inflowScenario,
+          demandGrowthPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].demandGrowthPct,
+          dryingTrendPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].dryingPct,
+          dryingTrendMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].maxReduction,
           currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
           snowpackData: data.snowpackData ?? undefined,
         },
@@ -173,13 +210,14 @@ export default function MonteCarloSimulator({
       setError(err.message || 'Failed to run projection')
       setIsLoading(false)
     }
-  }, [policy, yearsToProject, inflowScenario, startMode, customElevation, favoriteRamps])
+  }, [policy, yearsToProject, inflowScenario, streamflowTrend, startMode, customElevation, favoriteRamps])
 
   const getShareUrl = useCallback(async (origin: string) => {
     const config: SharedSimConfig = {
       policy,
       yearsToProject,
       inflowScenario,
+      streamflowTrend,
       startMode,
       ...(startMode === 'custom' ? { customElevation } : {}),
     }
@@ -191,7 +229,7 @@ export default function MonteCarloSimulator({
     if (!res.ok) throw new Error('Failed to save')
     const { id } = await res.json()
     return `${origin}/simulator?share=${id}`
-  }, [policy, yearsToProject, inflowScenario, startMode, customElevation])
+  }, [policy, yearsToProject, inflowScenario, streamflowTrend, startMode, customElevation])
 
   // Auto-run on mount
   useEffect(() => {
@@ -207,7 +245,7 @@ export default function MonteCarloSimulator({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Policy */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
-          <PolicySelector value={policy} onChange={setPolicy} />
+          <PolicySelector value={policy} onChange={handlePolicyChange} />
         </div>
 
         {/* Time Horizon */}
@@ -254,6 +292,21 @@ export default function MonteCarloSimulator({
                   : inflowScenario === 'last10'
                     ? 'Only 2016–present — driest period'
                     : 'Uses all years back to 1960s; recent years weighted 2×'}
+            </p>
+          </div>
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <label className="block text-xs text-gray-500 mb-1">Streamflow adjustment</label>
+            <select
+              value={streamflowTrend}
+              onChange={(e) => setStreamflowTrend(e.target.value as StreamflowTrend)}
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-teal-400"
+            >
+              {(Object.entries(STREAMFLOW_TRENDS) as [StreamflowTrend, typeof STREAMFLOW_TRENDS[StreamflowTrend]][]).map(([key, val]) => (
+                <option key={key} value={key}>{val.label}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-400 mt-1">
+              {STREAMFLOW_TRENDS[streamflowTrend].description}
             </p>
           </div>
         </div>
@@ -373,6 +426,90 @@ export default function MonteCarloSimulator({
             <ShareButton getShareUrl={getShareUrl} label="Share this projection" />
           </div>
         </div>
+      )}
+
+      {/* Model disclaimer */}
+      {result && (
+        <details className="group">
+          <summary className="flex items-center gap-2 cursor-pointer text-xs text-gray-400 hover:text-gray-600 transition-colors select-none">
+            <Info className="w-3.5 h-3.5" />
+            <span>About this model &mdash; how it differs from federal CRSS projections</span>
+          </summary>
+          <div className="mt-2 bg-gray-50 rounded-xl border border-gray-200 px-4 sm:px-5 py-3.5 text-xs text-gray-600 space-y-3">
+            <p>
+              This simulator provides <span className="font-medium text-gray-800">directional estimates</span> of how
+              different release policies affect Lake Powell over time. It is not a substitute for the Bureau of
+              Reclamation&apos;s Colorado River Simulation System (CRSS), which uses hundreds of synthetic hydrologic traces
+              derived from climate models.
+            </p>
+            <p className="font-medium text-gray-700">Key simplifications compared to CRSS:</p>
+            <ul className="list-disc list-inside space-y-1 text-gray-500">
+              <li>Samples from historical water year inflow patterns rather than climate-adjusted synthetic traces</li>
+              <li>Uses a simplified Lake Mead model with approximate shortage tiers (actual CRSS has detailed Lower Basin delivery mechanics, ICS, and conservation programs)</li>
+              <li>Does not capture all transit/evaporation losses across the full system (~1.2 MAF/yr structural deficit)</li>
+            </ul>
+            <details className="mt-1">
+              <summary className="cursor-pointer text-gray-500 hover:text-gray-700 font-medium select-none">
+                Federal Plan policy assumptions
+              </summary>
+              <div className="mt-2 space-y-2 pl-1">
+                <p className="text-gray-500">
+                  All tier elevations, release ranges, percentages, and curve breakpoints used in the Federal Plan policies
+                  come directly from the{' '}
+                  <a
+                    href="https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/index.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teal-600 hover:text-teal-800 underline"
+                  >
+                    January 2026 Draft EIS
+                  </a>. Where the document describes a goal but does not specify the exact implementation formula, we
+                  note our interpretation below.
+                </p>
+                <ul className="list-disc list-inside space-y-1.5 text-gray-500">
+                  <li>
+                    <span className="font-medium text-gray-600">No Action</span> &mdash; No interpretation needed.
+                    Releases a fixed 8.23 MAF/yr (100% of compact) as specified.
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-600">Basic Coordination</span> &mdash; The DEIS states
+                    releases &ldquo;transition smoothly between levels.&rdquo; We use linear interpolation between the
+                    elevation tiers, which is the most straightforward reading.
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-600">Enhanced Coordination</span> &mdash; The DEIS defines
+                    a target storage split between Powell and Mead (Figure 2-6) and guardrails (4.7&ndash;10.8 MAF/yr),
+                    but does not specify how quickly releases should adjust to reach the target. We assume the Bureau
+                    would correct roughly one-third of the gap per year, spreading the adjustment over ~3 years rather
+                    than making abrupt changes.
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-600">Max Operational Flexibility</span> &mdash; Release
+                    curves come from DEIS Table 2-6. This policy references total CRSP storage (Powell plus three smaller
+                    reservoirs). Since we only simulate Powell, we estimate the other reservoirs hold ~5 MAF combined
+                    based on current levels. This is a fixed estimate and does not change during the simulation.
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-600">Supply Driven</span> &mdash; No interpretation
+                    needed. Releases 65% of the 3-year rolling average natural flow, clamped to 4.7&ndash;12.0 MAF/yr,
+                    as specified in DEIS Section 2.8.2.
+                  </li>
+                </ul>
+                <p className="text-gray-500">
+                  The &ldquo;Streamflow adjustment&rdquo; setting controls whether inflows decline over time.
+                  &ldquo;Federal baseline&rdquo; applies a ~18% total reduction (tapering over ~13 years) with 0.25%/yr
+                  Upper Basin demand growth, approximating the CRSS hydrologic projections. &ldquo;Historical&rdquo; uses
+                  inflow patterns as recorded with no reduction applied.
+                </p>
+              </div>
+            </details>
+            <p>
+              The relative ordering of policy outcomes aligns with the Draft EIS, which finds that all alternatives
+              converge at infrastructure limits under sustained drought and that policy differences are secondary to
+              hydrology at lower reservoir elevations.
+            </p>
+          </div>
+        </details>
       )}
 
       {/* Outcome Report */}
@@ -1182,6 +1319,9 @@ export default function MonteCarloSimulator({
       {/* Policy Comparison */}
       <PolicyComparison
         inflowScenario={inflowScenario}
+        demandGrowthPctPerYear={STREAMFLOW_TRENDS[streamflowTrend].demandGrowthPct}
+        dryingTrendPctPerYear={STREAMFLOW_TRENDS[streamflowTrend].dryingPct}
+        dryingTrendMaxReduction={STREAMFLOW_TRENDS[streamflowTrend].maxReduction}
         startMode={startMode}
         customElevation={customElevation}
         favoriteRamps={favoriteRamps}
