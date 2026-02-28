@@ -49,6 +49,98 @@ export const POLICY_PRESETS: OutflowPolicy[] = [
   { type: 'simple', name: '85% of compact (6.99 MAF)', simplePercent: 85 },
 ]
 
+export const DEIS_PRESETS: OutflowPolicy[] = [
+  {
+    type: 'simple',
+    name: 'DEIS: No Action',
+    simplePercent: 100,
+  },
+  {
+    type: 'tiered',
+    name: 'DEIS: Basic Coordination',
+    interpolate: true,
+    tiers: [
+      { aboveElevation: 3650, percent: 115.4 },
+      { aboveElevation: 3635, percent: 100 },
+      { aboveElevation: 3575, percent: 100 },
+      { aboveElevation: 3525, percent: 85.1 },
+      { aboveElevation: 3490, percent: 85.1 },
+      { aboveElevation: 0, percent: 85.1 },
+    ],
+  },
+  {
+    type: 'storageDistribution',
+    name: 'DEIS: Enhanced Coordination',
+    targetDistribution: {
+      curve: [
+        { combinedPercentFull: 0.00, powellPercentOfCombined: 0.50 },
+        { combinedPercentFull: 0.10, powellPercentOfCombined: 0.52 },
+        { combinedPercentFull: 0.20, powellPercentOfCombined: 0.54 },
+        { combinedPercentFull: 0.30, powellPercentOfCombined: 0.55 },
+        { combinedPercentFull: 0.40, powellPercentOfCombined: 0.56 },
+        { combinedPercentFull: 0.50, powellPercentOfCombined: 0.55 },
+        { combinedPercentFull: 0.63, powellPercentOfCombined: 0.50 },
+        { combinedPercentFull: 0.70, powellPercentOfCombined: 0.47 },
+        { combinedPercentFull: 0.80, powellPercentOfCombined: 0.44 },
+        { combinedPercentFull: 0.90, powellPercentOfCombined: 0.42 },
+        { combinedPercentFull: 1.00, powellPercentOfCombined: 0.40 },
+      ],
+      minReleaseMaf: 4.7,
+      maxReleaseMaf: 10.8,
+      maxMonthlyKaf: 900,
+      runningAvgYears: 10,
+    },
+  },
+  {
+    type: 'dualIndicator',
+    name: 'DEIS: Max Operational Flexibility',
+    runOfRiverBelowElev: 3510,
+    releaseCurves: {
+      storageCapacityAf: 24_322_000,
+      curves: [
+        {
+          minFlowMaf: 10.0,
+          segments: [
+            { storagePercent: 1.00, releaseMaf: 11.0 },
+            { storagePercent: 0.88, releaseMaf: 8.6 },
+            { storagePercent: 0.63, releaseMaf: 7.0 },
+            { storagePercent: 0.46, releaseMaf: 6.0 },
+            { storagePercent: 0.00, releaseMaf: 6.0 },
+          ],
+        },
+        {
+          minFlowMaf: 8.0,
+          segments: [
+            { storagePercent: 1.00, releaseMaf: 11.0 },
+            { storagePercent: 0.88, releaseMaf: 8.6 },
+            { storagePercent: 0.63, releaseMaf: 6.5 },
+            { storagePercent: 0.46, releaseMaf: 5.5 },
+            { storagePercent: 0.00, releaseMaf: 5.5 },
+          ],
+        },
+        {
+          minFlowMaf: 0,
+          segments: [
+            { storagePercent: 1.00, releaseMaf: 11.0 },
+            { storagePercent: 0.88, releaseMaf: 8.6 },
+            { storagePercent: 0.63, releaseMaf: 6.0 },
+            { storagePercent: 0.46, releaseMaf: 5.0 },
+            { storagePercent: 0.00, releaseMaf: 5.0 },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    type: 'flowBased',
+    name: 'DEIS: Supply Driven',
+    flowPercent: 0.65,
+    flowAvgYears: 3,
+    flowMinMaf: 4.7,
+    flowMaxMaf: 12.0,
+  },
+]
+
 /** Restrict which historical water years can be sampled. Shorter windows = drier, less optimistic. */
 export type InflowScenario = 'full' | 'last30' | 'last20' | 'last10'
 
@@ -79,6 +171,8 @@ export interface MonteCarloConfig {
     projectedRunoffInflowAf: number
     currentSnowpackPercent: number
   }
+  /** Starting Lake Mead elevation for policies that require Mead state (default ~1062 ft). */
+  meadStartElevation?: number
 }
 
 export interface WaterYearPattern {
@@ -157,8 +251,102 @@ const MONTHLY_EVAPORATION_RATES: Record<number, number> = {
 }
 
 // ============================================================================
+// Lake Mead simplified model (for Enhanced Coordination policy)
+// ============================================================================
+
+const MEAD_FULL_POOL_CAPACITY = 26_120_000
+const MEAD_DEAD_POOL_ELEV = 895
+const MEAD_FULL_POOL_ELEV = 1220
+const MEAD_DEFAULT_START_ELEV = 1062
+const MEAD_SIDE_INFLOW_AF_PER_DAY = 820
+const MEAD_BASE_DELIVERY_AF = 7_500_000
+
+const MEAD_CAPACITY_TABLE: StorageCapacityEntry[] = [
+  { elevation: 895,  storage_at_elevation: 2_000_000 },
+  { elevation: 950,  storage_at_elevation: 4_552_000 },
+  { elevation: 1000, storage_at_elevation: 7_853_000 },
+  { elevation: 1025, storage_at_elevation: 9_601_000 },
+  { elevation: 1050, storage_at_elevation: 11_543_000 },
+  { elevation: 1075, storage_at_elevation: 13_586_000 },
+  { elevation: 1100, storage_at_elevation: 15_853_000 },
+  { elevation: 1135, storage_at_elevation: 19_087_000 },
+  { elevation: 1145, storage_at_elevation: 20_045_000 },
+  { elevation: 1165, storage_at_elevation: 21_564_000 },
+  { elevation: 1220, storage_at_elevation: 26_120_000 },
+]
+
+const MEAD_MONTHLY_EVAP_RATES: Record<number, number> = {
+  0: 0.0045, 1: 0.0065, 2: 0.0100, 3: 0.0145, 4: 0.0195,
+  5: 0.0240, 6: 0.0260, 7: 0.0235, 8: 0.0180, 9: 0.0120,
+  10: 0.0070, 11: 0.0050,
+}
+
+function meadSurfaceArea(elevation: number): number {
+  if (elevation <= MEAD_DEAD_POOL_ELEV) return 0
+  if (elevation >= MEAD_FULL_POOL_ELEV) return 162_700
+  return ((elevation - MEAD_DEAD_POOL_ELEV) / (MEAD_FULL_POOL_ELEV - MEAD_DEAD_POOL_ELEV)) * 162_700
+}
+
+function meadElevationFromStorage(storage: number): number {
+  return contentToElevation(storage, MEAD_CAPACITY_TABLE)
+}
+
+export function stepMead(
+  meadStorage: number,
+  powellOutflowAf: number,
+  month: number
+): { storage: number; elevation: number } {
+  const inflow = powellOutflowAf * 0.97 + MEAD_SIDE_INFLOW_AF_PER_DAY
+  const outflow = MEAD_BASE_DELIVERY_AF / 365
+  const elev = meadElevationFromStorage(meadStorage)
+  const evapRate = MEAD_MONTHLY_EVAP_RATES[month] ?? 0.015
+  const evap = meadSurfaceArea(elev) * evapRate
+
+  let newStorage = meadStorage + inflow - outflow - evap
+  if (newStorage > MEAD_FULL_POOL_CAPACITY) newStorage = MEAD_FULL_POOL_CAPACITY
+  if (newStorage < 0) newStorage = 0
+
+  return { storage: newStorage, elevation: meadElevationFromStorage(newStorage) }
+}
+
+// ============================================================================
 // Helper functions
 // ============================================================================
+
+/** Convert MAF/year to daily CFS. */
+function mafToDailyCfs(maf: number): number {
+  return (maf * 1_000_000) / 365 / CFS_TO_AF_PER_DAY
+}
+
+/**
+ * Rolling average of completed annual inflows in MAF.
+ * Uses whatever years are available; returns 0 if none.
+ */
+export function rollingAvgInflowMaf(completedYears: number[], nYears: number): number {
+  if (completedYears.length === 0) return 0
+  const slice = completedYears.slice(-nYears)
+  const sum = slice.reduce((a, b) => a + b, 0)
+  return sum / slice.length / 1_000_000
+}
+
+/**
+ * Linearly interpolate a value from a sorted array of {x, y} points.
+ */
+function lerpFromCurve(
+  curve: Array<{ x: number; y: number }>,
+  x: number
+): number {
+  if (curve.length === 0) return 0
+  if (x <= curve[0].x) return curve[0].y
+  if (x >= curve[curve.length - 1].x) return curve[curve.length - 1].y
+  for (let i = 0; i < curve.length - 1; i++) {
+    if (x >= curve[i].x && x <= curve[i + 1].x) {
+      const frac = (x - curve[i].x) / (curve[i + 1].x - curve[i].x)
+      return curve[i].y + frac * (curve[i + 1].y - curve[i].y)
+    }
+  }
+  return curve[curve.length - 1].y
+}
 
 export function getSurfaceAreaAtElevation(elevation: number): number {
   if (elevation <= DEAD_POOL_ELEV) return 0
@@ -228,9 +416,15 @@ function compactPercentToCfs(pct: number): number {
   return (COMPACT_RELEASE_AF * (pct / 100)) / 365 / CFS_TO_AF_PER_DAY
 }
 
-export function applyPolicy(inflowCfs: number, currentElevation: number, policy: OutflowPolicy): number {
+export function applyPolicy(
+  inflowCfs: number,
+  currentElevation: number,
+  policy: OutflowPolicy,
+  ctx?: SimulationContext,
+  powellContent?: number
+): number {
   if (policy.type === 'percentOfPolicy' && policy.basePolicy) {
-    const baseOutflow = applyPolicy(inflowCfs, currentElevation, policy.basePolicy)
+    const baseOutflow = applyPolicy(inflowCfs, currentElevation, policy.basePolicy, ctx, powellContent)
     return baseOutflow * ((policy.percent ?? 100) / 100)
   }
 
@@ -238,13 +432,88 @@ export function applyPolicy(inflowCfs: number, currentElevation: number, policy:
     return compactPercentToCfs(policy.simplePercent ?? 100)
   }
 
-  // Tiered: find the matching tier (sorted highest first)
-  const tiers = [...(policy.tiers ?? [])].sort((a, b) => b.aboveElevation - a.aboveElevation)
-  for (const tier of tiers) {
-    if (currentElevation >= tier.aboveElevation) {
-      return compactPercentToCfs(tier.percent)
+  if (policy.type === 'tiered') {
+    const tiers = [...(policy.tiers ?? [])].sort((a, b) => b.aboveElevation - a.aboveElevation)
+
+    if (policy.interpolate && tiers.length >= 2) {
+      for (let i = 0; i < tiers.length - 1; i++) {
+        const upper = tiers[i]
+        const lower = tiers[i + 1]
+        if (currentElevation >= upper.aboveElevation) {
+          return compactPercentToCfs(upper.percent)
+        }
+        if (currentElevation >= lower.aboveElevation && currentElevation < upper.aboveElevation) {
+          const frac = (currentElevation - lower.aboveElevation) / (upper.aboveElevation - lower.aboveElevation)
+          const pct = lower.percent + frac * (upper.percent - lower.percent)
+          return compactPercentToCfs(pct)
+        }
+      }
+      return compactPercentToCfs(tiers[tiers.length - 1].percent)
     }
+
+    for (const tier of tiers) {
+      if (currentElevation >= tier.aboveElevation) {
+        return compactPercentToCfs(tier.percent)
+      }
+    }
+    return compactPercentToCfs(100)
   }
+
+  if (policy.type === 'flowBased' && ctx) {
+    const avgInflowMaf = rollingAvgInflowMaf(ctx.completedYearInflows, policy.flowAvgYears ?? 3)
+    let releaseMaf = avgInflowMaf * (policy.flowPercent ?? 0.65)
+    releaseMaf = Math.max(policy.flowMinMaf ?? 4.7, Math.min(policy.flowMaxMaf ?? 12.0, releaseMaf))
+    return mafToDailyCfs(releaseMaf)
+  }
+
+  if (policy.type === 'dualIndicator' && ctx && policy.releaseCurves) {
+    const curves = policy.releaseCurves
+    const storagePct = (powellContent ?? 0) / curves.storageCapacityAf
+    const avgFlow = rollingAvgInflowMaf(ctx.completedYearInflows, 3)
+
+    const sorted = [...curves.curves].sort((a, b) => b.minFlowMaf - a.minFlowMaf)
+    let selectedCurve = sorted[sorted.length - 1]
+    for (const c of sorted) {
+      if (avgFlow >= c.minFlowMaf) { selectedCurve = c; break }
+    }
+
+    const segs = [...selectedCurve.segments].sort((a, b) => b.storagePercent - a.storagePercent)
+    let releaseMaf: number
+    if (storagePct >= segs[0].storagePercent) {
+      releaseMaf = segs[0].releaseMaf
+    } else if (storagePct <= segs[segs.length - 1].storagePercent) {
+      releaseMaf = segs[segs.length - 1].releaseMaf
+    } else {
+      const curvePoints = segs.map(s => ({ x: s.storagePercent, y: s.releaseMaf }))
+      releaseMaf = lerpFromCurve(curvePoints.reverse(), storagePct)
+    }
+
+    if (currentElevation <= (policy.runOfRiverBelowElev ?? 3510)) {
+      const inflowMafPerYear = inflowCfs * CFS_TO_AF_PER_DAY * 365 / 1_000_000
+      releaseMaf = Math.min(releaseMaf, inflowMafPerYear)
+    }
+
+    return mafToDailyCfs(releaseMaf)
+  }
+
+  if (policy.type === 'storageDistribution' && ctx && policy.targetDistribution) {
+    const td = policy.targetDistribution
+    const combinedStorage = (powellContent ?? 0) + ctx.meadStorage
+    const combinedCapacity = FULL_POOL_CAPACITY + MEAD_FULL_POOL_CAPACITY
+    const combinedPct = combinedStorage / combinedCapacity
+
+    const curvePoints = td.curve.map(p => ({ x: p.combinedPercentFull, y: p.powellPercentOfCombined }))
+    const targetPowellFraction = lerpFromCurve(curvePoints, combinedPct)
+    const targetPowellStorage = combinedStorage * targetPowellFraction
+
+    const avgInflowMaf = rollingAvgInflowMaf(ctx.completedYearInflows, td.runningAvgYears)
+    const storageDiscrepancyMaf = ((powellContent ?? 0) - targetPowellStorage) / 1_000_000
+    let releaseMaf = avgInflowMaf + storageDiscrepancyMaf
+
+    releaseMaf = Math.max(td.minReleaseMaf, Math.min(td.maxReleaseMaf, releaseMaf))
+    return mafToDailyCfs(releaseMaf)
+  }
+
   return compactPercentToCfs(100)
 }
 
@@ -480,6 +749,20 @@ export function runMonteCarloSimulation(
   // Estimate the winter base flow (Oct-Mar median) for the spring scaling.
   const WINTER_BASE_CFS = 8000
 
+  const policyNeedsContext = ['flowBased', 'dualIndicator', 'storageDistribution'].includes(config.policy.type)
+  const meadStartElev = config.meadStartElevation ?? MEAD_DEFAULT_START_ELEV
+  const meadStartStorage = (() => {
+    for (let i = 0; i < MEAD_CAPACITY_TABLE.length - 1; i++) {
+      const cur = MEAD_CAPACITY_TABLE[i]
+      const next = MEAD_CAPACITY_TABLE[i + 1]
+      if (meadStartElev >= cur.elevation && meadStartElev <= next.elevation) {
+        const frac = (meadStartElev - cur.elevation) / (next.elevation - cur.elevation)
+        return cur.storage_at_elevation + frac * (next.storage_at_elevation - cur.storage_at_elevation)
+      }
+    }
+    return 11_543_000
+  })()
+
   for (let iter = 0; iter < config.iterations; iter++) {
     let content = config.startContent
     let elevation = config.startElevation
@@ -494,21 +777,19 @@ export function runMonteCarloSimulation(
     let reachedRecoveryTarget = false
     const rampAccessible = ramps.map(() => true)
 
-    // Walk forward day-by-day, sampling a new historical year at each
-    // water-year boundary (Oct 1).  waterYearDay tracks our position
-    // within the sampled pattern so seasonal inflows align correctly.
     let waterYearDay = startDayOfWY
     let sampledYear: WaterYearPattern
     let inflowLookup: number[]
     let springScaleFactor = 1.0
     let isFirstWaterYear = true
 
-    // ── First partial water year: condition on snowpack ──────────────────
-    // Sample from historically similar snowpack years so the spring rise
-    // timing is realistic, then scale the total spring inflow volume to
-    // match the snowpack projection.  The water balance model naturally
-    // translates that volume into the correct elevation change at the
-    // current lake level (lower elevation = bigger rise per AF).
+    const simCtx: SimulationContext = {
+      completedYearInflows: [],
+      currentYearInflowAccum: 0,
+      meadStorage: meadStartStorage,
+      meadElevation: meadStartElev,
+    }
+
     if (hasFirstYearConditioning) {
       sampledYear = sampleFirstYear(
         patternsToUse,
@@ -533,9 +814,19 @@ export function runMonteCarloSimulation(
       inflowLookup = buildDailyLookup(sampledYear.dailyInflows)
     }
 
+    if (policyNeedsContext) {
+      simCtx.completedYearInflows = [sampledYear.totalInflowAf]
+    }
+
     for (let simDay = 0; simDay < totalDays; simDay++) {
-      // At the start of a new water year, sample a fresh historical pattern
       if (waterYearDay >= 365) {
+        if (policyNeedsContext) {
+          simCtx.completedYearInflows.push(simCtx.currentYearInflowAccum)
+          if (simCtx.completedYearInflows.length > 10) {
+            simCtx.completedYearInflows = simCtx.completedYearInflows.slice(-10)
+          }
+          simCtx.currentYearInflowAccum = 0
+        }
         waterYearDay = 0
         isFirstWaterYear = false
         springScaleFactor = 1.0
@@ -550,9 +841,6 @@ export function runMonteCarloSimulation(
 
       let inflowCfs = inflowLookup[waterYearDay % 366]
 
-      // Scale spring inflows in the first water year to match snowpack forecast.
-      // Only scale the excess above winter base flow so the timing of when
-      // inflow first exceeds outflow isn't pushed later.
       if (
         isFirstWaterYear &&
         springScaleFactor !== 1.0 &&
@@ -563,15 +851,29 @@ export function runMonteCarloSimulation(
         inflowCfs = WINTER_BASE_CFS + excess * springScaleFactor
       }
 
-      const outflowCfs = applyPolicy(inflowCfs, elevation, config.policy)
-
       const month = monthByDay[simDay]
-
       const inflowAf = inflowCfs * CFS_TO_AF_PER_DAY
+
+      if (policyNeedsContext) {
+        simCtx.currentYearInflowAccum += inflowAf
+      }
+
+      const outflowCfs = applyPolicy(
+        inflowCfs, elevation, config.policy,
+        policyNeedsContext ? simCtx : undefined,
+        policyNeedsContext ? content : undefined
+      )
+
       const outflowAf = outflowCfs * CFS_TO_AF_PER_DAY
       const evapAf = getDailyEvaporationAf(month, elevation)
 
       content = content + inflowAf - outflowAf - evapAf
+
+      if (policyNeedsContext) {
+        const meadResult = stepMead(simCtx.meadStorage, outflowAf, month)
+        simCtx.meadStorage = meadResult.storage
+        simCtx.meadElevation = meadResult.elevation
+      }
 
       if (content > FULL_POOL_CAPACITY) {
         content = FULL_POOL_CAPACITY

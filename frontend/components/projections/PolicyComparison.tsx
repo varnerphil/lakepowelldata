@@ -3,11 +3,14 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import {
   POLICY_PRESETS,
+  DEIS_PRESETS,
   COMPACT_RELEASE_AF,
   type OutflowPolicy,
   type MonteCarloResult,
   type InflowScenario,
 } from '@/lib/monte-carlo'
+
+const ALL_COMPARE_PRESETS = [...POLICY_PRESETS, ...DEIS_PRESETS]
 import type { WorkerResponse } from '@/workers/monte-carlo.worker'
 import { parseLocalDate, formatDateString } from '@/lib/date-utils'
 import {
@@ -54,7 +57,7 @@ export default function PolicyComparison({
   const [expanded, setExpanded] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(() => {
     const initial = new Set<string>()
-    POLICY_PRESETS.filter((p) => p.type === 'tiered').forEach((p) => initial.add(p.name))
+    ALL_COMPARE_PRESETS.filter((p) => p.type === 'tiered').forEach((p) => initial.add(p.name))
     return initial
   })
   const [results, setResults] = useState<CompareResult[]>([])
@@ -86,7 +89,7 @@ export default function PolicyComparison({
   }
 
   const runComparison = useCallback(async () => {
-    const policies = POLICY_PRESETS.filter((p) => selected.has(p.name))
+    const policies = ALL_COMPARE_PRESETS.filter((p) => selected.has(p.name))
     if (policies.length < 2) return
 
     setIsRunning(true)
@@ -204,7 +207,7 @@ export default function PolicyComparison({
 
       {/* Policy checkboxes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {POLICY_PRESETS.map((p, idx) => (
+        {ALL_COMPARE_PRESETS.map((p, idx) => (
           <label
             key={p.name}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors cursor-pointer text-sm ${

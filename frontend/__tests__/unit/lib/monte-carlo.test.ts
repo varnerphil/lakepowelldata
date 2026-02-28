@@ -6,12 +6,16 @@ import {
   contentToElevation,
   applyPolicy,
   buildDailyLookup,
+  rollingAvgInflowMaf,
+  stepMead,
   POLICY_PRESETS,
+  DEIS_PRESETS,
   COMPACT_RELEASE_AF,
   type MonteCarloConfig,
   type WaterYearPattern,
   type StorageCapacityEntry,
   type OutflowPolicy,
+  type SimulationContext,
 } from '@/lib/monte-carlo'
 
 // ============================================================================
@@ -726,5 +730,302 @@ describe('buildDailyLookup', () => {
     expect(lookup[182]).toBe(25000)
     expect(lookup[0]).toBe(5000)
     expect(lookup[364]).toBe(4000)
+  })
+})
+
+// ============================================================================
+// DEIS presets and new policy type tests
+// ============================================================================
+
+describe('DEIS_PRESETS', () => {
+  it('has 5 DEIS alternatives', () => {
+    expect(DEIS_PRESETS.length).toBe(5)
+  })
+
+  it('includes all expected policy types', () => {
+    const types = new Set(DEIS_PRESETS.map((p) => p.type))
+    expect(types.has('simple')).toBe(true)
+    expect(types.has('tiered')).toBe(true)
+    expect(types.has('flowBased')).toBe(true)
+    expect(types.has('dualIndicator')).toBe(true)
+    expect(types.has('storageDistribution')).toBe(true)
+  })
+
+  it('all presets have names starting with DEIS:', () => {
+    for (const p of DEIS_PRESETS) {
+      expect(p.name).toMatch(/^DEIS:/)
+    }
+  })
+
+  it('No Action preset is simple 100%', () => {
+    const noAction = DEIS_PRESETS.find((p) => p.name.includes('No Action'))
+    expect(noAction).toBeDefined()
+    expect(noAction!.type).toBe('simple')
+    expect(noAction!.simplePercent).toBe(100)
+  })
+
+  it('Basic Coordination has interpolation enabled', () => {
+    const basic = DEIS_PRESETS.find((p) => p.name.includes('Basic Coordination'))
+    expect(basic).toBeDefined()
+    expect(basic!.type).toBe('tiered')
+    expect(basic!.interpolate).toBe(true)
+    expect(basic!.tiers!.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('Supply Driven has flowBased config', () => {
+    const supply = DEIS_PRESETS.find((p) => p.name.includes('Supply Driven'))
+    expect(supply).toBeDefined()
+    expect(supply!.type).toBe('flowBased')
+    expect(supply!.flowPercent).toBe(0.65)
+    expect(supply!.flowAvgYears).toBe(3)
+    expect(supply!.flowMinMaf).toBe(4.7)
+    expect(supply!.flowMaxMaf).toBe(12.0)
+  })
+
+  it('Max Flexibility has dual indicator curves', () => {
+    const maxFlex = DEIS_PRESETS.find((p) => p.name.includes('Max Operational'))
+    expect(maxFlex).toBeDefined()
+    expect(maxFlex!.type).toBe('dualIndicator')
+    expect(maxFlex!.releaseCurves).toBeDefined()
+    expect(maxFlex!.releaseCurves!.curves.length).toBe(3)
+    expect(maxFlex!.runOfRiverBelowElev).toBe(3510)
+  })
+
+  it('Enhanced Coordination has storage distribution config', () => {
+    const enhanced = DEIS_PRESETS.find((p) => p.name.includes('Enhanced Coordination'))
+    expect(enhanced).toBeDefined()
+    expect(enhanced!.type).toBe('storageDistribution')
+    expect(enhanced!.targetDistribution).toBeDefined()
+    expect(enhanced!.targetDistribution!.minReleaseMaf).toBe(4.7)
+    expect(enhanced!.targetDistribution!.maxReleaseMaf).toBe(10.8)
+    expect(enhanced!.targetDistribution!.runningAvgYears).toBe(10)
+  })
+})
+
+describe('rollingAvgInflowMaf', () => {
+  it('returns 0 for empty array', () => {
+    expect(rollingAvgInflowMaf([], 3)).toBe(0)
+  })
+
+  it('returns single year average when only one year', () => {
+    expect(rollingAvgInflowMaf([10_000_000], 3)).toBeCloseTo(10.0, 1)
+  })
+
+  it('averages last N years', () => {
+    const years = [8_000_000, 10_000_000, 12_000_000]
+    expect(rollingAvgInflowMaf(years, 3)).toBeCloseTo(10.0, 1)
+  })
+
+  it('uses only last N years when more are available', () => {
+    const years = [5_000_000, 8_000_000, 10_000_000, 12_000_000]
+    expect(rollingAvgInflowMaf(years, 3)).toBeCloseTo(10.0, 1)
+  })
+
+  it('uses all years when fewer than N available', () => {
+    const years = [8_000_000, 12_000_000]
+    expect(rollingAvgInflowMaf(years, 3)).toBeCloseTo(10.0, 1)
+  })
+})
+
+describe('stepMead', () => {
+  it('increases storage when inflow exceeds outflow + evap', () => {
+    const start = 11_543_000
+    const highInflow = 40_000
+    const result = stepMead(start, highInflow, 0)
+    expect(result.storage).toBeGreaterThan(start)
+  })
+
+  it('decreases storage when outflow exceeds inflow', () => {
+    const start = 11_543_000
+    const lowInflow = 5_000
+    const result = stepMead(start, lowInflow, 6)
+    expect(result.storage).toBeLessThan(start)
+  })
+
+  it('caps storage at full pool capacity', () => {
+    const nearFull = 26_000_000
+    const result = stepMead(nearFull, 500_000, 0)
+    expect(result.storage).toBeLessThanOrEqual(26_120_000)
+  })
+
+  it('does not go below zero', () => {
+    const result = stepMead(0, 0, 6)
+    expect(result.storage).toBeGreaterThanOrEqual(0)
+  })
+
+  it('returns a valid elevation', () => {
+    const result = stepMead(11_543_000, 20_000, 6)
+    expect(result.elevation).toBeGreaterThan(895)
+    expect(result.elevation).toBeLessThan(1220)
+  })
+})
+
+describe('applyPolicy — new DEIS types', () => {
+  const makeCtx = (completedYears: number[]): SimulationContext => ({
+    completedYearInflows: completedYears,
+    currentYearInflowAccum: 0,
+    meadStorage: 11_543_000,
+    meadElevation: 1050,
+  })
+
+  describe('tiered with interpolation', () => {
+    const policy: OutflowPolicy = {
+      type: 'tiered',
+      name: 'test interpolated',
+      interpolate: true,
+      tiers: [
+        { aboveElevation: 3650, percent: 115.4 },
+        { aboveElevation: 3635, percent: 100 },
+        { aboveElevation: 3575, percent: 100 },
+        { aboveElevation: 3525, percent: 85.1 },
+        { aboveElevation: 0, percent: 85.1 },
+      ],
+    }
+
+    it('returns top tier above highest elevation', () => {
+      const cfs = applyPolicy(10000, 3660, policy)
+      expect(cfs).toBeCloseTo(expectedCfs(115.4), 0)
+    })
+
+    it('returns bottom tier below lowest', () => {
+      const cfs = applyPolicy(10000, 3400, policy)
+      expect(cfs).toBeCloseTo(expectedCfs(85.1), 0)
+    })
+
+    it('interpolates between 3525 and 3575', () => {
+      const midElev = 3550
+      const cfs = applyPolicy(10000, midElev, policy)
+      const expectedPct = 85.1 + ((midElev - 3525) / (3575 - 3525)) * (100 - 85.1)
+      expect(cfs).toBeCloseTo(expectedCfs(expectedPct), 0)
+    })
+
+    it('returns flat release in non-ramp zone (3575-3635)', () => {
+      const cfs1 = applyPolicy(10000, 3580, policy)
+      const cfs2 = applyPolicy(10000, 3630, policy)
+      expect(cfs1).toBeCloseTo(cfs2, 0)
+    })
+  })
+
+  describe('flowBased (Supply Driven)', () => {
+    const policy: OutflowPolicy = {
+      type: 'flowBased',
+      name: 'test flow',
+      flowPercent: 0.65,
+      flowAvgYears: 3,
+      flowMinMaf: 4.7,
+      flowMaxMaf: 12.0,
+    }
+
+    it('computes 65% of rolling average', () => {
+      const ctx = makeCtx([10_000_000, 12_000_000, 14_000_000])
+      const cfs = applyPolicy(10000, 3550, policy, ctx)
+      const expectedMaf = 0.65 * 12.0
+      const expectedDailyCfs = (expectedMaf * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeCloseTo(expectedDailyCfs, 0)
+    })
+
+    it('enforces minimum release of 4.7 MAF', () => {
+      const ctx = makeCtx([3_000_000, 3_000_000, 3_000_000])
+      const cfs = applyPolicy(10000, 3550, policy, ctx)
+      const minDailyCfs = (4.7 * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeCloseTo(minDailyCfs, 0)
+    })
+
+    it('enforces maximum release of 12.0 MAF', () => {
+      const ctx = makeCtx([25_000_000, 25_000_000, 25_000_000])
+      const cfs = applyPolicy(10000, 3550, policy, ctx)
+      const maxDailyCfs = (12.0 * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeCloseTo(maxDailyCfs, 0)
+    })
+
+    it('falls back to 100% compact without context', () => {
+      const cfs = applyPolicy(10000, 3550, policy)
+      expect(cfs).toBeCloseTo(expectedCfs(100), 0)
+    })
+  })
+
+  describe('dualIndicator (Max Flexibility)', () => {
+    const maxFlexPreset = DEIS_PRESETS.find((p) => p.name.includes('Max Operational'))!
+
+    it('returns high release at full storage with wet hydrology', () => {
+      const ctx = makeCtx([15_000_000, 15_000_000, 15_000_000])
+      const cfs = applyPolicy(10000, 3700, maxFlexPreset, ctx, 24_322_000)
+      const expectedDailyCfs = (11.0 * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeCloseTo(expectedDailyCfs, 0)
+    })
+
+    it('returns lower release at low storage with dry hydrology', () => {
+      const ctx = makeCtx([6_000_000, 6_000_000, 6_000_000])
+      const cfs = applyPolicy(10000, 3520, maxFlexPreset, ctx, 8_000_000)
+      const maxPossibleCfs = (8.6 * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeLessThan(maxPossibleCfs)
+    })
+
+    it('applies run-of-river below 3510 ft', () => {
+      const ctx = makeCtx([15_000_000, 15_000_000, 15_000_000])
+      const lowInflow = 3000
+      const cfs = applyPolicy(lowInflow, 3505, maxFlexPreset, ctx, 20_000_000)
+      const inflowMafPerYear = lowInflow * 1.9835 * 365 / 1_000_000
+      const inflowCapDailyCfs = (inflowMafPerYear * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeLessThanOrEqual(inflowCapDailyCfs + 1)
+    })
+  })
+
+  describe('storageDistribution (Enhanced Coordination)', () => {
+    const enhancedPreset = DEIS_PRESETS.find((p) => p.name.includes('Enhanced Coordination'))!
+
+    it('produces release within configured bounds', () => {
+      const ctx = makeCtx([10_000_000, 10_000_000, 10_000_000])
+      const cfs = applyPolicy(10000, 3550, enhancedPreset, ctx, 14_100_000)
+      const minCfs = (4.7 * 1_000_000) / 365 / 1.9835
+      const maxCfs = (10.8 * 1_000_000) / 365 / 1.9835
+      expect(cfs).toBeGreaterThanOrEqual(minCfs - 1)
+      expect(cfs).toBeLessThanOrEqual(maxCfs + 1)
+    })
+
+    it('increases release when Powell is overfull relative to target', () => {
+      const ctx1 = makeCtx([10_000_000, 10_000_000, 10_000_000])
+      const ctx2 = makeCtx([10_000_000, 10_000_000, 10_000_000])
+      const lowPowell = applyPolicy(10000, 3450, enhancedPreset, ctx1, 5_000_000)
+      const highPowell = applyPolicy(10000, 3650, enhancedPreset, ctx2, 22_000_000)
+      expect(highPowell).toBeGreaterThan(lowPowell)
+    })
+  })
+})
+
+describe('DEIS presets integration', () => {
+  it('runs full simulation with each DEIS preset', () => {
+    for (const preset of DEIS_PRESETS) {
+      const config = makeConfig({
+        iterations: 20,
+        yearsToProject: 3,
+        policy: preset,
+      })
+      const result = runMonteCarloSimulation(config, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+
+      expect(result.iterations).toBe(20)
+      expect(result.dailyPercentiles.length).toBeGreaterThan(0)
+      expect(result.summary.medianEndingElevation).toBeGreaterThanOrEqual(3370)
+      expect(result.summary.medianEndingElevation).toBeLessThanOrEqual(3700)
+
+      for (const day of result.dailyPercentiles) {
+        expect(day.p10).toBeLessThanOrEqual(day.p90 + 0.01)
+      }
+    }
+  })
+
+  it('DEIS presets produce different outcomes', () => {
+    const results = DEIS_PRESETS.map((preset) => {
+      const config = makeConfig({
+        iterations: 50,
+        yearsToProject: 5,
+        policy: preset,
+      })
+      return runMonteCarloSimulation(config, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+    })
+
+    const medians = results.map((r) => r.summary.medianEndingElevation)
+    const uniqueRounded = new Set(medians.map((m) => Math.round(m)))
+    expect(uniqueRounded.size).toBeGreaterThanOrEqual(2)
   })
 })

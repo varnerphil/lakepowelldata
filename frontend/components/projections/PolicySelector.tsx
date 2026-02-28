@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { POLICY_PRESETS, COMPACT_RELEASE_AF, type OutflowPolicy } from '@/lib/monte-carlo'
+import { POLICY_PRESETS, DEIS_PRESETS, COMPACT_RELEASE_AF, type OutflowPolicy } from '@/lib/monte-carlo'
 import { ChevronDown, Plus, Trash2, Check, Pencil, X, Save, Bookmark } from 'lucide-react'
 
 function pctToMaf(pct: number): number {
@@ -159,6 +159,8 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     { aboveElevation: 0, percent: 85 },
   ]
 
+  const allPresets = [...POLICY_PRESETS, ...DEIS_PRESETS]
+
   const handlePresetChange = (name: string) => {
     if (name === '__custom__') {
       setIsCustom(true)
@@ -175,7 +177,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
     setIsCustom(false)
     setActiveSavedName(null)
     setSeedSource(null)
-    const preset = POLICY_PRESETS.find((p) => p.name === name)
+    const preset = allPresets.find((p) => p.name === name)
     if (preset) onChange(preset)
   }
 
@@ -317,7 +319,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
       <div className="relative">
         <select
           value={
-            POLICY_PRESETS.some((p) => p.name === value.name)
+            allPresets.some((p) => p.name === value.name)
               ? value.name
               : activeSavedName
                 ? `__saved__:${activeSavedName}`
@@ -340,6 +342,13 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               {p.name}
             </option>
           ))}
+          <optgroup label="DEIS Post-2026 Proposed Alternatives">
+            {DEIS_PRESETS.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+          </optgroup>
           <option value="__custom__">Custom Policy</option>
           {savedPolicies.length > 0 && (
             <optgroup label="Your saved policies">
@@ -433,7 +442,7 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
                 className="w-full bg-white border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-teal-400"
               >
                 <option value="" disabled>Choose a proposal to edit...</option>
-                {POLICY_PRESETS.filter((p) => p.type === 'tiered').map((p) => (
+                {allPresets.filter((p) => p.type === 'tiered').map((p) => (
                   <option key={p.name} value={p.name}>{p.name}</option>
                 ))}
                 {savedPolicies.length > 0 && (
