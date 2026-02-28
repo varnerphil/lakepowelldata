@@ -38,6 +38,7 @@ function pctToMaf(pct: number): number {
 interface PolicyComparisonProps {
   inflowScenario: InflowScenario
   demandGrowthPctPerYear: number
+  demandGrowthMaxReduction: number
   dryingTrendPctPerYear: number
   dryingTrendMaxReduction: number
   startMode: 'today' | 'custom'
@@ -54,6 +55,7 @@ interface CompareResult {
 export default function PolicyComparison({
   inflowScenario,
   demandGrowthPctPerYear,
+  demandGrowthMaxReduction,
   dryingTrendPctPerYear,
   dryingTrendMaxReduction,
   startMode,
@@ -161,6 +163,7 @@ export default function PolicyComparison({
                   recentYearCutoff: 20,
                   inflowScenario,
                   demandGrowthPctPerYear,
+                  demandGrowthMaxReduction,
                   dryingTrendPctPerYear,
                   dryingTrendMaxReduction,
                   currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,

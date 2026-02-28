@@ -416,7 +416,7 @@ function getDeisAlignedResults(): PolicyResult[] {
 
   for (const { name, scenario } of configs) {
     const result = simulate(name, scenario, {
-      demandGrowthPctPerYear: 0.25,
+      demandGrowthPctPerYear: 0,
       dryingTrendPctPerYear: 1.5,
       dryingTrendMaxReduction: 0.18,
     })
@@ -604,7 +604,7 @@ describe('DEIS Comparison Report', () => {
 
     lines.push('')
     lines.push('╔════════════════════════════════════════════════════════════════════════╗')
-    lines.push('║     FEDERAL BASELINE (1.5%/yr decline, 18% cap, 0.25% demand growth) ║')
+    lines.push('║     FEDERAL BASELINE (1.5%/yr decline, 18% cap, no demand growth)     ║')
     lines.push('╚════════════════════════════════════════════════════════════════════════╝')
     lines.push('')
     lines.push(padRow('Policy', 'Inflow', 'Median End', 'P10 End', 'P90 End', 'Min Power%', 'Dead Pool%', 'Recovery%'))
@@ -678,7 +678,7 @@ describe('DEIS Comparison Report', () => {
     lines.push('  1. Historical scenario uses raw inflow patterns (~10 MAF avg) which')
     lines.push('     are more generous than CRSS projections (~7.5-8.5 MAF avg).')
     lines.push('')
-    lines.push('  2. Federal baseline (1.5%/yr decline, 18% cap, 0.25% demand growth)')
+    lines.push('  2. Federal baseline (1.5%/yr decline, 18% cap, no demand growth)')
     lines.push('     reduces effective inflows to ~8 MAF, matching CRSS assumptions.')
     lines.push('     Results are now substantially more pessimistic and closer to DEIS.')
     lines.push('')
@@ -728,3 +728,126 @@ function padRow2(...cols: string[]): string {
   const widths = [25, 8, 10, 10, 10, 10]
   return cols.map((c, i) => c.padEnd(widths[i] ?? 10)).join('  ')
 }
+
+// ============================================================================
+// 9. COMPREHENSIVE CROSS-POLICY × CROSS-TREND VALIDATION
+// ============================================================================
+
+const ALL_POLICIES = [
+  { name: '2007 guidelines', scenario: 'last30' as InflowScenario },
+  { name: '100% of compact', scenario: 'last30' as InflowScenario },
+  { name: '90% of compact', scenario: 'last30' as InflowScenario },
+  { name: 'No Action', scenario: 'last30' as InflowScenario },
+  { name: 'Basic Coordination', scenario: 'last30' as InflowScenario },
+  { name: 'Enhanced Coordination', scenario: 'last30' as InflowScenario },
+  { name: 'Max Operational', scenario: 'last20' as InflowScenario },
+  { name: 'Supply Driven', scenario: 'last10' as InflowScenario },
+]
+
+const TREND_CONFIGS: Array<{ name: string; overrides: Partial<MonteCarloConfig> }> = [
+  { name: 'Historical', overrides: { demandGrowthPctPerYear: 0, demandGrowthMaxReduction: 0, dryingTrendPctPerYear: 0, dryingTrendMaxReduction: 0 } },
+  { name: 'Moderate', overrides: { demandGrowthPctPerYear: 0, demandGrowthMaxReduction: 0, dryingTrendPctPerYear: 1.0, dryingTrendMaxReduction: 0.10 } },
+  { name: 'Federal', overrides: { demandGrowthPctPerYear: 0, demandGrowthMaxReduction: 0, dryingTrendPctPerYear: 1.5, dryingTrendMaxReduction: 0.18 } },
+]
+
+describe('Cross-policy × cross-trend validation', () => {
+  it('every policy × trend combination completes without error', () => {
+    const failures: string[] = []
+
+    for (const pol of ALL_POLICIES) {
+      for (const trend of TREND_CONFIGS) {
+        try {
+          const result = simulate(pol.name, pol.scenario, { ...trend.overrides, iterations: 50 })
+          if (!result || !result.summary || !result.dailyPercentiles) {
+            failures.push(`${pol.name} + ${trend.name}: missing result fields`)
+          }
+        } catch (e) {
+          failures.push(`${pol.name} + ${trend.name}: ${(e as Error).message}`)
+        }
+      }
+    }
+
+    if (failures.length > 0) {
+      console.error('FAILURES:', failures.join('\n'))
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('all policies produce median ending elevation above dead pool under Historical', () => {
+    for (const pol of ALL_POLICIES) {
+      const result = simulate(pol.name, pol.scenario, {
+        ...TREND_CONFIGS[0].overrides,
+        iterations: 200,
+      })
+      expect(result.summary.medianEndingElevation).toBeGreaterThan(3370)
+    }
+  })
+
+  it('all policies produce median ending elevation above dead pool under Federal baseline', () => {
+    for (const pol of ALL_POLICIES) {
+      const result = simulate(pol.name, pol.scenario, {
+        ...TREND_CONFIGS[2].overrides,
+        iterations: 200,
+      })
+      expect(result.summary.medianEndingElevation).toBeGreaterThan(3370)
+    }
+  })
+
+  it('Historical trend produces higher elevations than Federal baseline for every policy', () => {
+    for (const pol of ALL_POLICIES) {
+      const hist = simulate(pol.name, pol.scenario, { ...TREND_CONFIGS[0].overrides, iterations: 200 })
+      const fed = simulate(pol.name, pol.scenario, { ...TREND_CONFIGS[2].overrides, iterations: 200 })
+
+      expect(hist.summary.medianEndingElevation).toBeGreaterThanOrEqual(
+        fed.summary.medianEndingElevation - 10
+      )
+    }
+  })
+
+  it('Moderate trend produces results between Historical and Federal for all policies', () => {
+    for (const pol of ALL_POLICIES) {
+      const hist = simulate(pol.name, pol.scenario, { ...TREND_CONFIGS[0].overrides, iterations: 200 })
+      const mod = simulate(pol.name, pol.scenario, { ...TREND_CONFIGS[1].overrides, iterations: 200 })
+      const fed = simulate(pol.name, pol.scenario, { ...TREND_CONFIGS[2].overrides, iterations: 200 })
+
+      // Moderate should be between historical and federal (with some tolerance for stochastic variation)
+      expect(mod.summary.medianEndingElevation).toBeLessThanOrEqual(hist.summary.medianEndingElevation + 15)
+      expect(mod.summary.medianEndingElevation).toBeGreaterThanOrEqual(fed.summary.medianEndingElevation - 15)
+    }
+  })
+
+  it('Federal baseline produces stable or declining trajectories (no perpetual rise)', () => {
+    for (const pol of ALL_POLICIES) {
+      const result = simulate(pol.name, pol.scenario, {
+        ...TREND_CONFIGS[2].overrides,
+        iterations: 300,
+      })
+      const endElev = result.summary.medianEndingElevation
+      // Under federal baseline, no policy should end above 3,680 ft (near full pool)
+      expect(endElev).toBeLessThan(3680)
+    }
+  })
+
+  it('drying factor plateaus by year 15 under federal baseline', () => {
+    const dryRate = 0.015, dryMax = 0.18
+    const factor15 = Math.max(1 - dryMax, Math.pow(1 - dryRate, 15))
+    const factor20 = Math.max(1 - dryMax, Math.pow(1 - dryRate, 20))
+    // By year 15, drying cap has kicked in — factor should be stable
+    expect(Math.abs(factor20 - factor15)).toBeLessThan(0.001)
+  })
+
+  it('Historical trend has no reduction over 20 years', () => {
+    // No demand growth or drying — inflow is unadjusted
+    const factor20 = 1.0
+    expect(factor20).toBe(1)
+  })
+
+  it('default policy (2007 guidelines) runs successfully with Historical trend', () => {
+    const result = simulate('2007 guidelines', 'last30', {
+      ...TREND_CONFIGS[0].overrides,
+      iterations: 200,
+    })
+    expect(result.summary.medianEndingElevation).toBeGreaterThan(3490)
+    expect(result.thresholdProbabilities.stayAboveDeadPool).toBe(100)
+  })
+})

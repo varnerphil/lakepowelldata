@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   applyPolicy,
   POLICY_PRESETS,
+  DEIS_PRESETS,
   COMPACT_RELEASE_AF,
   type OutflowPolicy,
 } from '@/lib/monte-carlo'
@@ -126,67 +127,44 @@ describe('applyPolicy — preset math verification', () => {
     })
   })
 
-  describe('Federal proposal (approx.)', () => {
-    const policy = POLICY_PRESETS.find(p => p.name === 'Federal proposal (approx.)')!
+  describe('Federal Plan: No Action', () => {
+    const policy = DEIS_PRESETS.find(p => p.name === 'Federal Plan: No Action')!
 
-    it('releases 115% above 3640', () => {
-      expect(applyPolicy(10000, 3680, policy)).toBeCloseTo(expectedCfs(115), 0)
-    })
-
-    it('releases 115% at exactly 3640', () => {
-      expect(applyPolicy(10000, 3640, policy)).toBeCloseTo(expectedCfs(115), 0)
-    })
-
-    it('releases 100% between 3600 and 3640', () => {
-      expect(applyPolicy(10000, 3620, policy)).toBeCloseTo(expectedCfs(100), 0)
-    })
-
-    it('releases 85% between 3525 and 3600', () => {
-      expect(applyPolicy(10000, 3560, policy)).toBeCloseTo(expectedCfs(85), 0)
-    })
-
-    it('releases 73% between 3490 and 3525', () => {
-      expect(applyPolicy(10000, 3510, policy)).toBeCloseTo(expectedCfs(73), 0)
-    })
-
-    it('releases 61% below 3490', () => {
-      expect(applyPolicy(10000, 3400, policy)).toBeCloseTo(expectedCfs(61), 0)
+    it('releases 100% at any elevation', () => {
+      for (const elev of [3400, 3525, 3600, 3700]) {
+        expect(applyPolicy(10000, elev, policy)).toBeCloseTo(expectedCfs(100), 0)
+      }
     })
   })
 
-  describe('Upper Basin proposal (approx.)', () => {
-    const policy = POLICY_PRESETS.find(p => p.name === 'Upper Basin proposal (approx.)')!
+  describe('Federal Plan: Basic Coordination', () => {
+    const policy = DEIS_PRESETS.find(p => p.name === 'Federal Plan: Basic Coordination')!
 
-    it('releases 100% above 3600', () => {
-      expect(applyPolicy(10000, 3650, policy)).toBeCloseTo(expectedCfs(100), 0)
+    it('releases ~115% above 3650', () => {
+      expect(applyPolicy(10000, 3700, policy)).toBeCloseTo(expectedCfs(115.4), 0)
     })
 
-    it('releases 85% between 3525 and 3600', () => {
-      expect(applyPolicy(10000, 3560, policy)).toBeCloseTo(expectedCfs(85), 0)
-    })
-
-    it('releases 73% between 3490 and 3525', () => {
-      expect(applyPolicy(10000, 3510, policy)).toBeCloseTo(expectedCfs(73), 0)
-    })
-
-    it('releases 61% below 3490', () => {
-      expect(applyPolicy(10000, 3400, policy)).toBeCloseTo(expectedCfs(61), 0)
-    })
-  })
-
-  describe('Lower Basin proposal (approx.)', () => {
-    const policy = POLICY_PRESETS.find(p => p.name === 'Lower Basin proposal (approx.)')!
-
-    it('releases 100% above 3525', () => {
+    it('releases 100% between 3575 and 3635', () => {
       expect(applyPolicy(10000, 3600, policy)).toBeCloseTo(expectedCfs(100), 0)
     })
 
-    it('releases 95% between 3490 and 3525', () => {
-      expect(applyPolicy(10000, 3510, policy)).toBeCloseTo(expectedCfs(95), 0)
+    it('releases ~85% below 3525', () => {
+      expect(applyPolicy(10000, 3490, policy)).toBeCloseTo(expectedCfs(85.1), 0)
+    })
+  })
+
+  describe('Federal Plan: Supply Driven', () => {
+    const policy = DEIS_PRESETS.find(p => p.name.includes('Supply Driven'))!
+
+    it('is a flowBased policy type', () => {
+      expect(policy.type).toBe('flowBased')
     })
 
-    it('releases 90% below 3490', () => {
-      expect(applyPolicy(10000, 3400, policy)).toBeCloseTo(expectedCfs(90), 0)
+    it('applies without error at various elevations', () => {
+      for (const elev of [3400, 3525, 3600, 3700]) {
+        const result = applyPolicy(10000, elev, policy)
+        expect(result).toBeGreaterThan(0)
+      }
     })
   })
 
@@ -457,11 +435,10 @@ describe('simulateWithPolicy — relative policy effects', () => {
       .toBeLessThan(result100.summary.totalSimulatedOutflow)
   })
 
-  it('upper basin proposal (aggressive cuts) saves more water than lower basin (mild cuts)', () => {
-    const upper = POLICY_PRESETS.find(p => p.name === 'Upper Basin proposal (approx.)')!
-    const lower = POLICY_PRESETS.find(p => p.name === 'Lower Basin proposal (approx.)')!
+  it('Basic Coordination saves more water at low elevations than No Action', () => {
+    const basicCoord = DEIS_PRESETS.find(p => p.name.includes('Basic Coordination'))!
+    const noAction = DEIS_PRESETS.find(p => p.name.includes('No Action'))!
 
-    // Use measurements starting below 3525 to exercise the lower tiers
     const lowMeasurements = makeMeasurements(365, {
       startDate: '2024-01-01',
       startContent: 8_110_000, // ~3490 ft
@@ -469,32 +446,30 @@ describe('simulateWithPolicy — relative policy effects', () => {
       outflowCfs: 12_000,
     })
 
-    const resultUpper = simulateWithPolicy('2024-01-01', upper, lowMeasurements, STORAGE_CAPACITY)!
-    const resultLower = simulateWithPolicy('2024-01-01', lower, lowMeasurements, STORAGE_CAPACITY)!
+    const resultBasic = simulateWithPolicy('2024-01-01', basicCoord, lowMeasurements, STORAGE_CAPACITY)!
+    const resultNoAction = simulateWithPolicy('2024-01-01', noAction, lowMeasurements, STORAGE_CAPACITY)!
 
-    // Upper basin has more aggressive cuts (61% vs 90% at lowest tier),
-    // so it should produce a higher ending elevation
-    expect(resultUpper.summary.simulatedEndingElevation)
-      .toBeGreaterThan(resultLower.summary.simulatedEndingElevation)
+    // Basic Coordination cuts releases to 85% at low elevations vs 100% for No Action
+    expect(resultBasic.summary.simulatedEndingElevation)
+      .toBeGreaterThan(resultNoAction.summary.simulatedEndingElevation)
   })
 
-  it('federal proposal releases MORE water above 3640 (115%) than current ops (100%)', () => {
-    const federal = POLICY_PRESETS.find(p => p.name === 'Federal proposal (approx.)')!
+  it('Basic Coordination releases MORE water above 3650 (115%) than current ops (100%)', () => {
+    const basicCoord = DEIS_PRESETS.find(p => p.name.includes('Basic Coordination'))!
     const currentOps = POLICY_PRESETS.find(p => p.name === 'Current operations (2007 guidelines)')!
 
-    // Start high to exercise the 115% tier
     const highMeasurements = makeMeasurements(365, {
       startDate: '2024-01-01',
-      startContent: 23_000_000, // ~3660 ft — above 3640
+      startContent: 23_000_000, // ~3660 ft — above 3650
       inflowCfs: 15_000,
       outflowCfs: 12_000,
     })
 
-    const resultFederal = simulateWithPolicy('2024-01-01', federal, highMeasurements, STORAGE_CAPACITY)!
+    const resultBasic = simulateWithPolicy('2024-01-01', basicCoord, highMeasurements, STORAGE_CAPACITY)!
     const resultCurrent = simulateWithPolicy('2024-01-01', currentOps, highMeasurements, STORAGE_CAPACITY)!
 
-    // Federal should release more water (115% vs 100%) while above 3640
-    expect(resultFederal.summary.totalSimulatedOutflow)
+    // Basic Coordination should release more water (115%) vs current ops (100%) while above 3650
+    expect(resultBasic.summary.totalSimulatedOutflow)
       .toBeGreaterThan(resultCurrent.summary.totalSimulatedOutflow)
   })
 })

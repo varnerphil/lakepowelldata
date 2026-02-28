@@ -57,10 +57,10 @@ test.describe('Projections — Policy Selection', () => {
     expect(options).toContain('100% of compact (8.23 MAF)')
     expect(options).toContain('95% of compact (7.82 MAF)')
     expect(options).toContain('90% of compact (7.41 MAF)')
-    expect(options).toContain('Lower Basin proposal (approx.)')
-    expect(options).toContain('Upper Basin proposal (approx.)')
-    expect(options).toContain('Federal proposal (approx.)')
-    expect(options).toContain('Custom...')
+    expect(options).toContain('Federal Plan: No Action')
+    expect(options).toContain('Federal Plan: Basic Coordination')
+    expect(options).toContain('Federal Plan: Supply Driven')
+    expect(options).toContain('Custom Policy')
   })
 
   test('switching policy updates the description text', async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe('Projections — Policy Selection', () => {
     const select = page.locator('select').first()
     await expect(select).toBeVisible({ timeout: 10000 })
 
-    await select.selectOption('Custom...')
+    await select.selectOption('Custom Policy')
 
     await expect(page.getByText(/flat release/i)).toBeVisible()
     await expect(page.getByText(/elevation-based/i).first()).toBeVisible()
@@ -99,11 +99,52 @@ test.describe('Projections — Policy Selection', () => {
     const select = page.locator('select').first()
     await expect(select).toBeVisible({ timeout: 10000 })
 
-    await select.selectOption('Custom...')
+    await select.selectOption('Custom Policy')
     await page.getByText(/elevation-based/i).first().click()
 
     await expect(page.getByText(/above ft/i)).toBeVisible()
     await expect(page.getByText(/add tier/i)).toBeVisible()
+  })
+})
+
+test.describe('Projections — Historical Streamflow & All Policies', () => {
+  test('streamflow adjustment dropdown includes Historical', async ({ page }) => {
+    await page.goto(PROJECTIONS_URL)
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByText(/streamflow adjustment/i)).toBeVisible({ timeout: 10000 })
+    const streamflowSelect = page.locator('select').filter({ has: page.locator('option[value="historical"]') }).first()
+    await expect(streamflowSelect).toBeVisible()
+    await streamflowSelect.selectOption('historical')
+    await expect(page.getByText(/historical inflow patterns/i)).toBeVisible()
+  })
+
+  test('Historical streamflow + each policy completes simulation', async ({ page }) => {
+    await page.goto(PROJECTIONS_URL)
+    await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 60000 })
+
+    const streamflowSelect = page.locator('select').filter({ has: page.locator('option[value="historical"]') }).first()
+    await streamflowSelect.selectOption('historical')
+
+    const policySelect = page.locator('select').first()
+
+    const policiesToTest = [
+      'Current operations (2007 guidelines)',
+      '100% of compact (8.23 MAF)',
+      '90% of compact (7.41 MAF)',
+      'Federal Plan: No Action',
+      'Federal Plan: Basic Coordination',
+      'Federal Plan: Supply Driven',
+    ]
+
+    for (const policyName of policiesToTest) {
+      await policySelect.selectOption(policyName)
+      await page.getByRole('button', { name: /run projection/i }).click()
+      await expect(
+        page.getByText(/computing simulation|run projection/i).first()
+      ).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(/projection summary/i)).toBeVisible({ timeout: 90000 })
+    }
   })
 })
 

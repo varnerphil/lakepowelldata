@@ -16,10 +16,10 @@ import ShareButton from '@/components/ui/ShareButton'
 
 export type StreamflowTrend = 'historical' | 'moderate_decline' | 'federal_baseline'
 
-const STREAMFLOW_TRENDS: Record<StreamflowTrend, { label: string; description: string; dryingPct: number; maxReduction: number; demandGrowthPct: number }> = {
-  historical:       { label: 'Historical',          description: 'Uses historical inflow patterns as recorded — no adjustment', dryingPct: 0, maxReduction: 0, demandGrowthPct: 0.1 },
-  moderate_decline: { label: 'Moderate decline',    description: 'Gradual ~10% reduction over 10 years, then levels off', dryingPct: 1.0, maxReduction: 0.10, demandGrowthPct: 0.15 },
-  federal_baseline: { label: 'Federal baseline',    description: 'Matches Bureau of Reclamation CRSS projections — ~18% reduction, leveling off around year 13', dryingPct: 1.5, maxReduction: 0.18, demandGrowthPct: 0.25 },
+const STREAMFLOW_TRENDS: Record<StreamflowTrend, { label: string; description: string; dryingPct: number; maxReduction: number; demandGrowthPct: number; demandMaxReduction: number }> = {
+  historical:       { label: 'Historical',          description: 'Uses historical inflow patterns as recorded — no adjustment', dryingPct: 0, maxReduction: 0, demandGrowthPct: 0, demandMaxReduction: 0 },
+  moderate_decline: { label: 'Moderate decline',    description: 'Gradual ~10% streamflow reduction, leveling off around year 10', dryingPct: 1.0, maxReduction: 0.10, demandGrowthPct: 0, demandMaxReduction: 0 },
+  federal_baseline: { label: 'Federal baseline',    description: 'Matches Bureau of Reclamation CRSS projections — ~18% streamflow reduction, leveling off around year 13', dryingPct: 1.5, maxReduction: 0.18, demandGrowthPct: 0, demandMaxReduction: 0 },
 }
 
 export interface SharedSimConfig {
@@ -48,9 +48,9 @@ function defaultInflowScenario(policy: OutflowPolicy): InflowScenario | null {
   return null
 }
 
-function defaultStreamflowTrend(policy: OutflowPolicy): StreamflowTrend | null {
+function defaultStreamflowTrend(policy: OutflowPolicy): StreamflowTrend {
   if (policy.name.includes('Federal Plan:')) return 'federal_baseline'
-  return null
+  return 'historical'
 }
 
 export default function MonteCarloSimulator({
@@ -69,8 +69,7 @@ export default function MonteCarloSimulator({
     setPolicy(p)
     const recommended = defaultInflowScenario(p)
     if (recommended) setInflowScenario(recommended)
-    const recommendedTrend = defaultStreamflowTrend(p)
-    if (recommendedTrend) setStreamflowTrend(recommendedTrend)
+    setStreamflowTrend(defaultStreamflowTrend(p))
   }, [])
 
   const [result, setResult] = useState<MonteCarloResult | null>(null)
@@ -196,6 +195,7 @@ export default function MonteCarloSimulator({
           recentYearCutoff: 20,
           inflowScenario,
           demandGrowthPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].demandGrowthPct,
+          demandGrowthMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].demandMaxReduction,
           dryingTrendPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].dryingPct,
           dryingTrendMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].maxReduction,
           currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
@@ -497,9 +497,10 @@ export default function MonteCarloSimulator({
                 </ul>
                 <p className="text-gray-500">
                   The &ldquo;Streamflow adjustment&rdquo; setting controls whether inflows decline over time.
-                  &ldquo;Federal baseline&rdquo; applies a ~18% total reduction (tapering over ~13 years) with 0.25%/yr
-                  Upper Basin demand growth, approximating the CRSS hydrologic projections. &ldquo;Historical&rdquo; uses
-                  inflow patterns as recorded with no reduction applied.
+                  &ldquo;Federal baseline&rdquo; applies ~18% streamflow reduction (leveling off around year 13),
+                  approximating CRSS hydrologic projections (~8 MAF effective inflow). No Upper Basin demand growth
+                  is modeled — consumption is assumed to shift (Lower Basin cuts, Upper Basin develops) rather than increase.
+                  &ldquo;Historical&rdquo; uses inflow patterns as recorded with no adjustment.
                 </p>
               </div>
             </details>
@@ -1320,6 +1321,7 @@ export default function MonteCarloSimulator({
       <PolicyComparison
         inflowScenario={inflowScenario}
         demandGrowthPctPerYear={STREAMFLOW_TRENDS[streamflowTrend].demandGrowthPct}
+        demandGrowthMaxReduction={STREAMFLOW_TRENDS[streamflowTrend].demandMaxReduction}
         dryingTrendPctPerYear={STREAMFLOW_TRENDS[streamflowTrend].dryingPct}
         dryingTrendMaxReduction={STREAMFLOW_TRENDS[streamflowTrend].maxReduction}
         startMode={startMode}

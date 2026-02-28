@@ -225,6 +225,8 @@ export interface MonteCarloConfig {
    * Set to 0 to disable.
    */
   demandGrowthPctPerYear?: number
+  /** Max total demand growth reduction (0-1 fraction). Default 0.05 (5%). */
+  demandGrowthMaxReduction?: number
   /**
    * Annual percentage by which streamflow declines, tapering over time.
    * Applied for the first ~10-13 years then plateaus at the max reduction cap
@@ -915,6 +917,7 @@ export function runMonteCarloSimulation(
   const WINTER_BASE_CFS = 8000
 
   const demandGrowthRate = (config.demandGrowthPctPerYear ?? 0.1) / 100
+  const demandMaxReduction = config.demandGrowthMaxReduction ?? 0.05
   const dryingTrendRate = (config.dryingTrendPctPerYear ?? 0) / 100
   const dryingMaxReduction = config.dryingTrendMaxReduction ?? 0.18
   const policyNeedsContext = ['flowBased', 'dualIndicator', 'storageDistribution'].includes(config.policy.type)
@@ -1003,7 +1006,9 @@ export function runMonteCarloSimulation(
         isFirstWaterYear = false
         springScaleFactor = 1.0
         projectionYear++
-        const demandComponent = Math.pow(1 - demandGrowthRate, projectionYear)
+        const demandComponent = demandGrowthRate > 0
+          ? Math.max(1 - demandMaxReduction, Math.pow(1 - demandGrowthRate, projectionYear))
+          : 1
         const dryingComponent = dryingTrendRate > 0
           ? Math.max(1 - dryingMaxReduction, Math.pow(1 - dryingTrendRate, projectionYear))
           : 1
