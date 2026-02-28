@@ -122,16 +122,37 @@ function PolicyDescription({ policy }: { policy: OutflowPolicy }) {
         </button>
         {expanded && (
           <div className="bg-gray-50 rounded p-2 border border-gray-100 space-y-0.5">
-            {sorted.map((t, i) => (
-              <div key={i} className="flex justify-between text-[11px]">
-                <span className="text-gray-500">
-                  {t.aboveElevation === 0 ? 'Below all tiers' : `Above ${t.aboveElevation.toLocaleString()} ft`}
-                </span>
-                <span className="text-gray-700 font-medium">
-                  {t.percent}% ({pctToMaf(t.percent).toFixed(1)} MAF)
-                </span>
-              </div>
-            ))}
+            {(() => {
+              const merged: Array<{ label: string; percent: number }> = []
+              let i = 0
+              while (i < sorted.length) {
+                const t = sorted[i]
+                let j = i
+                while (j + 1 < sorted.length && sorted[j + 1].percent === t.percent) j++
+                const last = sorted[j]
+                if (i === j) {
+                  if (t.aboveElevation === 0) {
+                    const prev = i > 0 ? sorted[i - 1] : null
+                    merged.push({ label: `Below ${prev ? prev.aboveElevation.toLocaleString() : '0'} ft`, percent: t.percent })
+                  } else {
+                    merged.push({ label: `Above ${t.aboveElevation.toLocaleString()} ft`, percent: t.percent })
+                  }
+                } else if (last.aboveElevation === 0) {
+                  merged.push({ label: `Below ${t.aboveElevation.toLocaleString()} ft`, percent: t.percent })
+                } else {
+                  merged.push({ label: `${last.aboveElevation.toLocaleString()}–${t.aboveElevation.toLocaleString()} ft`, percent: t.percent })
+                }
+                i = j + 1
+              }
+              return merged.map((m, idx) => (
+                <div key={idx} className="flex justify-between text-[11px]">
+                  <span className="text-gray-500">{m.label}</span>
+                  <span className="text-gray-700 font-medium">
+                    {m.percent}% ({pctToMaf(m.percent).toFixed(1)} MAF)
+                  </span>
+                </div>
+              ))
+            })()}
             {isBasicCoord && (
               <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-100 mt-1">
                 Source: Bureau of Reclamation Draft EIS, Table 2-4. Releases interpolated linearly between tiers.
