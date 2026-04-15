@@ -547,7 +547,7 @@ export default function MonteCarloSimulator({
             </details>
             <p>
               The relative ordering of policy outcomes aligns with the Draft EIS, which finds that all alternatives
-              converge at infrastructure limits under sustained drought and that policy differences are secondary to
+              converge at infrastructure limits under sustained low-flow conditions and that policy differences are secondary to
               hydrology at lower reservoir elevations.
             </p>
           </div>
@@ -596,10 +596,10 @@ export default function MonteCarloSimulator({
                 ? `Recovery to 3,660 ft is possible but unlikely (${recoveryChance.toFixed(0)}% chance).`
                 : ''
 
-            // Drought note
+            // Worst-case low-flow note
             const p10Low = summary.lowestElevationReached.p10
             const droughtPhrase = p10Low < 3490
-              ? ` In a worst-case drought, the lake could drop as low as ${p10Low.toFixed(0)} ft.`
+              ? ` In a worst-case dry stretch, the lake could drop as low as ${p10Low.toFixed(0)} ft.`
               : ''
 
             // --- Phase-based outlook ---
@@ -643,13 +643,13 @@ export default function MonteCarloSimulator({
               if (direction === 'rising' && low >= 3490) {
                 verdict = 'the lake improves — power generation is secure and the trend is positive.'
               } else if (direction === 'rising' && low >= 3370) {
-                verdict = 'the lake trends upward, but drought could still threaten power generation.'
+                verdict = 'the lake trends upward, but a sustained dry stretch could still threaten power generation.'
               } else if (direction === 'rising') {
-                verdict = 'the lake is rising overall, but severe drought could push it dangerously low.'
+                verdict = 'the lake is rising overall, but a severe dry stretch could push it dangerously low.'
               } else if (direction === 'stable' && low >= 3490) {
                 verdict = 'the lake holds steady with power generation secure.'
               } else if (direction === 'stable') {
-                verdict = 'the lake holds steady, but drought vulnerability remains.'
+                verdict = 'the lake holds steady, but low-flow vulnerability remains.'
               } else if (low >= 3490) {
                 verdict = 'the lake is declining, though power generation stays online in most scenarios.'
               } else if (low >= 3370) {
@@ -862,7 +862,7 @@ export default function MonteCarloSimulator({
                       <p className="text-[10px] uppercase tracking-wide font-medium text-gray-400 px-1">Recovery</p>
                       <OutcomeRow
                         label="Lake reaches healthy recovery"
-                        detail="Lake rises to 3,660 ft (~90% capacity) — strong buffer for drought resilience and full operations"
+                        detail="Lake rises to 3,660 ft (~90% capacity) — strong buffer for dry-year resilience and full operations"
                         probability={thresholds.reachRecoveryTarget}
                         invertColor
                         timeline={recoveryTimeline}
@@ -964,7 +964,7 @@ export default function MonteCarloSimulator({
               )
             })()}
 
-            {/* Drought vulnerability analysis */}
+            {/* Dry-year vulnerability analysis */}
             {(() => {
               const dp = result!.dailyPercentiles
               if (dp.length < 10) return null
@@ -1075,7 +1075,7 @@ export default function MonteCarloSimulator({
 
               return (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Drought vulnerability</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Dry-year vulnerability</h4>
                   <div className="rounded-lg bg-amber-50/60 px-4 py-3 space-y-2">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -1084,11 +1084,11 @@ export default function MonteCarloSimulator({
                           <p className="text-sm text-gray-700 leading-relaxed">
                             If the region experiences multiple consecutive dry years, this policy is
                             {' '}<span className="font-semibold text-amber-800">vulnerable</span> at key levels.
-                            In a worst-case drought scenario (bottom 10% of outcomes):
+                            In a worst-case dry scenario (bottom 10% of outcomes):
                           </p>
                         ) : (
                           <p className="text-sm text-gray-700 leading-relaxed">
-                            This policy shows some resilience to drought, but a sustained dry period would
+                            This policy shows some resilience to dry conditions, but a sustained dry period would
                             {' '}<span className="font-semibold text-amber-700">tighten margins</span> at critical levels:
                           </p>
                         )}
@@ -1113,7 +1113,7 @@ export default function MonteCarloSimulator({
                                 </p>
                                 {v.recoversP10 && v.recoveryMonthsP10 != null ? (
                                   <p className="text-emerald-700">
-                                    Improves: drought risk clears {formatTime(v.recoveryMonthsP10)} as the lake rebuilds
+                                    Improves: low-flow risk clears {formatTime(v.recoveryMonthsP10)} as the lake rebuilds
                                     {v.vulnerableWindowMonths != null && (
                                       <> (vulnerable window: ~{v.vulnerableWindowMonths < 12
                                         ? `${v.vulnerableWindowMonths} months`

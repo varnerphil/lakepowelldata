@@ -9,7 +9,7 @@ const mainNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/simulator', label: 'Simulator' },
   { href: '/ramps', label: 'Ramps' },
-  { href: '/map', label: 'Map' },
+  { href: '/about', label: 'About' },
 ]
 
 const resourcesLinks = [
@@ -17,7 +17,6 @@ const resourcesLinks = [
   { href: '/storage', label: 'Storage' },
   { href: '/snowpack', label: 'Snowpack' },
   { href: '/stats', label: 'Stats' },
-  { href: '/about', label: 'About' },
 ]
 
 export default function MobileNav({ oswaldFont }: { oswaldFont?: string }) {

@@ -5,6 +5,7 @@ import { projectFromSnowpack } from '@/lib/calculations'
 import { formatDateString } from '@/lib/date-utils'
 import StatsTabs from '@/components/stats/StatsTabs'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
+import { getBaseUrl } from '@/lib/base-url'
 
 // Revalidate every hour
 export const revalidate = 3600
@@ -22,10 +23,12 @@ export default async function StatsPage({
   const historicalData = await getHistoricalData((params.range as any) || '1year', params.start, params.end)
   const statsSummary = await getStatisticalSummary()
   
+  const baseUrl = await getBaseUrl()
+
   // Get snowpack data for projected runoff
   let snowpackData = null
   try {
-      const snowpackResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/snowpack`, {
+      const snowpackResponse = await fetch(`${baseUrl}/api/snowpack`, {
         next: { revalidate: 3600 } // Cache for 1 hour
       })
     if (snowpackResponse.ok) {
@@ -38,7 +41,7 @@ export default async function StatsPage({
   // Get basin plots data for historical SWE trends
   let basinPlotsData = null
   try {
-      const basinPlotsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/basin-plots`, {
+      const basinPlotsResponse = await fetch(`${baseUrl}/api/basin-plots`, {
         next: { revalidate: 3600 } // Cache for 1 hour
       })
     if (basinPlotsResponse.ok) {

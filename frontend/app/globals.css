@@ -92,3 +92,12 @@ select {
   transform: translateX(calc(50vw - 50%)) !important;
   margin: 0 !important;
 }
+
+/* Hide scrollbar on horizontally scrolling chip rows */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

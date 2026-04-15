@@ -251,6 +251,7 @@ export default function HomeChartsWithFavorites({
   
   return (
     <>
+      <div id="chart" className="scroll-mt-24" />
       {/* 2. Historical Chart */}
       <div className="mt-8 lg:mt-12">
         <HistoricalChart 
@@ -265,6 +266,7 @@ export default function HomeChartsWithFavorites({
       </div>
 
       {/* 3. Elevation Projection - only show when appropriate */}
+      <div id="projection" className="scroll-mt-24" />
       {showDropProjection && (
         <div className="mt-8 lg:mt-12">
           <div className="card p-4 lg:p-8">

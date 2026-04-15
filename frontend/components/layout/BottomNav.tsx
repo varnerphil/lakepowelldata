@@ -2,28 +2,28 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TrendingUp, PlayCircle, MapPin, Map } from 'lucide-react'
+import { TrendingUp, PlayCircle, MapPin, Info } from 'lucide-react'
 
 const navItems = [
-  { 
-    href: '/', 
-    label: 'Dashboard', 
-    icon: TrendingUp 
+  {
+    href: '/',
+    label: 'Dashboard',
+    icon: TrendingUp
   },
-  { 
-    href: '/simulator', 
-    label: 'Simulator', 
-    icon: PlayCircle 
+  {
+    href: '/simulator',
+    label: 'Simulator',
+    icon: PlayCircle
   },
-  { 
-    href: '/ramps', 
-    label: 'Ramps', 
-    icon: MapPin 
+  {
+    href: '/ramps',
+    label: 'Ramps',
+    icon: MapPin
   },
-  { 
-    href: '/map', 
-    label: 'Map', 
-    icon: Map 
+  {
+    href: '/about',
+    label: 'About',
+    icon: Info
   },
 ]
 

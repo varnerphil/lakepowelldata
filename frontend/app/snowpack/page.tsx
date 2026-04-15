@@ -4,6 +4,7 @@ import SnowpackMap from '@/components/snowpack/SnowpackMap'
 import TributarySnowpack from '@/components/snowpack/TributarySnowpack'
 import BasinPlotsChart from '@/components/snowpack/BasinPlotsChart'
 import ShareButton from '@/components/ui/ShareButton'
+import { getBaseUrl } from '@/lib/base-url'
 
 // Revalidate every hour for updated snowpack data
 export const revalidate = 3600
@@ -38,7 +39,8 @@ interface SNOTELData {
 
 async function getSNOTELData(): Promise<SNOTELData | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/snowpack`, {
+    const baseUrl = await getBaseUrl()
+    const response = await fetch(`${baseUrl}/api/snowpack`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     })
     if (!response.ok) return null
@@ -80,7 +82,8 @@ interface BasinPlotsData {
 
 async function getBasinPlotsData(): Promise<BasinPlotsData | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/basin-plots`, {
+    const baseUrl = await getBaseUrl()
+    const response = await fetch(`${baseUrl}/api/basin-plots`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     })
     if (!response.ok) return null

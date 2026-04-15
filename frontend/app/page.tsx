@@ -102,6 +102,7 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
+import QuickJumpHeader from '@/components/layout/QuickJumpHeader'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import { calculateDropProjection, calculateDailyElevationProjection } from '@/lib/calculations'
@@ -622,7 +623,7 @@ function getDateRange(range: string): { start: string; end: string } {
       start.setUTCFullYear(start.getUTCFullYear() - 1)
       break
     default:
-      start.setUTCFullYear(start.getUTCFullYear() - 1) // Default to 1 year
+      start.setUTCFullYear(start.getUTCFullYear() - 5) // Default to 5 years
   }
   
   const startDate = start.toISOString().split('T')[0]
@@ -635,7 +636,7 @@ export default async function HomePage({
   searchParams: Promise<{ range?: string }>
 }) {
   const params = await searchParams
-  const currentRange = params.range || '1year'
+  const currentRange = params.range || '5years'
   
   // Fetch initial data in parallel for faster loading
   const [current, averages, elevationStorageData, allRamps, basinPlotsData, snotelData] = await Promise.all([
@@ -888,6 +889,32 @@ export default async function HomePage({
       {/* 1. Current Water Level */}
       <CurrentStatus current={current} recent={recent} ramps={allRamps} />
 
+      {/* Quick jumps + sticky mini-header on scroll */}
+      <QuickJumpHeader
+        elevation={current.elevation}
+        dailyChangeInches={(() => {
+          const previous = recent.length > 1 ? recent[recent.length - 2] : null
+          if (!previous) return null
+          const d = current.elevation - previous.elevation
+          if (d === 0) return '0'
+          const abs = Math.abs(d)
+          let ft = Math.floor(abs)
+          let inches = Math.round((abs - ft) * 12)
+          if (inches === 12) { ft += 1; inches = 0 }
+          const sign = d > 0 ? '+' : '−'
+          if (ft === 0 && inches === 0) return '0'
+          if (ft === 0) return `${sign}${inches}in`
+          if (inches === 0) return `${sign}${ft}ft`
+          return `${sign}${ft}ft ${inches}in`
+        })()}
+        sections={[
+          { href: '#chart', label: 'Chart' },
+          { href: '#projection', label: 'Projection' },
+          { href: '#storage', label: 'Storage' },
+          { href: '#snowpack', label: 'Snowpack' },
+        ]}
+      />
+
       {/* 2. Historical Chart + 3. Elevation Projection + 4. Snowpack Projection - with favorite ramps */}
       <HomeChartsWithFavorites
         measurements={measurements}
@@ -919,7 +946,8 @@ export default async function HomePage({
         </div>
       }>
         <div className="mt-12">
-          <StorageVisualization 
+          <div id="storage" className="scroll-mt-24" />
+          <StorageVisualization
             elevationStorageData={elevationStorageData}
             currentElevation={current.elevation}
           />
@@ -936,6 +964,7 @@ export default async function HomePage({
           </div>
         }>
           <div className="mt-8 lg:mt-12">
+            <div id="snowpack" className="scroll-mt-24" />
             <div className="card p-4 lg:p-8">
               <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
               <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light hidden lg:block">
@@ -979,16 +1008,6 @@ export default async function HomePage({
         </Suspense>
       )}
 
-      {/* 8. Historical Averages (Bottom) - Below the fold */}
-      <Suspense fallback={
-        <div className="mt-12 h-[300px] flex items-center justify-center">
-          <div className="text-gray-400">Loading historical averages...</div>
-        </div>
-      }>
-        <div className="mt-12">
-          <HistoricalAverages averages={averages} currentElevation={current.elevation} />
-        </div>
-      </Suspense>
     </div>
   )
 }
