@@ -8,6 +8,7 @@ import {
   type OutflowPolicy,
   type MonteCarloResult,
   type InflowScenario,
+  type AugmentationConfig,
 } from '@/lib/monte-carlo'
 
 const ALL_COMPARE_PRESETS = [...POLICY_PRESETS, ...DEIS_PRESETS]
@@ -41,6 +42,8 @@ interface PolicyComparisonProps {
   demandGrowthMaxReduction: number
   dryingTrendPctPerYear: number
   dryingTrendMaxReduction: number
+  augmentation?: AugmentationConfig
+  yearsToProject?: number
   startMode: 'today' | 'custom'
   customElevation: number
   favoriteRamps: Array<{ name: string; elevation: number }>
@@ -58,6 +61,8 @@ export default function PolicyComparison({
   demandGrowthMaxReduction,
   dryingTrendPctPerYear,
   dryingTrendMaxReduction,
+  augmentation,
+  yearsToProject = 10,
   startMode,
   customElevation,
   favoriteRamps,
@@ -156,7 +161,7 @@ export default function PolicyComparison({
                   startDate: data.startDate,
                   startElevation: data.startElevation,
                   startContent: data.startContent,
-                  yearsToProject: 10,
+                  yearsToProject,
                   iterations: 1000,
                   policy,
                   recentYearWeight: 2.0,
@@ -166,6 +171,7 @@ export default function PolicyComparison({
                   demandGrowthMaxReduction,
                   dryingTrendPctPerYear,
                   dryingTrendMaxReduction,
+                  augmentation,
                   currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
                   snowpackData: data.snowpackData ?? undefined,
                 },
@@ -184,7 +190,7 @@ export default function PolicyComparison({
       if (mountedRef.current) setIsRunning(false)
       workersRef.current = []
     }
-  }, [selected, startMode, customElevation, inflowScenario, favoriteRamps])
+  }, [selected, startMode, customElevation, inflowScenario, augmentation, yearsToProject, demandGrowthPctPerYear, demandGrowthMaxReduction, dryingTrendPctPerYear, dryingTrendMaxReduction, favoriteRamps])
 
   if (!expanded) {
     return (
@@ -206,7 +212,7 @@ export default function PolicyComparison({
         <div>
           <h3 className="text-lg font-light text-gray-900">Compare Policies</h3>
           <p className="text-xs text-gray-400 mt-0.5">
-            Select 2+ policies to compare over 10 years
+            Select 2+ policies to compare over {yearsToProject} years
           </p>
         </div>
         <button
@@ -261,7 +267,7 @@ export default function PolicyComparison({
       {/* Results */}
       {results.length > 0 && (
         <>
-          <ComparisonSummary results={results} />
+          <ComparisonSummary results={results} yearsToProject={yearsToProject} />
 
           <details className="group border-t border-gray-100 pt-3">
             <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 transition-colors font-medium select-none">
@@ -309,7 +315,7 @@ function getDirection(result: MonteCarloResult): 'rising' | 'falling' | 'stable'
   return net > 5 ? 'rising' : net < -5 ? 'falling' : 'stable'
 }
 
-function ComparisonSummary({ results }: { results: CompareResult[] }) {
+function ComparisonSummary({ results, yearsToProject }: { results: CompareResult[]; yearsToProject: number }) {
   const sorted = [...results].sort(
     (a, b) => b.result.summary.medianEndingElevation - a.result.summary.medianEndingElevation
   )
@@ -362,7 +368,7 @@ function ComparisonSummary({ results }: { results: CompareResult[] }) {
 
             {/* Where the lake ends up */}
             <div className="text-sm text-gray-600 leading-relaxed">
-              After 10 years, the lake is most likely around{' '}
+              After {yearsToProject} years, the lake is most likely around{' '}
               <span className="font-semibold text-gray-900">{s.medianEndingElevation.toFixed(0)} ft</span>
               {' '}(range: {s.p10EndingElevation.toFixed(0)}–{s.p90EndingElevation.toFixed(0)} ft).{' '}
               {dir === 'rising' ? (
@@ -575,7 +581,7 @@ function ComparisonTable({ results }: { results: CompareResult[] }) {
 
   return (
     <div>
-      <h4 className="text-sm font-light text-gray-600 mb-2">Comparison Summary (10 years)</h4>
+      <h4 className="text-sm font-light text-gray-600 mb-2">Comparison Summary ({results[0]?.result.dailyPercentiles.length ? Math.round(results[0].result.dailyPercentiles.length / 365) : 10} years)</h4>
       <div className="overflow-x-auto -mx-2">
         <table className="w-full text-xs">
           <thead>

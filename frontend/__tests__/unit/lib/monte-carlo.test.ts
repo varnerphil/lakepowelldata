@@ -9,6 +9,9 @@ import {
   rollingAvgInflowMaf,
   rollingAvgNaturalFlowMaf,
   stepMead,
+  computeAugmentationMAF,
+  AUGMENTATION_PRESETS,
+  POWELL_RELEASE_FLOOR_MAF,
   POLICY_PRESETS,
   DEIS_PRESETS,
   COMPACT_RELEASE_AF,
@@ -828,7 +831,84 @@ describe('rollingAvgInflowMaf', () => {
   })
 })
 
+describe('Abundance Act augmentation', () => {
+  describe('computeAugmentationMAF', () => {
+    const cfg = { iocYear: 2045, iocMAF: 2.0, focYear: 2055, focMAF: 7.0 }
+
+    it('returns 0 before IOC', () => {
+      expect(computeAugmentationMAF(cfg, 2030)).toBe(0)
+      expect(computeAugmentationMAF(cfg, 2044)).toBe(0)
+    })
+
+    it('returns iocMAF at IOC year', () => {
+      expect(computeAugmentationMAF(cfg, 2045)).toBe(2.0)
+    })
+
+    it('ramps linearly between IOC and FOC', () => {
+      expect(computeAugmentationMAF(cfg, 2050)).toBeCloseTo(4.5, 5)
+    })
+
+    it('saturates at focMAF after FOC year', () => {
+      expect(computeAugmentationMAF(cfg, 2055)).toBe(7.0)
+      expect(computeAugmentationMAF(cfg, 2100)).toBe(7.0)
+    })
+
+    it('handles IOC-only presets (focYear == iocYear)', () => {
+      const iocOnly = { iocYear: 2045, iocMAF: 2.0, focYear: 2045, focMAF: 2.0 }
+      expect(computeAugmentationMAF(iocOnly, 2050)).toBe(2.0)
+    })
+  })
+
+  describe('simulation with augmentation', () => {
+    it('Powell ends higher with augmentation than without (when start year > IOC)', () => {
+      const baseCfg = makeConfig({
+        startDate: '2050-01-01',
+        yearsToProject: 3,
+        iterations: 100,
+        startElevation: 3620,
+        startContent: 19_000_000,
+        policy: { type: 'simple', name: '95% of compact', simplePercent: 95 },
+      })
+      const without = runMonteCarloSimulation(baseCfg, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+      const withAug = runMonteCarloSimulation(
+        { ...baseCfg, augmentation: AUGMENTATION_PRESETS.find((p) => p.key === 'optimistic')!.config },
+        HISTORICAL_PATTERNS, STORAGE_CAPACITY
+      )
+      expect(withAug.summary.medianEndingElevation).toBeGreaterThan(
+        without.summary.medianEndingElevation
+      )
+    })
+
+    it('no effect before IOC year', () => {
+      const baseCfg = makeConfig({
+        startDate: '2030-01-01',
+        yearsToProject: 3,
+        iterations: 100,
+        startElevation: 3620,
+        startContent: 19_000_000,
+        policy: { type: 'simple', name: '95%', simplePercent: 95 },
+      })
+      const without = runMonteCarloSimulation(baseCfg, HISTORICAL_PATTERNS, STORAGE_CAPACITY)
+      const withAug = runMonteCarloSimulation(
+        { ...baseCfg, augmentation: AUGMENTATION_PRESETS.find((p) => p.key === 'realistic')!.config },
+        HISTORICAL_PATTERNS, STORAGE_CAPACITY
+      )
+      // Within Monte Carlo noise: should be nearly identical since augmentation
+      // is 0 throughout 2030–2033 (all before IOC year 2045).
+      expect(Math.abs(
+        withAug.summary.medianEndingElevation - without.summary.medianEndingElevation
+      )).toBeLessThan(5)
+    })
+  })
+})
+
 describe('stepMead', () => {
+  it('accepts optional augmentation inflow', () => {
+    const base = stepMead(11_543_000, 20_000, 6, 0)
+    const withAug = stepMead(11_543_000, 20_000, 6, 5_000)
+    expect(withAug.storage).toBeGreaterThan(base.storage)
+  })
+
   it('increases storage when inflow exceeds outflow + evap', () => {
     const start = 11_543_000
     const highInflow = 40_000

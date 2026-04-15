@@ -187,7 +187,73 @@ export const DEIS_PRESETS: OutflowPolicy[] = [
 ]
 
 /** Restrict which historical water years can be sampled. Shorter windows = drier, less optimistic. */
-export type InflowScenario = 'full' | 'last30' | 'last20' | 'last10'
+export type InflowScenario = 'full' | 'full_unweighted' | 'last30' | 'last20' | 'last10'
+
+/**
+ * Colorado River Abundance Act (Blue Ribbon Coalition, 2026) augmentation scenario.
+ * Models desalinated "Replacement Water" delivered to Lake Mead / Lower Basin,
+ * offsetting required Powell releases. Ramps linearly iocYear -> focYear.
+ */
+export interface AugmentationConfig {
+  /** Calendar year Initial Operating Capability begins (IOC volume starts here). */
+  iocYear: number
+  /** MAF/yr at IOC. */
+  iocMAF: number
+  /** Calendar year Full Operating Capability is reached (steady-state MAF thereafter). */
+  focYear: number
+  /** MAF/yr at FOC. Ramps linearly from iocMAF between iocYear and focYear. */
+  focMAF: number
+}
+
+/** Powell release cannot be reduced below this floor regardless of augmentation. */
+export const POWELL_RELEASE_FLOOR_MAF = 7.0
+
+export function computeAugmentationMAF(
+  aug: AugmentationConfig,
+  calendarYear: number
+): number {
+  if (calendarYear < aug.iocYear) return 0
+  if (calendarYear >= aug.focYear) return aug.focMAF
+  const t = (calendarYear - aug.iocYear) / Math.max(1, aug.focYear - aug.iocYear)
+  return aug.iocMAF + (aug.focMAF - aug.iocMAF) * t
+}
+
+export interface AugmentationPreset {
+  key: string
+  label: string
+  description: string
+  config: AugmentationConfig
+}
+
+/**
+ * Scenario presets for the Colorado River Abundance Act. Dates reflect research
+ * into desalination buildout timelines: Carlsbad (50 KAF/yr) took ~15 years
+ * concept-to-operation; 7 MAF/yr requires ~140 Carlsbads plus binational treaty.
+ * Delivered cost estimates $2,500-$4,500/AF vs ~$270 for current CR water.
+ */
+export const AUGMENTATION_PRESETS: AugmentationPreset[] = [
+  {
+    key: 'ioc-only',
+    label: 'Abundance Act — Phase 1 (2 MAF/yr)',
+    description:
+      '0 MAF through 2044. First desalination plants come online in 2045 delivering 2 MAF/yr, and capacity holds steady at 2 MAF/yr thereafter. A scale already proven by Israel\'s national desalination program — a strong foundation that stabilizes the Basin while further capacity is weighed.',
+    config: { iocYear: 2045, iocMAF: 2.0, focYear: 2045, focMAF: 2.0 },
+  },
+  {
+    key: 'realistic',
+    label: 'Abundance Act — Realistic (3 MAF/yr)',
+    description:
+      '0 MAF through 2044. Phase 1 delivers 2 MAF/yr starting 2045. Capacity ramps linearly to 2.5 MAF/yr by 2055 and reaches 3 MAF/yr by 2065, then holds steady. Enough to close the Lower Basin\'s structural deficit and lift reservoir elevations into a durable, resilient range.',
+    config: { iocYear: 2045, iocMAF: 2.0, focYear: 2065, focMAF: 3.0 },
+  },
+  {
+    key: 'optimistic',
+    label: 'Abundance Act — Full buildout (7 MAF/yr)',
+    description:
+      '0 MAF through 2039. First plants deliver 2 MAF/yr in 2040. Capacity ramps linearly — ~3.7 MAF/yr by 2045, ~5.3 MAF/yr by 2050 — reaching the full 7 MAF/yr by 2055 and holding steady thereafter. The Act\'s full vision, rivaling the Hoover and Glen Canyon Dams in transformative scale and restoring Powell and Mead to healthy elevations for generations.',
+    config: { iocYear: 2040, iocMAF: 2.0, focYear: 2055, focMAF: 7.0 },
+  },
+]
 
 export interface MonteCarloConfig {
   startDate: string
@@ -237,6 +303,13 @@ export interface MonteCarloConfig {
   dryingTrendPctPerYear?: number
   /** Max total streamflow reduction from drying trend (0-1 fraction). Default 0.18 (18%). */
   dryingTrendMaxReduction?: number
+  /**
+   * Colorado River Abundance Act augmentation scenario. Desalinated water
+   * delivered to Mead/Lower Basin offsets required Powell releases (with a
+   * POWELL_RELEASE_FLOOR_MAF floor). Mead inflow receives the augmentation
+   * directly, so Mead is held roughly neutral while Powell rises.
+   */
+  augmentation?: AugmentationConfig
 }
 
 export interface WaterYearPattern {
@@ -459,10 +532,11 @@ function meadDeliveryAfPerDay(elevation: number): number {
 export function stepMead(
   meadStorage: number,
   powellOutflowAf: number,
-  month: number
+  month: number,
+  augmentationAf: number = 0
 ): { storage: number; elevation: number } {
   const elev = meadElevationFromStorage(meadStorage)
-  const inflow = powellOutflowAf * 0.97 + MEAD_SIDE_INFLOW_AF_PER_DAY
+  const inflow = powellOutflowAf * 0.97 + MEAD_SIDE_INFLOW_AF_PER_DAY + augmentationAf
   const outflow = meadDeliveryAfPerDay(elev)
   const evapRate = MEAD_MONTHLY_EVAP_RATES[month] ?? 0.015
   const evap = meadSurfaceArea(elev) * evapRate
@@ -956,6 +1030,13 @@ export function runMonteCarloSimulation(
     let projectionYear = 0
     let demandFactor = 1.0
 
+    const augmentation = config.augmentation
+    const startCalendarYear = startDate.getFullYear()
+    const releaseFloorAfPerDay = POWELL_RELEASE_FLOOR_MAF * 1_000_000 / 365
+    let augmentationAfPerDay = augmentation
+      ? computeAugmentationMAF(augmentation, startCalendarYear) * 1_000_000 / 365
+      : 0
+
     const simCtx: SimulationContext = {
       completedYearInflows: [],
       completedYearNaturalFlows: [],
@@ -1013,6 +1094,11 @@ export function runMonteCarloSimulation(
           ? Math.max(1 - dryingMaxReduction, Math.pow(1 - dryingTrendRate, projectionYear))
           : 1
         demandFactor = demandComponent * dryingComponent
+        if (augmentation) {
+          augmentationAfPerDay =
+            computeAugmentationMAF(augmentation, startCalendarYear + projectionYear) *
+            1_000_000 / 365
+        }
         sampledYear = sampleWaterYear(
           patternsToUse,
           currentWaterYear,
@@ -1058,10 +1144,18 @@ export function runMonteCarloSimulation(
       const outflowAf = outflowCfs * CFS_TO_AF_PER_DAY
       const evapAf = getDailyEvaporationAf(month, elevation)
 
-      content = content + inflowAf - outflowAf - evapAf
+      // Abundance Act: desal water delivered to Mead offsets Powell releases,
+      // subject to a release floor. The offset keeps more water in Powell; the
+      // augmentation volume still reaches Mead directly.
+      const offsetAf = augmentationAfPerDay > 0
+        ? Math.min(augmentationAfPerDay, Math.max(0, outflowAf - releaseFloorAfPerDay))
+        : 0
+      const powellOutflowAf = outflowAf - offsetAf
+
+      content = content + inflowAf - powellOutflowAf - evapAf
 
       if (policyNeedsContext) {
-        const meadResult = stepMead(simCtx.meadStorage, outflowAf, month)
+        const meadResult = stepMead(simCtx.meadStorage, powellOutflowAf, month, augmentationAfPerDay)
         simCtx.meadStorage = meadResult.storage
         simCtx.meadElevation = meadResult.elevation
       }

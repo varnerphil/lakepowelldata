@@ -3,10 +3,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   POLICY_PRESETS,
+  AUGMENTATION_PRESETS,
   type InflowScenario,
   type OutflowPolicy,
   type MonteCarloResult,
+  type AugmentationConfig,
 } from '@/lib/monte-carlo'
+
+type AugmentationKey = 'none' | (typeof AUGMENTATION_PRESETS)[number]['key']
+
+function getAugmentation(key: AugmentationKey): AugmentationConfig | undefined {
+  if (key === 'none') return undefined
+  return AUGMENTATION_PRESETS.find((p) => p.key === key)?.config
+}
 import type { WorkerResponse } from '@/workers/monte-carlo.worker'
 import MonteCarloChart from './MonteCarloChart'
 import PolicySelector from './PolicySelector'
@@ -18,8 +27,8 @@ export type StreamflowTrend = 'historical' | 'moderate_decline' | 'federal_basel
 
 const STREAMFLOW_TRENDS: Record<StreamflowTrend, { label: string; description: string; dryingPct: number; maxReduction: number; demandGrowthPct: number; demandMaxReduction: number }> = {
   historical:       { label: 'Historical',          description: 'Uses historical inflow patterns as recorded — no adjustment', dryingPct: 0, maxReduction: 0, demandGrowthPct: 0, demandMaxReduction: 0 },
-  moderate_decline: { label: 'Moderate decline',    description: 'Gradual ~10% streamflow reduction, leveling off around year 10', dryingPct: 1.0, maxReduction: 0.10, demandGrowthPct: 0, demandMaxReduction: 0 },
-  federal_baseline: { label: 'Federal baseline',    description: 'Matches Bureau of Reclamation CRSS projections — ~18% streamflow reduction, leveling off around year 13', dryingPct: 1.5, maxReduction: 0.18, demandGrowthPct: 0, demandMaxReduction: 0 },
+  moderate_decline: { label: 'Moderate decline',    description: 'Gradual ~10% streamflow reduction, reaching the cap around year 20', dryingPct: 0.5, maxReduction: 0.10, demandGrowthPct: 0, demandMaxReduction: 0 },
+  federal_baseline: { label: 'Federal baseline',    description: 'Matches Bureau of Reclamation CRSS projections — ~18% streamflow reduction by ~2055, ramping gradually from today', dryingPct: 0.6, maxReduction: 0.18, demandGrowthPct: 0, demandMaxReduction: 0 },
 }
 
 export interface SharedSimConfig {
@@ -27,6 +36,7 @@ export interface SharedSimConfig {
   yearsToProject: number
   inflowScenario: InflowScenario
   streamflowTrend?: StreamflowTrend
+  augmentation?: AugmentationKey
   startMode: 'today' | 'custom'
   customElevation?: number
 }
@@ -60,16 +70,14 @@ export default function MonteCarloSimulator({
 }: MonteCarloSimulatorProps) {
   const [policy, setPolicy] = useState<OutflowPolicy>(sharedConfig?.policy ?? POLICY_PRESETS[0])
   const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 20)
-  const [inflowScenario, setInflowScenario] = useState<InflowScenario>(sharedConfig?.inflowScenario ?? 'last30')
+  const [inflowScenario, setInflowScenario] = useState<InflowScenario>(sharedConfig?.inflowScenario ?? 'last20')
   const [streamflowTrend, setStreamflowTrend] = useState<StreamflowTrend>(sharedConfig?.streamflowTrend ?? 'historical')
+  const [augmentationKey, setAugmentationKey] = useState<AugmentationKey>(sharedConfig?.augmentation ?? 'ioc-only')
   const [startMode, setStartMode] = useState<'today' | 'custom'>(sharedConfig?.startMode ?? 'today')
   const [customElevation, setCustomElevation] = useState(sharedConfig?.customElevation ?? currentElevation)
 
   const handlePolicyChange = useCallback((p: OutflowPolicy) => {
     setPolicy(p)
-    const recommended = defaultInflowScenario(p)
-    if (recommended) setInflowScenario(recommended)
-    setStreamflowTrend(defaultStreamflowTrend(p))
   }, [])
 
   const [result, setResult] = useState<MonteCarloResult | null>(null)
@@ -191,13 +199,14 @@ export default function MonteCarloSimulator({
           yearsToProject,
           iterations: 1000,
           policy,
-          recentYearWeight: 2.0,
+          recentYearWeight: inflowScenario === 'full_unweighted' ? 1.0 : 2.0,
           recentYearCutoff: 20,
           inflowScenario,
           demandGrowthPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].demandGrowthPct,
           demandGrowthMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].demandMaxReduction,
           dryingTrendPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].dryingPct,
           dryingTrendMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].maxReduction,
+          augmentation: getAugmentation(augmentationKey),
           currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
           snowpackData: data.snowpackData ?? undefined,
         },
@@ -210,7 +219,7 @@ export default function MonteCarloSimulator({
       setError(err.message || 'Failed to run projection')
       setIsLoading(false)
     }
-  }, [policy, yearsToProject, inflowScenario, streamflowTrend, startMode, customElevation, favoriteRamps])
+  }, [policy, yearsToProject, inflowScenario, streamflowTrend, augmentationKey, startMode, customElevation, favoriteRamps])
 
   const getShareUrl = useCallback(async (origin: string) => {
     const config: SharedSimConfig = {
@@ -218,6 +227,7 @@ export default function MonteCarloSimulator({
       yearsToProject,
       inflowScenario,
       streamflowTrend,
+      augmentation: augmentationKey,
       startMode,
       ...(startMode === 'custom' ? { customElevation } : {}),
     }
@@ -229,7 +239,7 @@ export default function MonteCarloSimulator({
     if (!res.ok) throw new Error('Failed to save')
     const { id } = await res.json()
     return `${origin}/simulator?share=${id}`
-  }, [policy, yearsToProject, inflowScenario, streamflowTrend, startMode, customElevation])
+  }, [policy, yearsToProject, inflowScenario, streamflowTrend, augmentationKey, startMode, customElevation])
 
   // Auto-run on mount
   useEffect(() => {
@@ -262,15 +272,15 @@ export default function MonteCarloSimulator({
           <input
             type="range"
             min={1}
-            max={20}
+            max={40}
             value={yearsToProject}
             onChange={(e) => setYearsToProject(parseInt(e.target.value))}
             className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-teal-600"
           />
           <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
             <span>1 yr</span>
-            <span>10 yr</span>
             <span>20 yr</span>
+            <span>40 yr</span>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-100">
             <label className="block text-xs text-gray-500 mb-1">Inflow scenario</label>
@@ -283,6 +293,7 @@ export default function MonteCarloSimulator({
               <option value="last20">Last 20 years</option>
               <option value="last10">Last 10 years</option>
               <option value="full">Full history (recent 2×)</option>
+              <option value="full_unweighted">Full history (unweighted)</option>
             </select>
             <p className="text-[10px] text-gray-400 mt-1">
               {inflowScenario === 'last30'
@@ -291,7 +302,9 @@ export default function MonteCarloSimulator({
                   ? 'Only 2006–present — drier period'
                   : inflowScenario === 'last10'
                     ? 'Only 2016–present — driest period'
-                    : 'Uses all years back to 1960s; recent years weighted 2×'}
+                    : inflowScenario === 'full_unweighted'
+                      ? 'All years back to 1960s, sampled uniformly — best pairing with streamflow trend'
+                      : 'Uses all years back to 1960s; recent years weighted 2×'}
             </p>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-100">
@@ -308,6 +321,34 @@ export default function MonteCarloSimulator({
             <p className="text-[10px] text-gray-400 mt-1">
               {STREAMFLOW_TRENDS[streamflowTrend].description}
             </p>
+            {streamflowTrend !== 'historical' && inflowScenario !== 'full_unweighted' && (
+              <p className="text-[10px] text-amber-700 mt-1 leading-snug">
+                Heads up: this inflow window is already drier than the long-run mean ({inflowScenario === 'last30' ? '~14% drier' : inflowScenario === 'last20' ? '~18% drier' : inflowScenario === 'last10' ? '~22% drier' : '~7% drier (recent 2× weighting)'}). Layering a streamflow reduction on top double-counts dryness. For CRSS-comparable runs, pair streamflow adjustment with "Full history (unweighted)".
+              </p>
+            )}
+          </div>
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <label className="block text-xs text-gray-500 mb-1">Abundance Act augmentation</label>
+            <select
+              value={augmentationKey}
+              onChange={(e) => setAugmentationKey(e.target.value as AugmentationKey)}
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-teal-400"
+            >
+              <option value="none">None (baseline)</option>
+              {AUGMENTATION_PRESETS.map((p) => (
+                <option key={p.key} value={p.key}>{p.label}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-400 mt-1">
+              {augmentationKey === 'none'
+                ? 'No Replacement Water modeled — status quo baseline.'
+                : AUGMENTATION_PRESETS.find((p) => p.key === augmentationKey)?.description}
+            </p>
+            {augmentationKey !== 'none' && (
+              <p className="text-[10px] text-teal-700 mt-1 leading-snug">
+                Desalinated water delivered to Mead or directly into the Lower Basin offsets Powell releases, keeping more water upstream and lifting reservoir elevations. Long-term infrastructure investment backed by public-private partnerships and powered by dedicated renewables — the same American build-it spirit that created the Hoover and Glen Canyon Dams.
+              </p>
+            )}
           </div>
         </div>
 
@@ -1324,6 +1365,8 @@ export default function MonteCarloSimulator({
         demandGrowthMaxReduction={STREAMFLOW_TRENDS[streamflowTrend].demandMaxReduction}
         dryingTrendPctPerYear={STREAMFLOW_TRENDS[streamflowTrend].dryingPct}
         dryingTrendMaxReduction={STREAMFLOW_TRENDS[streamflowTrend].maxReduction}
+        augmentation={getAugmentation(augmentationKey)}
+        yearsToProject={yearsToProject}
         startMode={startMode}
         customElevation={customElevation}
         favoriteRamps={favoriteRamps}
