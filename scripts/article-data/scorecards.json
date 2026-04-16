@@ -1,0 +1,9018 @@
+{
+  "generatedAt": "2026-04-16T05:29:24.037Z",
+  "startDate": "2026-04-14",
+  "startElevation": 3526.52,
+  "startContent": 5632804,
+  "stressTest": {
+    "inflowScenario": "last10",
+    "streamflowTrend": "historical",
+    "iterations": 2000
+  },
+  "ramps": [
+    {
+      "name": "Wahweap",
+      "elevation": 3555
+    },
+    {
+      "name": "Bullfrog",
+      "elevation": 3540
+    },
+    {
+      "name": "Antelope Point",
+      "elevation": 3540
+    },
+    {
+      "name": "Halls Crossing",
+      "elevation": 3550
+    },
+    {
+      "name": "Stateline",
+      "elevation": 3520
+    }
+  ],
+  "scenarios": [
+    {
+      "key": "current-operations-2007-guidelines",
+      "label": "Current operations (2007 guidelines)",
+      "policyName": "Current operations (2007 guidelines)",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3528.9,
+          "p10End": 3398.8,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 21.9,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3528.2,
+          "p10End": 3396.9,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 9.8,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3511.7,
+          "p10End": 3370.6,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 1.5,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3524
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3540.9
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3537.1
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3551.2
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3522.9
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3543.2
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3522.6
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3539.3
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3549.7
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3533.2
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3554.1
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3526.6
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3547.5
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3529.2
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3544.6
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3559.4
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3536.5
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3554.1
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3527.2
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3546.7
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3531.2
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3538.8
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3559
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3532.1
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3552.4
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3525
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3543.9
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3533.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3536
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3556.9
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3528.5
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3553.8
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3527.1
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3545.3
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3542.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3536.2
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3555.5
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3527.1
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3545.8
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3522.6
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3540.8
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3546
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3533
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3553.7
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3526.1
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3544
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3522.5
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3536.7
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3549.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3527.9
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3551.6
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3522.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3540.5
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3521.6
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3532.7
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3550.1
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3523.4
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3546.4
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3518.4
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3537.7
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3528.2
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3550.6
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3520.7
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3539.6
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3513.4
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3532.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3527.5
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3523.7
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3511.8
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3480.7
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3448.3
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3462.5
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3416.2
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3434
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3400.1
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3425.5
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3446.2
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3395.7
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3440.5
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3389.5
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3432.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3403.3
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3430.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3460.3
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3418.5
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3447.3
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3395.7
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3426
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3410.6
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3417.7
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3453.9
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3404.2
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3434.9
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3384.6
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3423.5
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3420.7
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3414.3
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3448.3
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3396.6
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3443.9
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3396.3
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3426.2
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3431.3
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3404.9
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3440.6
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3387.2
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3427.8
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3390
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3427.3
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3445.9
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3408
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3440.8
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3387.1
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3436.4
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3395.8
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3414.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3440.5
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3383.5
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3437.6
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3384.3
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3432
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3406.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3413.3
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3448.9
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3391.6
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3437.2
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3386.2
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3428.8
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3409.6
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3408
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3438.9
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3381.7
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3426.4
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3379.4
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3405
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3410.9
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3386.7
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3370
+        }
+      ]
+    },
+    {
+      "key": "100-of-compact-8-23-maf",
+      "label": "100% of compact (8.23 MAF)",
+      "policyName": "100% of compact (8.23 MAF)",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3458.1,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 7.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3446.5,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 1.9,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3429.5,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 0.1,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "F"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3528.2
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3523.3
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3514.6
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3524.6
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3484.2
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3510.9
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3474
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3500.3
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3504.7
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3477.7
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3513.1
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3466.9
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3497.5
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3457
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3485.7
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3500.2
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3471.4
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3505.5
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3461.7
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3493.3
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3459.7
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3482.5
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3506.1
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3470.7
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3503.1
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3455.2
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3486.9
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3460.5
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3473.6
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3501.3
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3456.8
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3492.7
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3445.8
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3481.2
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3473.7
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3470
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3500.1
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3456.7
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3489.9
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3445.4
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3478.2
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3476.5
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3462
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3498.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3452.6
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3487.4
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3444
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3476.1
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3490.2
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3463.1
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3496.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3450.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3485.1
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3442.6
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3474
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3497
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3459.4
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3494.4
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3446.7
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3477.8
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3445.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3465.9
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3498.6
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3449.2
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3490.6
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3436.9
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3475.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3457.4
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3457.4
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3426.2
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3481.9
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3453.4
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3382
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3401.6
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3394
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3380.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3371.4
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3370.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3375.7
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3376.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3382.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3385
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3381.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3370.1
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3377.3
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3373.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3371.9
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3370.3
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3376.8
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3370
+        }
+      ]
+    },
+    {
+      "key": "95-of-compact-7-82-maf",
+      "label": "95% of compact (7.82 MAF)",
+      "policyName": "95% of compact (7.82 MAF)",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3495.7,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 15.5,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3485.5,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 6.1,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3473.9,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 1.2,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3517.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3529.9
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3527.7
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3537.3
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3504.1
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3532.2
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3501.6
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3516.6
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3530.1
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3507.6
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3532.1
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3496.7
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3521
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3496.5
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3509.5
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3525.6
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3496.7
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3528.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3494.9
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3518.1
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3497.8
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3511.8
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3532.5
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3499.6
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3491
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3516.9
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3503
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3507
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3532.5
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3499.6
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3523.8
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3490
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3511.6
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3511.8
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3505.8
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3527.8
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3493.6
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3515.5
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3485.2
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3508.3
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3517
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3497.7
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3520.8
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3487.4
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3514.1
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3486.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3502.7
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3516.9
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3493
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3517.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3481.9
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3509
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3483.5
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3500
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3518.9
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3490.5
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3518.6
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3483.5
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3508.3
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3491.8
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3497
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3521.3
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3486
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3513
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3476.2
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3502.6
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3485.9
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3491.3
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3474.5
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3486.7
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3459.8
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3405.7
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3421.2
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3387.8
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3370.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3409.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3398.9
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3371.3
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3370.3
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3411.3
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3392.3
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3370.1
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3377
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3411.4
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3385.5
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3384.9
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3403.2
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3379
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3394.3
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3403.8
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3403
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3400.1
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3408.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3386.6
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3370.4
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3371.1
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3398
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3374.5
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3377.3
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3408.4
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3379.9
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3389.4
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3370
+        }
+      ]
+    },
+    {
+      "key": "90-of-compact-7-41-maf",
+      "label": "90% of compact (7.41 MAF)",
+      "policyName": "90% of compact (7.41 MAF)",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3538.6,
+          "p10End": 3371.1,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 25.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3543.2,
+          "p10End": 3384.1,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 16.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3533.4,
+          "p10End": 3370.1,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 6.9,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3535.4
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3539.2
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3538.5
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3550.8
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3523.1
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3552.4
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3531.7
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3546.9
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3555.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3539.6
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3561.1
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3535.8
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3557.6
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3536.1
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3552.1
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3566.7
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3546.4
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3563.3
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3539.1
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3559.4
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3544.7
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3555.7
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3570.5
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3547.9
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3565
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3539.9
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3559.8
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3550.6
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3554.7
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3576.1
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3552.3
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3567.6
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3544.7
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3560.3
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3554.5
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3553.3
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3573.9
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3548.9
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3563.7
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3542.1
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3561.5
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3565
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3554.5
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3572
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3548.3
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3565.1
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3544.6
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3558.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3569.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3550.4
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3567.5
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3542.8
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3560.7
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3542.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3554.1
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3567.5
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3546.4
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3566.9
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3541.7
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3557.4
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3544.1
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3550
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3565.4
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3540
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3563.1
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3536.8
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3550.7
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3543.4
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3546.1
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3533.6
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3491.5
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3475.2
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3433.4
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3440.7
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3382.9
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3408.9
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3377.1
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3398.8
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3434
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3374.3
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3421.5
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3370.2
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3416.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3385.1
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3389.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3436.2
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3418.9
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3370.5
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3409.9
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3391.3
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3383
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3434.5
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3411.4
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3370.8
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3402
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3403.1
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3386.6
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3431.3
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3420.5
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3397.3
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3424
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3389.7
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3430.1
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3371.5
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3422.1
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3376.3
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3404.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3425.8
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3383.6
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3433.1
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3371.9
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3429.4
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3389.6
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3413.8
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3438.3
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3378.1
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3431
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3371.7
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3418.9
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3398.1
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3401.2
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3446.5
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3382.9
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3425.6
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3370.8
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3388.9
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3390.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3370.1
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3426.3
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3409.2
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3370.1
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3386.5
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3403.2
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3370
+        }
+      ]
+    },
+    {
+      "key": "85-of-compact-6-99-maf",
+      "label": "85% of compact (6.99 MAF)",
+      "policyName": "85% of compact (6.99 MAF)",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3577.9,
+          "p10End": 3433.2,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 37.9,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3599.6,
+          "p10End": 3455.9,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 30,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3597.9,
+          "p10End": 3449.6,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 18.4,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3526.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3543.9
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3544.8
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3564
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3542.7
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3563.2
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3546.3
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3564.1
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3574.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3564.3
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3583.4
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3563.3
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3582.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3568.5
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3581.5
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3595.6
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3580.9
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3597.7
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3580.3
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3596.2
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3586.7
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3596
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3609.3
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3592.2
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3611.3
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3594.2
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3606.4
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3602.4
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3605.3
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3619.7
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3602.5
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3616.6
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3601.8
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3613.4
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3612.9
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3609.3
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3621.8
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3604
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3616.7
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3602
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3612.2
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3616.7
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3608.4
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3622.4
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3605.5
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3617.2
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3603.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3613.2
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3620.3
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3607.6
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3618.8
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3601.5
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3614
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3603.3
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3610.1
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3621.3
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3604.9
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3617.4
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3601.6
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3614.2
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3604.8
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3609.6
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3622.5
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3604.5
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3617.6
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3602.1
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3613.1
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3608.7
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3606
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3598
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3485.1
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3450.1
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3458.2
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3412
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3448.5
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3411.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3439
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3465.2
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3431.4
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3463
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3423.6
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3463.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3440.6
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3461.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3484.9
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3450.6
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3477.3
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3437.3
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3470.1
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3451.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3463.8
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3493.7
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3456.8
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3481.4
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3450.5
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3476.7
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3468.6
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3468.3
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3501
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3462.3
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3486.9
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3457.1
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3482.8
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3482.9
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3476.1
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3500.5
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3467.6
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3490.7
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3464.3
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3482.8
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3492.9
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3476.7
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3495.7
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3462
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3497.1
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3468.8
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3485.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3501.7
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3477.3
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3499.8
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3465.4
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3493
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3468.8
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3480.4
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3501.5
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3470.1
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3488.9
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3456.8
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3475
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3463.3
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3472.5
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3501.3
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3465.3
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3486
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3451.6
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3483.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3478.9
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3469.4
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3451
+        }
+      ]
+    },
+    {
+      "key": "federal-plan-no-action",
+      "label": "Federal Plan: No Action",
+      "policyName": "Federal Plan: No Action",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3456.7,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 9.5,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3448.6,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 1.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3421.4,
+          "p10End": 3370,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 0.3,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "F"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3511.8
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3522.5
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3515.4
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3523.2
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3485
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3511.3
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3475
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3500.6
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3505
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3485.2
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3518.4
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3472.3
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3504.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3464.6
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3488.5
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3501.5
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3470.9
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3505.5
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3457.2
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3493.1
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3458.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3482.2
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3506.1
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3467.1
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3501.8
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3456.4
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3488.1
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3461.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3472.9
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3501.3
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3458.1
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3492.7
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3449.5
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3483.6
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3475.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3470.2
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3500.1
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3456.7
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3489.9
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3443.9
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3479.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3477.6
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3465
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3499
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3455.8
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3487.4
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3440.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3475.4
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3490.2
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3459.3
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3496.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3445.6
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3484.8
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3444.9
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3473.2
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3497.2
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3459.1
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3494.4
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3443.5
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3480.5
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3443.2
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3463.6
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3498.6
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3450.7
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3490.6
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3434.3
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3471.5
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3452.3
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3455.4
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3422.7
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3481.9
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3448.7
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3379.4
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3401.4
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3392.8
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3380.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3371.4
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3370.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3375.7
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3376.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3382.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3385
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3381.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3370.1
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3377.3
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3373.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3371.9
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3370.3
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3378.1
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3370
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3370
+        }
+      ]
+    },
+    {
+      "key": "federal-plan-basic-coordination",
+      "label": "Federal Plan: Basic Coordination",
+      "policyName": "Federal Plan: Basic Coordination",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3521.6,
+          "p10End": 3398.7,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 22.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3520.5,
+          "p10End": 3380.7,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 8.1,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3508,
+          "p10End": 3371.6,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 0.9,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3540.8
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3534.6
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3552.5
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3525.6
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3545.5
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3525.6
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3539.7
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3550.2
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3531.2
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3551.4
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3525.1
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3542.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3526
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3538.1
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3553.1
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3529.2
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3551.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3525.1
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3541.2
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3527.8
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3534.4
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3553.7
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3525.8
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3546.6
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3522.4
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3540.5
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3532.3
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3533.5
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3554
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3526.1
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3544.3
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3520.6
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3537
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3534.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3527.7
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3550.4
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3523.2
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3541.6
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3518.5
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3533.7
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3538.1
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3523.5
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3546.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3519.8
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3541.5
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3518.9
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3532.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3547.3
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3544.5
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3517.8
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3538.5
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3521.8
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3530.3
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3547.9
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3520.9
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3540.8
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3515.2
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3535.6
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3522.8
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3527
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3547.6
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3518.1
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3538.1
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3511.9
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3528.7
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3523.6
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3520
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3508
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.2
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3485.6
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3450.1
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3460.7
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3418.2
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3448.6
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3415.1
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3437.8
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3461.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3425.4
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3449.5
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3403.4
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3433.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3401.3
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3419.9
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3448.1
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3399.3
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3438.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3387.5
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3424.7
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3414.1
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3419.1
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3454.4
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3408.1
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3446
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3396
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3431.5
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3421.2
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3411.5
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3442.9
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3384.5
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3426.2
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3381.6
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3420.3
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3426.6
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3400.6
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3437.9
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3388.1
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3426.2
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3384.4
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3411.8
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3437.9
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3398.3
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3434
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3373.4
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3424
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3390.4
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3405.9
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3448.7
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3406.4
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3440
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3382.5
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3422.5
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3400
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3403.2
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3444.3
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3385.6
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3425.7
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3378
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3406.9
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3409.3
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3409.1
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3440.2
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3376.4
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3423.4
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3373.7
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3410.6
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3417.8
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3394.4
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3373
+        }
+      ]
+    },
+    {
+      "key": "federal-plan-enhanced-coordination",
+      "label": "Federal Plan: Enhanced Coordination",
+      "policyName": "Federal Plan: Enhanced Coordination",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3586.4,
+          "p10End": 3513,
+          "lowestP10": 3457.1,
+          "stayAboveMinPower": 76.3,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3581.8,
+          "p10End": 3524.1,
+          "lowestP10": 3449.5,
+          "stayAboveMinPower": 65.6,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3579.2,
+          "p10End": 3522.1,
+          "lowestP10": 3442.4,
+          "stayAboveMinPower": 50.7,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3542.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3552
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3548.3
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3579.4
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3563
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3581.9
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3568.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3583.2
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3594.1
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3583.2
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3597.5
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3578.9
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3592.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3581.5
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3592.6
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3603.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3588.2
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3603.5
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3584.8
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3596.6
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3585.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3591.7
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3604
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3584.7
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3599.4
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3581.4
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3594.2
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3589.7
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3592.1
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3603.8
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3583.5
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3600
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3583.4
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3593.2
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3591.2
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3587.1
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3603.4
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3583.5
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3595.9
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3580.4
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3591.6
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3595.2
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3585.6
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3600.5
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3581.2
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3592.5
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3578.4
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3588.6
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3598.1
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3584
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3599.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3580.8
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3593.1
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3582
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3589
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3600.8
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3583.3
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3598.1
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3579.2
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3592.3
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3584.4
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3587.8
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3602.7
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3583.5
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3597.2
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3579
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3591.7
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3589.7
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3587
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3579.2
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3519.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3523.4
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3504.2
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3516.6
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3498.4
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3509.8
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3498.3
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3508
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3508.2
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3525
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3508.3
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3518.3
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3508.9
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3516.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3536.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3518.3
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3534.1
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3516.1
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3529
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3522.3
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3529.3
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3543.2
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3524.8
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3540.3
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3536.1
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3532.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3532.1
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3547.2
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3528.5
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3538.7
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3533
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3536.3
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3525.3
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3541.1
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3521.7
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3533.3
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3521
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3529.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3540.1
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3524.4
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3538.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3522.6
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3532.4
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3523.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3529.6
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3541.9
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3525.7
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3539.2
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3522.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3533.5
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3525.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3526.8
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3545.8
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3538.2
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3521.8
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3531.1
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3529
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3529.2
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3544
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3524.4
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3537
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3522.3
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3533.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3536
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3528.2
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3522.2
+        }
+      ]
+    },
+    {
+      "key": "federal-plan-max-operational-flexibility",
+      "label": "Federal Plan: Max Operational Flexibility",
+      "policyName": "Federal Plan: Max Operational Flexibility",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3593,
+          "p10End": 3548.6,
+          "lowestP10": 3508.4,
+          "stayAboveMinPower": 100,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "A"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3589.7,
+          "p10End": 3547.9,
+          "lowestP10": 3508.2,
+          "stayAboveMinPower": 100,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "A"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3586,
+          "p10End": 3541.2,
+          "lowestP10": 3507.8,
+          "stayAboveMinPower": 100,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "A"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3549.5
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3563.2
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3562.2
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3588.2
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3571.4
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3588.5
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3576.2
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3591.9
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3601.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3590.3
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3605.6
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3588.2
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3603.4
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3590.9
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3599.3
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3611.9
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3594.8
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3608.4
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3590.7
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3605.7
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3596.1
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3600.1
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3614
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3595.7
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3609.9
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3592.5
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3604
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3598.9
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3599.8
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3614.3
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3595.2
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3608.1
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3591.5
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3604.9
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3602.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3598.2
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3612.6
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3593.4
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3605.3
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3590.6
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3600.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3606.5
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3596.1
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3611.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3592.6
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3604.2
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3590.4
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3599.6
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3610
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3594.5
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3606.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3588.7
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3602
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3591
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3597.7
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3610.4
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3592
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3604
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3586.9
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3600.9
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3592.7
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3595.9
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3609.9
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3590.3
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3603.7
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3586.7
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3597.9
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3596.3
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3593.3
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3586.1
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3513.5
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3526.1
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3514
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3533
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3520.9
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3537.1
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3530.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3539.9
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3554.3
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3540.7
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3554.3
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3541.4
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3551.6
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3546.8
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3551.9
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3564.9
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3549.1
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3559.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3546.2
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3558.5
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3553.5
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3556.5
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3566.9
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3551.2
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3560.7
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3549.3
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3558.8
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3559.9
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3556.8
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3566.4
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3550.1
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3561.4
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3550.4
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3556.6
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3558.5
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3551.2
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3560.6
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3546.7
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3557.6
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3547.6
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3553.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3564.9
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3552.6
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3561.9
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3546.7
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3557.1
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3548.5
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3555.9
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3563.7
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3547.4
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3557.1
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3545.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3554.4
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3548.9
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3551.4
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3563.8
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3547.1
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3556.7
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3543.7
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3552.6
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3550.6
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3549.9
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3562.2
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3545.9
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3555.2
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3541.9
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3551.9
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3554.1
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3546.3
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3541.2
+        }
+      ]
+    },
+    {
+      "key": "federal-plan-supply-driven",
+      "label": "Federal Plan: Supply Driven",
+      "policyName": "Federal Plan: Supply Driven",
+      "augmentation": null,
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3624.1,
+          "p10End": 3564.7,
+          "lowestP10": 3476.3,
+          "stayAboveMinPower": 81.4,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3664.8,
+          "p10End": 3613,
+          "lowestP10": 3475.8,
+          "stayAboveMinPower": 82.5,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3669.4,
+          "p10End": 3634.9,
+          "lowestP10": 3470.1,
+          "stayAboveMinPower": 82.1,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "B"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3550.9
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3558.5
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3558.1
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3581.7
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3567.1
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3588.4
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3578.1
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3594.9
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3607.8
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3600.8
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3619.5
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3606.9
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3622
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3613.9
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3626.2
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3639.5
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3630.1
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3646.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3635.3
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3647
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3643.1
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3650
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3662
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3650.4
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3662
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3652.5
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3662.2
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3660.6
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3663.5
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3672.8
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3661.4
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3672
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3663
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3671.1
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3672.8
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3670.1
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3678.8
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3667.7
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3674.9
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3666.9
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3673.2
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3677.5
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3671.6
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3679.8
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3669.4
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3676
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3669.1
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3673.8
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3681.7
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3673.1
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3680.8
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3670.5
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3677.5
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3672.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3674.7
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3682.8
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3673.1
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3680.1
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3670.5
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3677.3
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3674
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3675.3
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3682.2
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3671.1
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3680
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3671.2
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3676.5
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3675.6
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3673.6
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3669.5
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3513.6
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3513.9
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3508.2
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3522
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3508.1
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3528.7
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3518.3
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3534.2
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3546.8
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3536.3
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3556.9
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3542.3
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3558.7
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3550.6
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3564.4
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3578.7
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3565.8
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3580.9
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3567.7
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3583.5
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3578.7
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3585.3
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3600.1
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3586.4
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3598.9
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3589.6
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3601
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3601.5
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3602.2
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3614.6
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3602.8
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3612.3
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3603.9
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3617.5
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3618.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3617.3
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3630.2
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3619
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3628
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3618.3
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3627.8
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3634.2
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3627.1
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3636.9
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3626.2
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3636.2
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3628.9
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3634.6
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3641.7
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3632.5
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3640.2
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3629.8
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3639.7
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3634.4
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3638
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3646.8
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3635.8
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3644.5
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3634.8
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3641.5
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3637
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3638.6
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3646.6
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3634
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3642.4
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3634
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3641.8
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3641.6
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3638.5
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3634.8
+        }
+      ]
+    },
+    {
+      "key": "current-ops-plus-ioc-only",
+      "label": "Current operations (2007 guidelines) + Abundance Act — Phase 1 (2 MAF/yr)",
+      "policyName": "Current operations (2007 guidelines)",
+      "augmentation": "IOC=2045/2MAF, FOC=2045/2MAF",
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3526.3,
+          "p10End": 3397,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 24.4,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3535.7,
+          "p10End": 3394.4,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 10.2,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3586.7,
+          "p10End": 3444.4,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 5.8,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3521.2
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3541.8
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3535.5
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3553
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3546.6
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3524.3
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3540.9
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3555.1
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3538.7
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3560.6
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3533.4
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3548.9
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3530.7
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3547.6
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3559.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3536.1
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3556.4
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3531.1
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3549
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3535
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3541.7
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3557.8
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3530
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3551.8
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3525.8
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3544.7
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3535.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3538.6
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3560.2
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3532.3
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3550.5
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3528.1
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3551.7
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3550.4
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3549.4
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3570
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3548.2
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3570.1
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3551.7
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3570.9
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3578.6
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3570
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3587.3
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3568.6
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3585.7
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3569.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3582.4
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3594.2
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3578.9
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3594.8
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3576.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3591.2
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3578.7
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3588.8
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3602.2
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3584.8
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3602
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3584.9
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3598.3
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3589.4
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3595
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3607.2
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3588.3
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3601.7
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3583.7
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3599.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3595
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3594.6
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3587
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3480.7
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3447.5
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3459.3
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3416.2
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3446.2
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3410.9
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3435.7
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3453.9
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3412.4
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3445.6
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3392.6
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3440.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3411.6
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3430.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3453.9
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3411.7
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3447.3
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3395.3
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3436.8
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3414.6
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3423.4
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3453.9
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3405.3
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3445.7
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3390.9
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3433.7
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3425.3
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3415.2
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3453.6
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3399.2
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3437.2
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3393.2
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3432.5
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3434.1
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3421.6
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3457.5
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3411
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3442.3
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3405.3
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3435.5
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3454.8
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3425.4
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3455.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3417.3
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3462
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3425.8
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3443.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3472
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3435.7
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3473.5
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3429.5
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3459.3
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3429.7
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3454.4
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3481.6
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3443.9
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3479.2
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3444.9
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3464.1
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3444.9
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3454.1
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3486
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3451.7
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3475
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3438.3
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3468.3
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3466.9
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3461.9
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3445
+        }
+      ]
+    },
+    {
+      "key": "current-ops-plus-realistic",
+      "label": "Current operations (2007 guidelines) + Abundance Act — Realistic (3 MAF/yr)",
+      "policyName": "Current operations (2007 guidelines)",
+      "augmentation": "IOC=2045/2MAF, FOC=2065/3MAF",
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3527.7,
+          "p10End": 3398.8,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 23.8,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3533.5,
+          "p10End": 3391.4,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 9.5,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3590.1,
+          "p10End": 3443.5,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 5.4,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3524
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3539.5
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3534.1
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3553.8
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3547.2
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3525.5
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3541.3
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3550.8
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3533.5
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3555
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3526.4
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3548.7
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3529.4
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3541.9
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3558.8
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3537.2
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3555.5
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3528.2
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3548
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3532.7
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3542.7
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3560.4
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3533.8
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3553.8
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3526
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3545
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3535.3
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3536.1
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3558.9
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3531.3
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3549.4
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3527.4
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3549
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3550.6
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3548.9
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3570.7
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3548.8
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3569.7
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3551.9
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3569.8
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3574.4
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3567.5
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3588.3
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3568.5
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3583.9
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3570.8
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3584.8
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3596.1
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3582.4
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3599.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3581.4
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3594.7
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3583.6
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3590.2
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3604.5
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3587
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3603.2
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3585.8
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3600.4
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3592.9
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3596.9
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3609.2
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3590.3
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3607.1
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3589
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3602
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3597.3
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3598.3
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3590.4
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.2
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3485
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3447.7
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3457.1
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3406.3
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3441.3
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3403.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3426
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3458.7
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3419.8
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3448.6
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3399.5
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3440.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3409.3
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3431.5
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3461.5
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3421.1
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3449.8
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3401
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3439.9
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3424.3
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3424.2
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3462.1
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3415.2
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3444.2
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3393.4
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3426.9
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3421.2
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3420.9
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3453.6
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3404.8
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3443.9
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3394.8
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3423
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3432.5
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3411.1
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3448.8
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3389.3
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3440.3
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3406.2
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3438.1
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3457.8
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3431.5
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3462.5
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3418.6
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3466.2
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3433
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3447.1
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3474.5
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3441.3
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3474.7
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3433.7
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3470
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3445.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3459.7
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3485.1
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3445.3
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3473.6
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3435.1
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3464.4
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3443.5
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3463.1
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3495.1
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3454.4
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3479
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3444.5
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3470.8
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3463.3
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3461
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3443.7
+        }
+      ]
+    },
+    {
+      "key": "current-ops-plus-optimistic",
+      "label": "Current operations (2007 guidelines) + Abundance Act — Full buildout (7 MAF/yr)",
+      "policyName": "Current operations (2007 guidelines)",
+      "augmentation": "IOC=2040/2MAF, FOC=2055/7MAF",
+      "horizons": [
+        {
+          "years": 10,
+          "medianEnd": 3527.3,
+          "p10End": 3396.7,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 22.3,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 20,
+          "medianEnd": 3561.4,
+          "p10End": 3417.2,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 11.6,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        },
+        {
+          "years": 40,
+          "medianEnd": 3592.2,
+          "p10End": 3448.2,
+          "lowestP10": 3370,
+          "stayAboveMinPower": 6.4,
+          "stayAbove3525": 0,
+          "stayAboveDeadPool": 100,
+          "ramps": [
+            {
+              "name": "Wahweap",
+              "elevation": 3555,
+              "probability": 0
+            },
+            {
+              "name": "Bullfrog",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Antelope Point",
+              "elevation": 3540,
+              "probability": 0
+            },
+            {
+              "name": "Halls Crossing",
+              "elevation": 3550,
+              "probability": 0
+            },
+            {
+              "name": "Stateline",
+              "elevation": 3520,
+              "probability": 0
+            }
+          ],
+          "grade": "D"
+        }
+      ],
+      "dailyP50": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3535.5
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3540.8
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3534.4
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3551.6
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3523.3
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3543
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3520.8
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3537.8
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3548.3
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3532.9
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3553.1
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3526.2
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3550.1
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3529.2
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3540.8
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3557.3
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3532.7
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3556.9
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3529.2
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3546
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3529.9
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3540.1
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3557.8
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3533.1
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3552.2
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3530.9
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3554.2
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3548.8
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3553.8
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3576.2
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3555
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3572.9
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3554.7
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3572.4
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3571.9
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3570.2
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3587.4
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3566.8
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3583.7
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3567
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3582.7
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3589.7
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3580.1
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3596.8
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3578.2
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3597.2
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3583.7
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3595.1
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3603.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3590.4
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3606
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3588.4
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3602
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3591.1
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3600.5
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3613.1
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3597
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3609.3
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3591.7
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3607.7
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3599.6
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3600.5
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3615.5
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3597.1
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3609.1
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3592.3
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3605.2
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3601.6
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3600.6
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3592.7
+        }
+      ],
+      "dailyP10": [
+        {
+          "monthsOut": 0,
+          "elevation": 3526.5
+        },
+        {
+          "monthsOut": 7,
+          "elevation": 3496.3
+        },
+        {
+          "monthsOut": 14,
+          "elevation": 3485
+        },
+        {
+          "monthsOut": 21,
+          "elevation": 3454.3
+        },
+        {
+          "monthsOut": 28,
+          "elevation": 3460
+        },
+        {
+          "monthsOut": 34,
+          "elevation": 3417
+        },
+        {
+          "monthsOut": 41,
+          "elevation": 3442.1
+        },
+        {
+          "monthsOut": 48,
+          "elevation": 3409.6
+        },
+        {
+          "monthsOut": 55,
+          "elevation": 3431.7
+        },
+        {
+          "monthsOut": 62,
+          "elevation": 3444.4
+        },
+        {
+          "monthsOut": 69,
+          "elevation": 3405.4
+        },
+        {
+          "monthsOut": 76,
+          "elevation": 3440.2
+        },
+        {
+          "monthsOut": 83,
+          "elevation": 3382
+        },
+        {
+          "monthsOut": 90,
+          "elevation": 3430.4
+        },
+        {
+          "monthsOut": 97,
+          "elevation": 3398.9
+        },
+        {
+          "monthsOut": 103,
+          "elevation": 3427.7
+        },
+        {
+          "monthsOut": 110,
+          "elevation": 3451.1
+        },
+        {
+          "monthsOut": 117,
+          "elevation": 3408.6
+        },
+        {
+          "monthsOut": 124,
+          "elevation": 3444.2
+        },
+        {
+          "monthsOut": 131,
+          "elevation": 3390.3
+        },
+        {
+          "monthsOut": 138,
+          "elevation": 3429.7
+        },
+        {
+          "monthsOut": 145,
+          "elevation": 3410.2
+        },
+        {
+          "monthsOut": 152,
+          "elevation": 3419.5
+        },
+        {
+          "monthsOut": 159,
+          "elevation": 3451.6
+        },
+        {
+          "monthsOut": 166,
+          "elevation": 3401
+        },
+        {
+          "monthsOut": 172,
+          "elevation": 3439.3
+        },
+        {
+          "monthsOut": 179,
+          "elevation": 3386.8
+        },
+        {
+          "monthsOut": 186,
+          "elevation": 3425
+        },
+        {
+          "monthsOut": 193,
+          "elevation": 3421.2
+        },
+        {
+          "monthsOut": 200,
+          "elevation": 3418.4
+        },
+        {
+          "monthsOut": 207,
+          "elevation": 3453.6
+        },
+        {
+          "monthsOut": 214,
+          "elevation": 3404.2
+        },
+        {
+          "monthsOut": 221,
+          "elevation": 3443.9
+        },
+        {
+          "monthsOut": 228,
+          "elevation": 3401.4
+        },
+        {
+          "monthsOut": 235,
+          "elevation": 3435.2
+        },
+        {
+          "monthsOut": 241,
+          "elevation": 3445.5
+        },
+        {
+          "monthsOut": 248,
+          "elevation": 3432.9
+        },
+        {
+          "monthsOut": 255,
+          "elevation": 3469.1
+        },
+        {
+          "monthsOut": 262,
+          "elevation": 3425
+        },
+        {
+          "monthsOut": 269,
+          "elevation": 3457.8
+        },
+        {
+          "monthsOut": 276,
+          "elevation": 3420.5
+        },
+        {
+          "monthsOut": 283,
+          "elevation": 3458
+        },
+        {
+          "monthsOut": 290,
+          "elevation": 3471
+        },
+        {
+          "monthsOut": 297,
+          "elevation": 3448.9
+        },
+        {
+          "monthsOut": 304,
+          "elevation": 3479.6
+        },
+        {
+          "monthsOut": 310,
+          "elevation": 3443.7
+        },
+        {
+          "monthsOut": 317,
+          "elevation": 3463.1
+        },
+        {
+          "monthsOut": 324,
+          "elevation": 3433.2
+        },
+        {
+          "monthsOut": 331,
+          "elevation": 3457.3
+        },
+        {
+          "monthsOut": 338,
+          "elevation": 3484.8
+        },
+        {
+          "monthsOut": 345,
+          "elevation": 3459.2
+        },
+        {
+          "monthsOut": 352,
+          "elevation": 3482.6
+        },
+        {
+          "monthsOut": 359,
+          "elevation": 3448.1
+        },
+        {
+          "monthsOut": 366,
+          "elevation": 3476.2
+        },
+        {
+          "monthsOut": 373,
+          "elevation": 3456.2
+        },
+        {
+          "monthsOut": 379,
+          "elevation": 3467.1
+        },
+        {
+          "monthsOut": 386,
+          "elevation": 3498
+        },
+        {
+          "monthsOut": 393,
+          "elevation": 3457.9
+        },
+        {
+          "monthsOut": 400,
+          "elevation": 3479.3
+        },
+        {
+          "monthsOut": 407,
+          "elevation": 3446.4
+        },
+        {
+          "monthsOut": 414,
+          "elevation": 3475.5
+        },
+        {
+          "monthsOut": 421,
+          "elevation": 3461.4
+        },
+        {
+          "monthsOut": 428,
+          "elevation": 3468.3
+        },
+        {
+          "monthsOut": 435,
+          "elevation": 3494.4
+        },
+        {
+          "monthsOut": 442,
+          "elevation": 3454.2
+        },
+        {
+          "monthsOut": 448,
+          "elevation": 3473.7
+        },
+        {
+          "monthsOut": 455,
+          "elevation": 3440.1
+        },
+        {
+          "monthsOut": 462,
+          "elevation": 3468.5
+        },
+        {
+          "monthsOut": 469,
+          "elevation": 3466.7
+        },
+        {
+          "monthsOut": 476,
+          "elevation": 3464.2
+        },
+        {
+          "monthsOut": 479,
+          "elevation": 3448.2
+        }
+      ]
+    }
+  ]
+}
