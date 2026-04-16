@@ -1724,3 +1724,266 @@ export async function getSharedSimulation(id: string): Promise<SharedSimulation 
   }
 }
 
+// ─── Content Engine Admin Functions ──────────────────────────────
+
+export async function getAllArticlesAdmin() {
+  const result = await query(
+    `SELECT a.*, ai.article_type, ai.source_article_url, ai.source_article_title
+     FROM articles a
+     LEFT JOIN article_ideas ai ON ai.id = a.idea_id
+     ORDER BY a.created_at DESC`
+  )
+  return result.rows
+}
+
+export async function getResponseQueueAdmin() {
+  const result = await query(
+    `SELECT r.*, a.title AS article_title, a.slug AS article_slug
+     FROM response_queue r
+     JOIN articles a ON a.id = r.article_id
+     ORDER BY r.created_at DESC`
+  )
+  return result.rows
+}
+
+export async function getPipelineStats() {
+  const toRecord = (rows: any[]): Record<string, number> =>
+    rows.reduce((acc: Record<string, number>, r) => {
+      acc[r.status] = (acc[r.status] || 0) + Number(r.count)
+      return acc
+    }, {})
+
+  const [sources, ideas, articles, responses, lastRun] = await Promise.all([
+    query(`SELECT status, COUNT(*) as count FROM content_sources GROUP BY status`),
+    query(`SELECT status, article_type, COUNT(*) as count FROM article_ideas GROUP BY status, article_type`),
+    query(`SELECT status, COUNT(*) as count FROM articles GROUP BY status`),
+    query(`SELECT status, COUNT(*) as count FROM response_queue GROUP BY status`),
+    query(`SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT 1`),
+  ])
+  return {
+    sourcesByStatus: toRecord(sources.rows),
+    ideasByStatus: toRecord(ideas.rows),
+    articlesByStatus: toRecord(articles.rows),
+    responsesByStatus: toRecord(responses.rows),
+    lastRun: lastRun.rows[0] || null,
+  }
+}
+
+export async function getIdeasForReview() {
+  const result = await query(
+    `SELECT id, source_ids, title, angle, themes, score, status, matched_article_id, research_brief, article_type, source_article_url, source_article_title, created_at
+     FROM article_ideas
+     WHERE status = 'pending_review'
+     ORDER BY score DESC, created_at ASC
+     LIMIT 50`
+  )
+  return result.rows
+}
+
+// ─── Article Types ──────────────────────────────────────────────
+
+export interface ArticleRow {
+  id: number
+  slug: string
+  title: string
+  subtitle: string | null
+  body_html: string | null
+  body_markdown: string | null
+  read_time_minutes: number | null
+  idea_id: number | null
+  status: string
+  published_at: string | null
+  created_at: string
+  article_type?: string
+  source_article_url?: string
+  source_article_title?: string
+  seo_title?: string
+  meta_description?: string
+  keywords?: string[]
+}
+
+export interface ResponseQueueRow {
+  id: number
+  source_id: number | null
+  article_id: number
+  draft_comment: string
+  source_url: string | null
+  status: string
+  created_at: string
+  posted_at: string | null
+  article_title?: string
+  article_slug?: string
+}
+
+export interface IdeaRow {
+  id: number
+  source_ids: number[]
+  title: string
+  angle: string | null
+  themes: string[]
+  score: number
+  status: string
+  matched_article_id: number | null
+  research_brief: any
+  article_type?: string
+  source_article_url?: string
+  source_article_title?: string
+  created_at: string
+}
+
+// ─── Published Articles ─────────────────────────────────────────
+
+export async function getPublishedArticles(): Promise<ArticleRow[]> {
+  const result = await query(
+    `SELECT a.*, ai.article_type, ai.source_article_url, ai.source_article_title
+     FROM articles a
+     LEFT JOIN article_ideas ai ON ai.id = a.idea_id
+     WHERE a.status = 'published'
+     ORDER BY a.published_at DESC`
+  )
+  return result.rows
+}
+
+export async function getArticleBySlug(slug: string): Promise<ArticleRow | null> {
+  const result = await query(
+    `SELECT a.*, ai.article_type, ai.source_article_url, ai.source_article_title
+     FROM articles a
+     LEFT JOIN article_ideas ai ON ai.id = a.idea_id
+     WHERE a.slug = $1`,
+    [slug]
+  )
+  return result.rows[0] || null
+}
+
+export async function getArticleAssets(articleId: number) {
+  const result = await query(
+    `SELECT * FROM article_assets WHERE article_id = $1 ORDER BY id`,
+    [articleId]
+  )
+  return result.rows
+}
+
+export async function getArticleHeroImage(articleId: number) {
+  const result = await query(
+    `SELECT * FROM article_assets WHERE article_id = $1 AND (role = 'hero' OR (asset_type = 'image' AND alt_text IS NOT NULL)) LIMIT 1`,
+    [articleId]
+  )
+  return result.rows[0] || null
+}
+
+// ─── Article Admin ──────────────────────────────────────────────
+
+export async function toggleArticlePublish(id: number): Promise<string> {
+  const current = await query(`SELECT status FROM articles WHERE id = $1`, [id])
+  if (!current.rows[0]) throw new Error('Article not found')
+  const newStatus = current.rows[0].status === 'published' ? 'unpublished' : 'published'
+  if (newStatus === 'published') {
+    await query(`UPDATE articles SET status = 'published', published_at = NOW() WHERE id = $1`, [id])
+  } else {
+    await query(`UPDATE articles SET status = 'unpublished', published_at = NULL WHERE id = $1`, [id])
+  }
+  return newStatus
+}
+
+export async function sendArticleForRevision(articleId: number, feedback: string) {
+  const article = await query(`SELECT idea_id FROM articles WHERE id = $1`, [articleId])
+  if (!article.rows[0]?.idea_id) throw new Error('Article has no linked idea')
+  const ideaId = article.rows[0].idea_id
+  await query(
+    `UPDATE article_ideas SET research_brief = jsonb_set(COALESCE(research_brief, '{}'::jsonb), '{humanFeedback}', $1::jsonb), status = 'editing' WHERE id = $2`,
+    [JSON.stringify(feedback), ideaId]
+  )
+}
+
+// ─── Idea Admin ─────────────────────────────────────────────────
+
+export async function getIdeaById(id: number): Promise<IdeaRow | null> {
+  const result = await query(
+    `SELECT id, source_ids, title, angle, themes, score, status, matched_article_id, research_brief, article_type, source_article_url, source_article_title, created_at FROM article_ideas WHERE id = $1`,
+    [id]
+  )
+  return result.rows[0] || null
+}
+
+export async function approveIdea(id: number) {
+  await query(`UPDATE article_ideas SET status = 'approved' WHERE id = $1`, [id])
+}
+
+export async function skipIdea(id: number) {
+  await query(`UPDATE article_ideas SET status = 'skipped' WHERE id = $1`, [id])
+}
+
+export async function toggleIdeaStar(id: number) {
+  const idea = await query(`SELECT research_brief FROM article_ideas WHERE id = $1`, [id])
+  const brief = idea.rows[0]?.research_brief || {}
+  const starred = !brief.starred
+  await query(
+    `UPDATE article_ideas SET research_brief = jsonb_set(COALESCE(research_brief, '{}'::jsonb), '{starred}', $1::jsonb) WHERE id = $2`,
+    [JSON.stringify(starred), id]
+  )
+}
+
+export async function updateIdeaDirection(id: number, direction: string) {
+  await query(
+    `UPDATE article_ideas SET research_brief = jsonb_set(COALESCE(research_brief, '{}'::jsonb), '{humanDirectionFeedback}', $1::jsonb) WHERE id = $2`,
+    [JSON.stringify(direction), id]
+  )
+}
+
+export async function updateIdeaFields(id: number, fields: Record<string, any>) {
+  const setClauses: string[] = []
+  const values: any[] = []
+  let idx = 1
+  for (const [key, value] of Object.entries(fields)) {
+    if (['title', 'angle', 'status', 'score'].includes(key)) {
+      setClauses.push(`${key} = $${idx}`)
+      values.push(value)
+      idx++
+    }
+  }
+  if (setClauses.length === 0) return
+  values.push(id)
+  await query(`UPDATE article_ideas SET ${setClauses.join(', ')} WHERE id = $${idx}`, values)
+}
+
+export async function getStarredIdeas(): Promise<IdeaRow[]> {
+  const result = await query(
+    `SELECT id, source_ids, title, angle, themes, score, status, matched_article_id, research_brief, article_type, source_article_url, source_article_title, created_at
+     FROM article_ideas WHERE research_brief->>'starred' = 'true' ORDER BY score DESC`
+  )
+  return result.rows
+}
+
+// ─── Response Admin ─────────────────────────────────────────────
+
+export async function updateResponseStatus(id: number, status: string) {
+  const updates = status === 'posted' ? "status = $1, posted_at = NOW()" : "status = $1"
+  await query(`UPDATE response_queue SET ${updates} WHERE id = $2`, [status, id])
+}
+
+// ─── Pipeline Status ────────────────────────────────────────────
+
+export async function getActivePipelineRun() {
+  const result = await query(
+    `SELECT * FROM pipeline_runs WHERE status = 'running' ORDER BY started_at DESC LIMIT 1`
+  )
+  return result.rows[0] || null
+}
+
+export async function getRecentPipelineRuns() {
+  const result = await query(
+    `SELECT * FROM pipeline_runs ORDER BY started_at DESC LIMIT 10`
+  )
+  return result.rows
+}
+
+export async function getIdeaStatusCounts(): Promise<Record<string, number>> {
+  const result = await query(
+    `SELECT status, article_type, COUNT(*) as count FROM article_ideas GROUP BY status, article_type ORDER BY status`
+  )
+  return result.rows.reduce((acc: Record<string, number>, r: any) => {
+    acc[r.status] = (acc[r.status] || 0) + Number(r.count)
+    return acc
+  }, {})
+}
+
