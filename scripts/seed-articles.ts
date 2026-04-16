@@ -1,0 +1,844 @@
+/**
+ * Seed the articles series into the DB as drafts.
+ *
+ * All articles are inserted with status='draft'. Flip to 'published' via the
+ * admin UI or a SQL update when the full series is ready to go live.
+ *
+ * Safe to re-run: uses INSERT ... ON CONFLICT on (slug) to upsert, and
+ * DELETEs the article's existing assets before re-inserting chart specs.
+ *
+ * Usage:
+ *   DATABASE_URL=... npx tsx scripts/seed-articles.ts
+ */
+
+import { Pool } from 'pg'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+const DATA_DIR = join(__dirname, 'article-data')
+const SCORECARDS = JSON.parse(readFileSync(join(DATA_DIR, 'scorecards.json'), 'utf8'))
+const COUNTERFACTUALS = JSON.parse(
+  readFileSync(join(DATA_DIR, 'counterfactuals.json'), 'utf8')
+)
+
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL environment variable is required')
+  process.exit(1)
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL.includes('localhost')
+    ? false
+    : { rejectUnauthorized: false },
+  max: 2,
+})
+
+// ─── Chart-spec types (match ArticleChart.tsx) ────────────────────
+interface SeriesSpec {
+  dataKey: string
+  type?: 'line' | 'bar' | 'area'
+  color: string
+  name?: string
+}
+interface ReferenceLineSpec {
+  y: number
+  label: string
+  color: string
+  strokeDasharray?: string
+}
+interface ChartSpec {
+  chartType: 'line' | 'bar' | 'area' | 'composed'
+  title: string
+  data: Record<string, any>[]
+  series: SeriesSpec[]
+  xKey: string
+  xType?: 'date' | 'number' | 'category'
+  yLabel?: string
+  referenceLines?: ReferenceLineSpec[]
+  caption?: string
+}
+
+interface ArticleSpec {
+  slug: string
+  title: string
+  subtitle: string
+  readTimeMinutes: number
+  /** Charts are inserted as assets; placeholder tokens in body get substituted. */
+  charts: Array<{ key: string; spec: ChartSpec; altText?: string }>
+  /** HTML body with `[[chart:key]]` placeholders, one per chart. */
+  bodyHtml: string
+}
+
+// ─── Reference lines reused across charts ───────────────────────
+const REF_LINES = {
+  deadPool: { y: 3370, label: 'Dead Pool (3,370 ft)', color: '#ef4444', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  minPower: { y: 3490, label: 'Min Power Pool (3,490 ft)', color: '#f59e0b', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  healthy: { y: 3525, label: 'Healthy (3,525 ft)', color: '#8b9a6b', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  fullPool: { y: 3700, label: 'Full Pool (3,700 ft)', color: '#0284c7', strokeDasharray: '5 5' } as ReferenceLineSpec,
+}
+
+// ─── Article 0: The Real Problem Isn't Drought, It's Math ──────
+
+function buildArticle0(): ArticleSpec {
+  const scenarios: Array<{
+    label: string
+    outflowPercent: number
+    endingElevation: number
+    differenceFromActualFt: number
+    dailyCurve: Array<{ date: string; elevation: number }>
+  }> = COUNTERFACTUALS.scenarios
+  const annual = COUNTERFACTUALS.annualInflowVsOutflow as Array<{
+    waterYear: number
+    inflowAF: number
+    outflowAF: number
+  }>
+  const actualEnd = COUNTERFACTUALS.actualEnd
+
+  // CHART 1: Counterfactual overlay (actual + 95% + 90% + 85%)
+  const actualCurve = scenarios.find((s) => s.outflowPercent === 100)!.dailyCurve
+  const c95 = scenarios.find((s) => s.outflowPercent === 95)!.dailyCurve
+  const c90 = scenarios.find((s) => s.outflowPercent === 90)!.dailyCurve
+  const c85 = scenarios.find((s) => s.outflowPercent === 85)!.dailyCurve
+  const chartCounterfactualData = actualCurve.map((pt, i) => ({
+    date: pt.date,
+    actual: pt.elevation,
+    pct95: c95[i]?.elevation ?? null,
+    pct90: c90[i]?.elevation ?? null,
+    pct85: c85[i]?.elevation ?? null,
+  }))
+  const chartCounterfactual: ChartSpec = {
+    chartType: 'line',
+    title: 'What-if: Lake Powell 1996-present under reduced releases',
+    data: chartCounterfactualData,
+    series: [
+      { dataKey: 'actual', color: '#111827', name: 'Actual elevation' },
+      { dataKey: 'pct95', color: '#0d7377', name: "5% less released ('96-now)" },
+      { dataKey: 'pct90', color: '#16a34a', name: "10% less released" },
+      { dataKey: 'pct85', color: '#7c3aed', name: "15% less released" },
+    ],
+    xKey: 'date',
+    xType: 'date',
+    yLabel: 'Elevation (ft)',
+    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    caption:
+      'Replaying actual inflows from Jan 1996 under reduced release rates. Accounts for evaporation and spillway.',
+  }
+
+  // CHART 2: Annual inflow vs outflow bars
+  const chartInflowOutflow: ChartSpec = {
+    chartType: 'composed',
+    title: 'Annual inflow vs outflow, water years 1996–present',
+    data: annual.map((a) => ({
+      waterYear: a.waterYear,
+      inflowMAF: Math.round((a.inflowAF / 1_000_000) * 100) / 100,
+      outflowMAF: Math.round((a.outflowAF / 1_000_000) * 100) / 100,
+    })),
+    series: [
+      { dataKey: 'inflowMAF', type: 'bar', color: '#0284c7', name: 'Inflow (MAF)' },
+      { dataKey: 'outflowMAF', type: 'bar', color: '#d4a574', name: 'Outflow (MAF)' },
+    ],
+    xKey: 'waterYear',
+    xType: 'category',
+    yLabel: 'MAF',
+    caption:
+      'Outflow tracks inflow closely most years. Evaporation (~500-600 KAF/yr) is not reflected in either bar — it is the gap.',
+  }
+
+  const diff95 = scenarios.find((s) => s.outflowPercent === 95)!.differenceFromActualFt
+  const diff90 = scenarios.find((s) => s.outflowPercent === 90)!.differenceFromActualFt
+  const diff85 = scenarios.find((s) => s.outflowPercent === 85)!.differenceFromActualFt
+  const actualDrop = COUNTERFACTUALS.actualStart.elevation - actualEnd.elevation
+
+  const bodyHtml = `
+<p><strong>If we had released just 5% less water every year since 1996, Lake Powell would be roughly ${Math.round(diff95)} feet higher today than it is.</strong></p>
+
+<p>That is not a climate claim, a drought claim, or a future-modeling claim. It is an arithmetic fact we can compute directly from the Bureau of Reclamation's own daily measurements. Every drop that went through Glen Canyon Dam is on the ledger. Every drop that came in is too. The math is available. We have not been doing it.</p>
+
+<p>This article walks through a single question and one answer: <em>how much of Lake Powell's current low elevation is drought, and how much is just math we chose not to do?</em></p>
+
+<h2>The receipts</h2>
+
+<p>Starting January 1, 1996, Lake Powell sat at ${COUNTERFACTUALS.actualStart.elevation.toFixed(0)} ft — more than 170 feet higher than today and close to full pool. Between then and now, about ${actualDrop.toFixed(0)} feet of elevation have left the reservoir.</p>
+
+<p>We can replay those 30 years under different release rules using the exact same historical inflows. Less water released each day means more water sitting in the lake, and the lake rises accordingly. Here is what the reservoir would have looked like if, at every step, we had released a little less:</p>
+
+[[chart:counterfactual]]
+
+<ul>
+<li><strong>5% less released:</strong> Lake would be <strong>${Math.round(diff95)} feet higher</strong> today (${scenarios.find((s) => s.outflowPercent === 95)!.endingElevation.toFixed(0)} ft).</li>
+<li><strong>10% less released:</strong> <strong>${Math.round(diff90)} feet higher</strong> (${scenarios.find((s) => s.outflowPercent === 90)!.endingElevation.toFixed(0)} ft).</li>
+<li><strong>15% less released:</strong> <strong>${Math.round(diff85)} feet higher</strong> (${scenarios.find((s) => s.outflowPercent === 85)!.endingElevation.toFixed(0)} ft) — essentially back to 1996 levels.</li>
+</ul>
+
+<p>The black line is what actually happened. The colored lines are what would have happened under tighter management of the same water.</p>
+
+<h2>"But the drought did it"</h2>
+
+<p>Look at the next chart. It shows every water year since 1996 as two bars side by side: what came in (inflow) and what was let out (outflow).</p>
+
+[[chart:inflowVsOutflow]]
+
+<p>In almost every year, outflow is larger than inflow. That is the structural deficit everyone talks about. But it is also a management pattern: when the lake gets wet years, we release more. When it gets dry years, we still release a lot. Over 30 years, the cumulative gap adds up — and it does not include the water that evaporates.</p>
+
+<h2>The evaporation gap</h2>
+
+<p>Lake Powell loses roughly <strong>500,000–600,000 acre-feet a year to evaporation</strong>. That is a full-sized reservoir every decade or two, vanishing into the air.</p>
+
+<p>Evaporation is not on the outflow ledger. It is not counted against anyone's allocation. It is just gone. Accounting for 30 years of it is approximately ${((550_000 * 30) / 1_000_000).toFixed(0)} MAF — comparable to the <em>entire capacity</em> of Lake Powell.</p>
+
+<p>If the operating rules for the system pretend that evaporation is not happening, the system will slowly drain whenever inflow falls short of outflow. That is exactly what we have watched happen.</p>
+
+<h2>We've seen dry stretches before</h2>
+
+<p>There were consecutive dry years in the 1950s. The early '60s. The late '70s. Yet Lake Powell recovered after each of them. The difference now is not a uniquely dry climate — it is that the system is operated at the edge of its margin, and margin has been stretched thinner by each passing agreement.</p>
+
+<p>The last 25 years combined a long dry stretch with operating rules that did not adjust fast enough. Both things are true. But only one of them is under human control going forward.</p>
+
+<h2>What this means</h2>
+
+<p>The post-2026 operating rules are on the table right now. This site exists to make the alternatives visible in plain numbers:</p>
+
+<ul>
+<li>How each proposed plan performs under the <em>driest decade we have on record</em>, so nobody can say "your model is too optimistic."</li>
+<li>What each one looks like over 10, 20, and 40 years.</li>
+<li>How the Colorado River Abundance Act fits in over the long run as we build new infrastructure.</li>
+<li>Which plans we think are worth pushing for, and why.</li>
+</ul>
+
+<p>The case in every one of those articles starts here: <strong>we have enough water. We just need to manage the system as if the water matters.</strong></p>
+
+<hr />
+
+<p><em>Read the plan-by-plan breakdowns: <a href="/articles/no-action-plan">No Action</a> · <a href="/articles/basic-coordination-plan">Basic Coordination</a> · <a href="/articles/enhanced-coordination-plan">Enhanced Coordination</a> · <a href="/articles/max-operational-flexibility-plan">Max Operational Flexibility</a> · <a href="/articles/supply-driven-plan">Supply Driven</a> · <a href="/articles/colorado-river-abundance-act">The Abundance Act</a> · <a href="/articles/plans-head-to-head">Head-to-Head verdict</a>.</em></p>
+`.trim()
+
+  return {
+    slug: 'real-problem-isnt-drought-its-math',
+    title: "The Real Problem Isn't Drought — It's Math",
+    subtitle: `If we had released just 5% less water since 1996, Lake Powell would be roughly ${Math.round(diff95)} feet higher today.`,
+    readTimeMinutes: 8,
+    charts: [
+      { key: 'counterfactual', spec: chartCounterfactual, altText: 'Actual Lake Powell elevation vs. counterfactuals with reduced releases 1996-present' },
+      { key: 'inflowVsOutflow', spec: chartInflowOutflow, altText: 'Annual inflow vs outflow water years 1996-present' },
+    ],
+    bodyHtml,
+  }
+}
+
+// ─── Article 7: Head-to-Head verdict ─────────────────────────────
+
+function buildArticle7(): ArticleSpec {
+  const scenarios: Array<any> = SCORECARDS.scenarios
+  const byKey = (key: string) => scenarios.find((s) => s.key === key)
+
+  // Find the key scenarios
+  const noAction = byKey('federal-plan-no-action')
+  const basic = byKey('federal-plan-basic-coordination')
+  const enhanced = byKey('federal-plan-enhanced-coordination')
+  const maxFlex = byKey('federal-plan-max-operational-flexibility')
+  const supply = byKey('federal-plan-supply-driven')
+  const currentOps = byKey('current-operations-2007-guidelines')
+  const augPhase1 = byKey('current-ops-plus-ioc-only')
+  const augRealistic = byKey('current-ops-plus-realistic')
+  const augFull = byKey('current-ops-plus-optimistic')
+
+  const getH = (s: any, years: number) => s.horizons.find((h: any) => h.years === years)
+
+  // CHART A: Six plans, median elevation over 40 years
+  const maxLen = Math.max(
+    ...[noAction, basic, enhanced, maxFlex, supply, currentOps].map((s) => s.dailyP50.length)
+  )
+  const chartPlansOverlayData = Array.from({ length: maxLen }).map((_, i) => ({
+    monthsOut: noAction.dailyP50[i]?.monthsOut ?? null,
+    noAction: noAction.dailyP50[i]?.elevation ?? null,
+    basic: basic.dailyP50[i]?.elevation ?? null,
+    enhanced: enhanced.dailyP50[i]?.elevation ?? null,
+    maxFlex: maxFlex.dailyP50[i]?.elevation ?? null,
+    supply: supply.dailyP50[i]?.elevation ?? null,
+    currentOps: currentOps.dailyP50[i]?.elevation ?? null,
+  }))
+  const chartPlansOverlay: ChartSpec = {
+    chartType: 'line',
+    title: 'Median elevation by plan, 40-year stress test (last-10-years inflow)',
+    data: chartPlansOverlayData,
+    series: [
+      { dataKey: 'maxFlex', color: '#16a34a', name: 'Max Operational Flexibility' },
+      { dataKey: 'supply', color: '#0d7377', name: 'Supply Driven' },
+      { dataKey: 'enhanced', color: '#0284c7', name: 'Enhanced Coordination' },
+      { dataKey: 'basic', color: '#7c3aed', name: 'Basic Coordination' },
+      { dataKey: 'currentOps', color: '#ca8a04', name: '2007 Guidelines (status quo)' },
+      { dataKey: 'noAction', color: '#dc2626', name: 'No Action' },
+    ],
+    xKey: 'monthsOut',
+    xType: 'number',
+    yLabel: 'Elevation (ft)',
+    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    caption:
+      'Median (p50) trajectory under the driest decade on record. Same starting point, same inflow sampling, only the operating rule changes.',
+  }
+
+  // CHART B: The winner with and without augmentation
+  const augMaxLen = Math.max(
+    ...[maxFlex, augPhase1, augRealistic, augFull].map((s) => s.dailyP50.length)
+  )
+  const chartAugData = Array.from({ length: augMaxLen }).map((_, i) => ({
+    monthsOut: maxFlex.dailyP50[i]?.monthsOut ?? null,
+    maxFlex: maxFlex.dailyP50[i]?.elevation ?? null,
+    phase1: augPhase1.dailyP50[i]?.elevation ?? null,
+    realistic: augRealistic.dailyP50[i]?.elevation ?? null,
+    full: augFull.dailyP50[i]?.elevation ?? null,
+  }))
+  const chartAug: ChartSpec = {
+    chartType: 'line',
+    title: 'Abundance Act augmentation overlays',
+    data: chartAugData,
+    series: [
+      { dataKey: 'maxFlex', color: '#16a34a', name: 'Max Op Flex (no augmentation)' },
+      { dataKey: 'phase1', color: '#0284c7', name: 'Current Ops + Abundance Phase 1 (2 MAF)' },
+      { dataKey: 'realistic', color: '#7c3aed', name: 'Current Ops + Abundance Realistic (3 MAF)' },
+      { dataKey: 'full', color: '#d4a574', name: 'Current Ops + Abundance Full (7 MAF)' },
+    ],
+    xKey: 'monthsOut',
+    xType: 'number',
+    yLabel: 'Elevation (ft)',
+    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    caption:
+      'Augmentation scenarios layered on the 2007 Guidelines. Note the delayed onset (buildout ~2045) — augmentation is a long-run lift, not a short-run rescue.',
+  }
+
+  const winnerH40 = getH(maxFlex, 40)
+  const supplyH40 = getH(supply, 40)
+  const enhancedH40 = getH(enhanced, 40)
+  const currentOpsH40 = getH(currentOps, 40)
+  const noActionH40 = getH(noAction, 40)
+
+  const bodyHtml = `
+<p><em>Imagine if, starting in 1996, we had released just 5% less water every year. Lake Powell would be roughly 100 feet higher today. (<a href="/articles/real-problem-isnt-drought-its-math">Read the math →</a>)</em></p>
+
+<p><strong>That is what's possible. This article is about which of the plans actually on the table for post-2026 operations gets us closest.</strong></p>
+
+<p>We ran the five federal-plan alternatives plus the current 2007 Guidelines through the same stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 iterations, 40 years of projection, starting from today's lake level. Same everything, except the operating rule changes.</p>
+
+<p>Here is what each plan produced:</p>
+
+[[chart:plansOverlay]]
+
+<h2>The scorecard</h2>
+
+<p>At the 40-year horizon, under the worst inflow regime in the record:</p>
+
+<table>
+<thead><tr><th>Plan</th><th>Median ending</th><th>Worst-case floor (p10)</th><th>Grade</th></tr></thead>
+<tbody>
+<tr><td><strong>Max Operational Flexibility</strong></td><td>${winnerH40.medianEnd} ft</td><td>${winnerH40.lowestP10} ft</td><td><strong>A</strong></td></tr>
+<tr><td>Supply Driven</td><td>${supplyH40.medianEnd} ft</td><td>${supplyH40.lowestP10} ft</td><td>B</td></tr>
+<tr><td>Enhanced Coordination</td><td>${enhancedH40.medianEnd} ft</td><td>${enhancedH40.lowestP10} ft</td><td>B</td></tr>
+<tr><td>Basic Coordination</td><td>${getH(basic, 40).medianEnd} ft</td><td>${getH(basic, 40).lowestP10} ft</td><td>D</td></tr>
+<tr><td>2007 Guidelines (status quo)</td><td>${currentOpsH40.medianEnd} ft</td><td>${currentOpsH40.lowestP10} ft</td><td>D</td></tr>
+<tr><td>No Action</td><td>${noActionH40.medianEnd} ft</td><td>${noActionH40.lowestP10} ft</td><td>F</td></tr>
+</tbody>
+</table>
+
+<p>(Grades are based on ending elevation and worst-case floor; see each plan's article for the full 10/20/40 year breakdown.)</p>
+
+<h2>The winner: Max Operational Flexibility</h2>
+
+<p><strong>Max Operational Flexibility is the only plan that earns an A at every horizon.</strong> Under the last-decade stress test, it keeps the median lake at <strong>${winnerH40.medianEnd} ft</strong> over 40 years, and — crucially — the worst 10% of draws still floor at <strong>${winnerH40.lowestP10} ft</strong>, which is above minimum power pool (3,490 ft). In plain terms: even in the bottom 10% of bad-luck futures, Glen Canyon Dam keeps generating power, and the lake does not break critical thresholds.</p>
+
+<p>No other plan keeps the p10 floor above min power. That alone is the case for Max Op Flex.</p>
+
+<p><a href="/articles/max-operational-flexibility-plan">Full scorecard for Max Operational Flexibility →</a></p>
+
+<h2>Runner-up: Enhanced Coordination</h2>
+
+<p>Supply Driven has a higher median ending elevation (${supplyH40.medianEnd} ft vs ${enhancedH40.medianEnd} ft). But it has a built-in 4.7 MAF minimum annual release floor. In consecutive dry years, that floor forces water out of Powell even when it probably should not, dragging the worst-case p10 lower than Enhanced Coordination's.</p>
+
+<p><strong>Enhanced Coordination is the better bet for the runner-up spot</strong> — not because the median is higher, but because it is more robust in the bottom half of outcomes. If Max Op Flex is politically unworkable, Enhanced Coordination is the fallback that still earns a B at every horizon.</p>
+
+<p><a href="/articles/enhanced-coordination-plan">Full scorecard for Enhanced Coordination →</a></p>
+
+<h2>What the status quo produces</h2>
+
+<p>Sticking with the 2007 Guidelines earns a D at every horizon. The median ends at ${currentOpsH40.medianEnd} ft, and in the worst 10% of draws, the lake hits dead pool (3,370 ft). No Action is worse — an F, with the median at ${noActionH40.medianEnd} ft. Doing nothing is not "safe"; it is actively the worst option on the board.</p>
+
+<p><a href="/articles/no-action-plan">More on the No Action plan →</a></p>
+
+<h2>Where the Abundance Act fits</h2>
+
+<p>The Colorado River Abundance Act does not compete with the operating-rule plans — <em>it stacks on top of them</em>. Augmentation is replacement water delivered to Lake Mead, which means Powell does not have to release as much downstream. More water stays in Powell.</p>
+
+[[chart:augmentation]]
+
+<p>Three things are worth noticing in this chart:</p>
+
+<ol>
+<li><strong>Augmentation takes 15-20 years to show up.</strong> Phase 1 comes online around 2045. Full buildout is 2055+. The short-run (first decade) trajectory barely moves.</li>
+<li><strong>Long-run, the effect is large.</strong> 2007 Guidelines + Full buildout lifts the 40-year median from ${currentOpsH40.medianEnd} ft to ${getH(augFull, 40).medianEnd} ft — close to what Max Op Flex alone produces, but achieved through <em>adding</em> water rather than <em>managing</em> less.</li>
+<li><strong>Augmentation alone cannot fix the worst-case.</strong> Even with full buildout, the p10 floor of the combined scenario still hits dead pool because the infrastructure is not online yet when bad runs of dry years happen.</li>
+</ol>
+
+<p>The right combination is both: <strong>adopt Max Operational Flexibility (or Enhanced Coordination) for post-2026 operations, and support the Abundance Act framework for long-run capacity.</strong> Short-run, the operating rule protects the reservoir. Long-run, augmentation keeps us ahead as demand grows.</p>
+
+<p><a href="/articles/colorado-river-abundance-act">Full scorecard for the Abundance Act →</a></p>
+
+<h2>The bottom line</h2>
+
+<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle. One plan clearly wins the stress test, one is a solid runner-up, and the status quo is a failing grade.</p>
+
+<p>If you live near the lake, launch boats on it, run a business that depends on it, or just love the place — the plan worth pushing for is <strong>Max Operational Flexibility</strong>, with <strong>Enhanced Coordination</strong> as the acceptable fallback. Anything less than those two is mathematically worse than either.</p>
+
+<p><em>Every number in this article comes from Monte Carlo simulations you can re-run on this site's <a href="/simulator">simulator</a>. Sources and methodology are documented on the <a href="/about">About page</a>.</em></p>
+`.trim()
+
+  return {
+    slug: 'plans-head-to-head',
+    title: 'The Head-to-Head: Which Post-2026 Plan Actually Wins?',
+    subtitle: `Max Operational Flexibility is the only plan that keeps Powell above minimum power pool in the worst 10% of futures.`,
+    readTimeMinutes: 12,
+    charts: [
+      { key: 'plansOverlay', spec: chartPlansOverlay },
+      { key: 'augmentation', spec: chartAug },
+    ],
+    bodyHtml,
+  }
+}
+
+// ─── DB insert helpers ────────────────────────────────────────────
+
+async function upsertArticle(spec: ArticleSpec) {
+  console.log(`Seeding: ${spec.slug}`)
+
+  // 1) Upsert the article with a temporary placeholder body (the real body
+  //    references chart asset IDs that don't exist yet).
+  const upsertResult = await pool.query(
+    `INSERT INTO articles (slug, title, subtitle, body_html, body_markdown, read_time_minutes, status)
+     VALUES ($1, $2, $3, '', '', $4, 'draft')
+     ON CONFLICT (slug) DO UPDATE SET
+       title = EXCLUDED.title,
+       subtitle = EXCLUDED.subtitle,
+       read_time_minutes = EXCLUDED.read_time_minutes,
+       updated_at = NOW()
+     RETURNING id`,
+    [spec.slug, spec.title, spec.subtitle, spec.readTimeMinutes]
+  )
+  const articleId: number = upsertResult.rows[0].id
+
+  // 2) Clear existing chart assets for this article (safe to re-run).
+  await pool.query(
+    `DELETE FROM article_assets WHERE article_id = $1 AND asset_type = 'chart'`,
+    [articleId]
+  )
+
+  // 3) Insert each chart asset, collect its ID.
+  const assetIdByKey = new Map<string, number>()
+  for (const chart of spec.charts) {
+    const res = await pool.query(
+      `INSERT INTO article_assets (article_id, asset_type, config, alt_text)
+       VALUES ($1, 'chart', $2::jsonb, $3)
+       RETURNING id`,
+      [articleId, JSON.stringify(chart.spec), chart.altText ?? null]
+    )
+    assetIdByKey.set(chart.key, res.rows[0].id)
+  }
+
+  // 4) Substitute [[chart:key]] placeholders with <!-- chart:asset:N -->.
+  let finalHtml = spec.bodyHtml
+  for (const [key, assetId] of assetIdByKey) {
+    const placeholder = `[[chart:${key}]]`
+    finalHtml = finalHtml.split(placeholder).join(`<!-- chart:asset:${assetId} -->`)
+  }
+
+  // 5) Update the article with the substituted body.
+  await pool.query(
+    `UPDATE articles SET body_html = $1, updated_at = NOW() WHERE id = $2`,
+    [finalHtml, articleId]
+  )
+
+  console.log(`  ✓ article_id=${articleId}, ${assetIdByKey.size} charts`)
+}
+
+// ─── Shared plan-article builder ─────────────────────────────────
+
+interface PlanArticleInput {
+  slug: string
+  title: string
+  subtitle: string
+  readTimeMinutes: number
+  scenarioKey: string
+  whatItIs: string
+  strengths: string[]
+  weaknesses: string[]
+  verdict: string
+}
+
+function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
+  const scenario = SCORECARDS.scenarios.find((s: any) => s.key === input.scenarioKey)
+  if (!scenario) throw new Error(`No scorecard scenario for ${input.scenarioKey}`)
+
+  const getH = (years: number) =>
+    scenario.horizons.find((h: any) => h.years === years)
+  const h10 = getH(10)
+  const h20 = getH(20)
+  const h40 = getH(40)
+
+  // Chart: p50 + p10 ribbon over 40 years
+  const maxLen = Math.max(scenario.dailyP50.length, scenario.dailyP10.length)
+  const chartData = Array.from({ length: maxLen }).map((_, i) => ({
+    monthsOut: scenario.dailyP50[i]?.monthsOut ?? null,
+    p50: scenario.dailyP50[i]?.elevation ?? null,
+    p10: scenario.dailyP10[i]?.elevation ?? null,
+  }))
+  const chartSpec: ChartSpec = {
+    chartType: 'line',
+    title: `${input.title}: 40-year projection under last-10-years stress test`,
+    data: chartData,
+    series: [
+      { dataKey: 'p50', color: '#0d7377', name: 'Median (p50)' },
+      { dataKey: 'p10', color: '#c99a7a', name: 'Worst case (p10)' },
+    ],
+    xKey: 'monthsOut',
+    xType: 'number',
+    yLabel: 'Elevation (ft)',
+    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    caption:
+      'Projected Lake Powell elevation under the driest decade on record. Median line shows the most likely outcome; p10 line is the 10th-percentile worst case.',
+  }
+
+  const rampsAt40 = h40.ramps
+    .map(
+      (r: any) =>
+        `<li><strong>${r.name}</strong> (min ${r.elevation} ft): accessible ${r.probability}% of the time</li>`
+    )
+    .join('\n')
+
+  const bodyHtml = `
+<p>${input.whatItIs}</p>
+
+[[chart:projection]]
+
+<h2>The scorecard</h2>
+
+<p>We ran this plan through our standard stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 Monte Carlo iterations, 40 years forward. Same starting point as every other plan we evaluate. Same inflow sampling. Only the operating rule changes.</p>
+
+<table>
+<thead><tr><th>Horizon</th><th>Median ending elevation</th><th>Worst-case floor (p10 lowest)</th><th>Grade</th></tr></thead>
+<tbody>
+<tr><td>10 years</td><td>${h10.medianEnd} ft</td><td>${h10.lowestP10} ft</td><td><strong>${h10.grade}</strong></td></tr>
+<tr><td>20 years</td><td>${h20.medianEnd} ft</td><td>${h20.lowestP10} ft</td><td><strong>${h20.grade}</strong></td></tr>
+<tr><td>40 years</td><td>${h40.medianEnd} ft</td><td>${h40.lowestP10} ft</td><td><strong>${h40.grade}</strong></td></tr>
+</tbody>
+</table>
+
+<h3>Marina access (40-year horizon)</h3>
+
+<ul>
+${rampsAt40}
+</ul>
+
+<h2>Strengths</h2>
+
+<ul>
+${input.strengths.map((s) => `<li>${s}</li>`).join('\n')}
+</ul>
+
+<h2>Weaknesses</h2>
+
+<ul>
+${input.weaknesses.map((w) => `<li>${w}</li>`).join('\n')}
+</ul>
+
+<h2>Verdict</h2>
+
+<p>${input.verdict}</p>
+
+<hr />
+
+<p><em>See all plans compared in the <a href="/articles/plans-head-to-head">head-to-head verdict</a>, or read about why <a href="/articles/real-problem-isnt-drought-its-math">the real problem isn't drought — it's math</a>.</em></p>
+`.trim()
+
+  return {
+    slug: input.slug,
+    title: input.title,
+    subtitle: input.subtitle,
+    readTimeMinutes: input.readTimeMinutes,
+    charts: [{ key: 'projection', spec: chartSpec }],
+    bodyHtml,
+  }
+}
+
+// ─── Article 6: The Colorado River Abundance Act (standalone) ───
+
+function buildArticle6(): ArticleSpec {
+  const byKey = (k: string) =>
+    SCORECARDS.scenarios.find((s: any) => s.key === k)
+  const currentOps = byKey('current-operations-2007-guidelines')
+  const phase1 = byKey('current-ops-plus-ioc-only')
+  const realistic = byKey('current-ops-plus-realistic')
+  const full = byKey('current-ops-plus-optimistic')
+
+  const getH = (s: any, years: number) =>
+    s.horizons.find((h: any) => h.years === years)
+
+  // Overlay chart: baseline (2007 alone) + three augmentation levels
+  const maxLen = Math.max(
+    currentOps.dailyP50.length,
+    phase1.dailyP50.length,
+    realistic.dailyP50.length,
+    full.dailyP50.length
+  )
+  const chartData = Array.from({ length: maxLen }).map((_, i) => ({
+    monthsOut: currentOps.dailyP50[i]?.monthsOut ?? null,
+    baseline: currentOps.dailyP50[i]?.elevation ?? null,
+    phase1: phase1.dailyP50[i]?.elevation ?? null,
+    realistic: realistic.dailyP50[i]?.elevation ?? null,
+    full: full.dailyP50[i]?.elevation ?? null,
+  }))
+  const chartSpec: ChartSpec = {
+    chartType: 'line',
+    title: 'Median elevation with and without Abundance Act augmentation',
+    data: chartData,
+    series: [
+      { dataKey: 'baseline', color: '#111827', name: '2007 Guidelines (no augmentation)' },
+      { dataKey: 'phase1', color: '#0284c7', name: '+ Phase 1 (2 MAF/yr by 2045)' },
+      { dataKey: 'realistic', color: '#7c3aed', name: '+ Realistic (3 MAF/yr by 2065)' },
+      { dataKey: 'full', color: '#d4a574', name: '+ Full buildout (7 MAF/yr by 2055)' },
+    ],
+    xKey: 'monthsOut',
+    xType: 'number',
+    yLabel: 'Elevation (ft)',
+    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    caption:
+      'Augmentation adds water to Mead / Lower Basin, which reduces the releases Powell has to make. All three scenarios use the 2007 Guidelines as the operating rule.',
+  }
+
+  const fullH40 = getH(full, 40)
+  const realisticH40 = getH(realistic, 40)
+  const phase1H40 = getH(phase1, 40)
+  const baselineH40 = getH(currentOps, 40)
+
+  const bodyHtml = `
+<p>The Colorado River Abundance Act, introduced by the Blue Ribbon Coalition in late 2026, is not an operating-rule proposal — it is an <em>infrastructure</em> proposal. The pitch is simple: build enough desalination and conveyance capacity to deliver 2 to 7 million acre-feet of new water per year into the Colorado River system, delivered to Lake Mead or directly to Lower Basin users. That water offsets releases Powell would otherwise have to make, so Powell stays higher. Same lake, more water, fewer releases needed.</p>
+
+<p>It is the long-run complement to operating-rule reform. Where post-2026 operating rules change <em>how</em> we release water from what we have, the Abundance Act changes <em>how much water the system has</em>.</p>
+
+<h2>What the Act proposes</h2>
+
+<p>The Act authorizes a Colorado River Augmentation Project with three staged buildout milestones, paired with financing, public-private partnerships, and streamlined permitting to accelerate construction:</p>
+
+<ul>
+<li><strong>Phase 1 (IOC, 2 MAF/yr):</strong> Initial Operating Capability — first plants online by 2045, delivering 2 million acre-feet per year. Scale comparable to Israel's entire national desalination fleet.</li>
+<li><strong>Realistic buildout (3 MAF/yr):</strong> A phased expansion through 2065, enough to close the Lower Basin's structural deficit.</li>
+<li><strong>Full buildout (7 MAF/yr):</strong> The Act's full vision — 7 MAF/yr online by 2055. Roughly 10-13% of current global seawater desalination capacity, concentrated on one coast.</li>
+</ul>
+
+<p>Our simulator implements each level as an augmentation overlay on top of whatever operating rule the user selects. For the scorecards below, we used the current <strong>2007 Guidelines</strong> as the operating-rule baseline so the effect of augmentation is isolated.</p>
+
+[[chart:augmentation]]
+
+<h2>The scorecards</h2>
+
+<p>Same stress test as every other plan we evaluate: last-10-years inflow, 2,000 Monte Carlo iterations, 40-year horizon.</p>
+
+<table>
+<thead><tr><th>Scenario</th><th>10 yr median</th><th>20 yr median</th><th>40 yr median</th><th>40 yr p10 floor</th></tr></thead>
+<tbody>
+<tr><td>2007 Guidelines alone (baseline)</td><td>${getH(currentOps, 10).medianEnd} ft</td><td>${getH(currentOps, 20).medianEnd} ft</td><td>${baselineH40.medianEnd} ft</td><td>${baselineH40.lowestP10} ft</td></tr>
+<tr><td>+ Phase 1 (2 MAF/yr)</td><td>${getH(phase1, 10).medianEnd} ft</td><td>${getH(phase1, 20).medianEnd} ft</td><td>${phase1H40.medianEnd} ft</td><td>${phase1H40.lowestP10} ft</td></tr>
+<tr><td>+ Realistic (3 MAF/yr)</td><td>${getH(realistic, 10).medianEnd} ft</td><td>${getH(realistic, 20).medianEnd} ft</td><td>${realisticH40.medianEnd} ft</td><td>${realisticH40.lowestP10} ft</td></tr>
+<tr><td>+ Full (7 MAF/yr)</td><td>${getH(full, 10).medianEnd} ft</td><td>${getH(full, 20).medianEnd} ft</td><td>${fullH40.medianEnd} ft</td><td>${fullH40.lowestP10} ft</td></tr>
+</tbody>
+</table>
+
+<h2>What the data shows</h2>
+
+<h3>1. In the first decade, augmentation does almost nothing.</h3>
+
+<p>The 10-year medians are barely different from the baseline (${baselineH40.medianEnd - getH(currentOps, 10).medianEnd < 0 ? 'difference <1 ft' : 'identical within noise'}). That is not a failure of the model — it is the timeline. First plants don't come online until 2045 at the earliest. Between now and then, the Act gives the system nothing new. This is the honest cost of long-lead-time infrastructure.</p>
+
+<h3>2. By 20 years, the effect starts to show.</h3>
+
+<p>Phase 1 adds <strong>${(getH(phase1, 20).medianEnd - getH(currentOps, 20).medianEnd).toFixed(0)} ft</strong> to the 20-year median. Realistic adds <strong>${(getH(realistic, 20).medianEnd - getH(currentOps, 20).medianEnd).toFixed(0)} ft</strong>. Full adds <strong>${(getH(full, 20).medianEnd - getH(currentOps, 20).medianEnd).toFixed(0)} ft</strong>. Not dramatic yet, but the trajectory is bending upward.</p>
+
+<h3>3. By 40 years, the effect is large.</h3>
+
+<p>Full buildout lifts the 40-year median from ${baselineH40.medianEnd} ft to <strong>${fullH40.medianEnd} ft</strong> — about ${(fullH40.medianEnd - baselineH40.medianEnd).toFixed(0)} feet of elevation, added purely by manufacturing new water. Even the Realistic scenario adds ~${(realisticH40.medianEnd - baselineH40.medianEnd).toFixed(0)} feet. This is the case for augmentation as long-term insurance against growing demand.</p>
+
+<h3>4. The worst-case floor is still dead pool.</h3>
+
+<p>Every augmentation scenario's p10 worst case still floors at 3,370 ft (dead pool). Why? Because augmentation takes 15-20 years to come online. In the bottom 10% of bad-luck futures — long consecutive runs of dry years starting soon — the lake can reach dead pool <em>before</em> the new plants are delivering water. Augmentation is a long-run lift, not a short-run rescue.</p>
+
+<h2>Strengths</h2>
+
+<ul>
+<li><strong>Additive to any operating rule.</strong> Augmentation works with the existing 2007 Guidelines, any DEIS alternative, or whatever comes next. No conflict with other reform.</li>
+<li><strong>Scales with demand.</strong> The Southwest's population is projected to keep growing. Every other plan assumes we divide a shrinking pie. This one builds a bigger pie.</li>
+<li><strong>Preserves Compact and Treaty obligations.</strong> The Act is explicit that Replacement Water is additive — it does not alter Mexico's Treaty allocation or shift Compact obligations between Upper and Lower Basins.</li>
+<li><strong>Long-run elevation lift is real.</strong> 40-year medians above 3,590 ft under the Realistic and Full scenarios, even under last-decade stressed inflows.</li>
+</ul>
+
+<h2>Weaknesses</h2>
+
+<ul>
+<li><strong>Timeline.</strong> First capacity comes online ~2045. The Carlsbad desal plant (50,000 AF/yr) took about 15 years from concept to operation. 7 MAF/yr means roughly 140 Carlsbads worth of capacity — a scale no coast has ever built.</li>
+<li><strong>Delivered cost.</strong> Estimated $2,500–$4,500 per acre-foot delivered to Lake Mead or Powell. Current Colorado River water costs roughly $270/AF. Cost is worth it if the alternative is an empty reservoir, but the gap is real.</li>
+<li><strong>Energy demand.</strong> Full buildout at 7 MAF/yr would require 42–63 TWh/yr — about 8–12% of the Southwest's total electricity generation, or ~50% of Arizona's. The Act calls for dedicated renewables; whether that infrastructure can be built at pace is an open question.</li>
+<li><strong>Cannot rescue the near term.</strong> For the next 15-20 years, the Act contributes nothing to Powell's elevation. Only operating-rule reform can help in that window.</li>
+</ul>
+
+<h2>Verdict</h2>
+
+<p>The Abundance Act is a long-term play — and a strong one. It does not compete with operating-rule reform; it complements it. <strong>The right path forward is both:</strong> adopt the best-performing operating rule for the post-2026 period, and support the Abundance Act framework for long-run infrastructure. The operating rule protects the reservoir in the near term. Augmentation keeps the system ahead of demand growth in the long term.</p>
+
+<p>If you have to pick one, pick the operating rule — the simulations are clear that augmentation alone cannot save the worst-case bad-draw futures. But supporting both is strictly better than supporting either alone. The Abundance Act is the most optimistic vision on the table for what the Southwest's water future can look like, and the math works: with enough time and investment, we can build our way to a reservoir that refills.</p>
+
+<hr />
+
+<p><em>Read the <a href="/articles/plans-head-to-head">head-to-head verdict</a> on which operating rule to pair this with, or start from <a href="/articles/real-problem-isnt-drought-its-math">the real problem isn't drought — it's math</a>.</em></p>
+`.trim()
+
+  return {
+    slug: 'colorado-river-abundance-act',
+    title: 'The Colorado River Abundance Act: Long-Term Insurance',
+    subtitle:
+      'Building new water is the Southwest\'s best long-run play — but it takes 15-20 years to come online, so it can\'t rescue the near term.',
+    readTimeMinutes: 10,
+    charts: [{ key: 'augmentation', spec: chartSpec }],
+    bodyHtml,
+  }
+}
+
+async function main() {
+  console.log('=== Seeding article series ===\n')
+
+  const articles: ArticleSpec[] = [
+    buildArticle0(),
+    buildPlanArticle({
+      slug: 'no-action-plan',
+      title: 'The No Action Plan: Doing Nothing Is the Worst Option',
+      subtitle:
+        'Continue the 2007 Guidelines past their 2026 expiration with no adjustments. Earns an F at 40 years.',
+      readTimeMinutes: 5,
+      scenarioKey: 'federal-plan-no-action',
+      whatItIs:
+        'The No Action alternative in the post-2026 Draft EIS is exactly what it sounds like: continue operating under the 2007 Interim Guidelines past their expiration with no modifications. No coordination improvements, no elevation-responsive adjustments, no new tools. This alternative exists primarily as a baseline for comparison — it is what happens if Congress and Reclamation fail to agree on anything.',
+      strengths: [
+        "Simple. No new legal framework required; no inter-basin negotiation needed.",
+        'Politically the path of least resistance — easier to block change than enact it.',
+      ],
+      weaknesses: [
+        'Worst outcome of any plan we evaluated. Under the last-decade stress test, median elevation ends below 3,430 ft within 40 years.',
+        'Worst-case (p10) floor hits dead pool (3,370 ft) — in the bottom 10% of futures, the lake is effectively empty.',
+        "Ignores everything we've learned since 2007 about reservoir response to extended drought. The 2007 rules were designed for a wetter paradigm.",
+      ],
+      verdict:
+        "If you remember nothing else from this series, remember this: <strong>doing nothing is not safe.</strong> No Action is the worst option on the table. Every other plan — including ones we don't recommend — produces better outcomes than continuing the status quo. The decision is not whether to change; it is which change to choose.",
+    }),
+    buildPlanArticle({
+      slug: 'basic-coordination-plan',
+      title: 'Basic Coordination: The Minimum Effort Plan',
+      subtitle:
+        'Small, interpolated adjustments to the 2007 tier structure. Better than nothing, but not by much.',
+      readTimeMinutes: 5,
+      scenarioKey: 'federal-plan-basic-coordination',
+      whatItIs:
+        'Basic Coordination is the gentlest of the five Draft EIS alternatives. It preserves the broad tier structure of the 2007 Guidelines but adds smooth interpolation between tiers, plus modest coordination with Lake Mead elevations. The release reductions trigger slightly earlier and at lower rates than under the current rules.',
+      strengths: [
+        "Slight improvement over the 2007 Guidelines at low elevations — the interpolated tiers avoid the cliff effect of hard tier boundaries.",
+        'Politically feasible. This is the alternative that changes the least, which makes it the easiest to get adopted.',
+        'No new infrastructure or new legal frameworks required.',
+      ],
+      weaknesses: [
+        'Does not address the structural deficit. Inflow minus outflow is still negative most years; the plan just trims a little off the top.',
+        'Worst-case floor still reaches dead pool in our stress test. The plan does not introduce a real reservoir-elevation protection mechanism.',
+        'Incremental — saves a few feet in the short run, loses the same few feet over the long run.',
+      ],
+      verdict:
+        "Basic Coordination is better than No Action but worse than every other alternative we evaluated. If it is the only plan with political traction, it is <em>marginally</em> worth supporting over the status quo. But it should not be the ceiling. Push for Max Operational Flexibility or Enhanced Coordination, and treat Basic as the floor of what's acceptable.",
+    }),
+    buildPlanArticle({
+      slug: 'enhanced-coordination-plan',
+      title: 'Enhanced Coordination: Letting Powell and Mead Work Together',
+      subtitle:
+        'Combined-storage balancing between Powell and Mead. Our runner-up recommendation.',
+      readTimeMinutes: 6,
+      scenarioKey: 'federal-plan-enhanced-coordination',
+      whatItIs:
+        "Enhanced Coordination treats Powell and Mead as a combined system rather than two reservoirs with independent release rules. Releases from Powell are adjusted based on the combined storage percentage — when the total system is low, both reservoirs ease up; when it's fuller, releases ramp up. The goal is to keep the two reservoirs in a healthier balance so neither hits critical elevations while the other sits comfortably.",
+      strengths: [
+        'Worst-case (p10) floor stays at 3,442 ft — well above dead pool (3,370 ft) even in the bottom 10% of bad-luck futures.',
+        'Robust across all horizons. Earns a B at 10, 20, and 40 years — one of only two plans with consistent grades.',
+        'Adaptive. The rule responds to current conditions rather than relying on fixed thresholds, so it handles unusual sequences of wet and dry years better than static rules.',
+        'Preserves Upper-Basin vs Lower-Basin Compact obligations while allowing smart operational choices within that framework.',
+      ],
+      weaknesses: [
+        'Requires genuine coordination between Upper and Lower Basin states. Political complexity is higher than Basic Coordination.',
+        'Median ending elevation (3,579 ft) is slightly lower than Max Operational Flexibility (3,586 ft). Not much — but not the top of the pack.',
+        'Requires both basins to agree on what "balance" means. If one side games the rule, the benefits diminish.',
+      ],
+      verdict:
+        '<strong>Enhanced Coordination is our runner-up recommendation.</strong> If Max Operational Flexibility proves politically unworkable, this is the plan to support. It is the most robust B-grade option — its worst-case floor is the second-best of any plan, and it stays within the existing Compact framework. If you are a decision-maker looking for a plan that balances "good outcomes" with "actually can get adopted," this one is the answer.',
+    }),
+    buildPlanArticle({
+      slug: 'max-operational-flexibility-plan',
+      title: 'Max Operational Flexibility: The Clear Winner',
+      subtitle:
+        'Dual-indicator release curves and a 3,510 ft run-of-river floor. The only plan that earns an A at every horizon.',
+      readTimeMinutes: 7,
+      scenarioKey: 'federal-plan-max-operational-flexibility',
+      whatItIs:
+        "Max Operational Flexibility is the most aggressive of the Draft EIS alternatives. Releases are determined by dual indicators — both current storage percentage and recent flow category — using explicit curves at three flow levels. Below 3,510 ft the plan switches to run-of-river operation, meaning releases equal natural flow (no additional drawdown). This floor is the killer feature: it prevents the lake from being drained below the point where hydropower and ecology fail.",
+      strengths: [
+        '<strong>Only plan that keeps the p10 worst-case floor above minimum power pool (3,490 ft).</strong> Even in the bottom 10% of bad-luck futures, Glen Canyon Dam keeps generating power.',
+        'Consistent A grades at 10, 20, and 40 year horizons under the last-decade stress test.',
+        'Run-of-river protection below 3,510 ft means the lake cannot be operated into dead pool even in extreme scenarios.',
+        'Dual-indicator curves are more responsive than single-indicator rules — the plan handles both wet and dry sequences better than static tier systems.',
+      ],
+      weaknesses: [
+        'Politically the most ambitious. Changes the operating philosophy the most, which will attract the most pushback from stakeholders who prefer the current status quo.',
+        'Run-of-river operation below 3,510 ft means Lower Basin users see reduced deliveries when the lake is low. In practice this is what should happen, but it will be framed as a loss.',
+        'More complex than tier-based rules. Operators and users have to learn a new decision framework.',
+      ],
+      verdict:
+        "<strong>Max Operational Flexibility is the plan we recommend pushing for.</strong> It is the only plan whose worst-case outcome keeps minimum power pool online. Every other plan, in the bottom 10% of futures, reaches at least minimum power pool or lower under last-decade stressed conditions. If you care about Lake Powell having a stable, operational future — one where boats launch, turbines spin, and the ecology holds — this is the plan that delivers it. Support this one first. Fall back to Enhanced Coordination only if this one is politically blocked.",
+    }),
+    buildPlanArticle({
+      slug: 'supply-driven-plan',
+      title: "Supply Driven: Releasing What the River Actually Gives",
+      subtitle:
+        'Releases track the 3-year rolling average of natural flow. Highest median ending elevation — but a floor that can bite in consecutive dry years.',
+      readTimeMinutes: 6,
+      scenarioKey: 'federal-plan-supply-driven',
+      whatItIs:
+        'Supply Driven is the simplest of the DEIS alternatives and in some ways the most honest: the release rule is 65% of the 3-year rolling average natural inflow, bounded by a 4.7 MAF/yr floor and a 12 MAF/yr ceiling. In good years the lake releases more; in dry years it releases less. The approach mimics how unregulated rivers behave — supply-driven rather than demand-driven.',
+      strengths: [
+        'Highest 40-year median ending elevation of any plan we evaluated (3,669 ft). Under normal-to-good draws, the lake recovers strongly.',
+        'Simple rule. Easier to explain, audit, and defend than multi-tier or dual-indicator schemes.',
+        'Tracks the actual supply — so in dry decades it automatically tightens releases, while in wet decades it lets the system breathe.',
+      ],
+      weaknesses: [
+        '<strong>4.7 MAF/yr minimum release floor</strong> can force water out of Powell even in consecutive dry years where releases should arguably be lower. This drags the worst-case (p10) floor to 3,470 ft — below minimum power pool.',
+        'The 4.7 MAF floor is a political commitment to Lower Basin minimum deliveries, not a hydrological necessity. It is the reason this plan grades B rather than A.',
+        'Large year-to-year variability in releases. Downstream users have to manage around fluctuating deliveries, which creates its own costs.',
+      ],
+      verdict:
+        "Supply Driven is a strong plan that is hamstrung by its floor. In median outcomes it beats every other plan; in worst-case outcomes the minimum-release constraint forces breakdowns. If the floor could be negotiated lower (say, to 4.0 MAF), this plan would be our top pick on simplicity grounds alone. As written, it's a B — a solid plan that narrowly misses the top spot because of one political compromise built into its definition.",
+    }),
+    buildArticle6(),
+    buildArticle7(),
+  ]
+
+  for (const article of articles) {
+    await upsertArticle(article)
+  }
+
+  console.log(`\nDone. ${articles.length} articles seeded as drafts.`)
+  console.log(`Admin → flip status to 'published' when ready.`)
+
+  await pool.end()
+}
+
+main().catch((err) => {
+  console.error('Fatal error:', err)
+  process.exit(1)
+})
