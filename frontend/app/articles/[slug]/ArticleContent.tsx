@@ -40,9 +40,13 @@ export default function ArticleContent({ html, chartAssets }: Props) {
 
   const proseClasses = `prose prose-gray prose-lg max-w-none font-light
     prose-headings:font-light prose-headings:tracking-tight
+    prose-h2:mt-10 prose-h2:mb-4 prose-h3:mt-8 prose-h3:mb-3
     prose-p:text-gray-600 prose-p:leading-relaxed
     prose-a:text-[#d4a574] prose-a:no-underline hover:prose-a:underline
-    prose-strong:text-gray-800 prose-strong:font-normal`
+    prose-strong:text-gray-800 prose-strong:font-normal
+    prose-table:text-sm prose-th:text-left prose-th:py-2 prose-th:px-3
+    prose-td:py-2 prose-td:px-3 prose-td:border-b prose-td:border-gray-100
+    prose-li:text-gray-600`
 
   if (segments.length === 1 && segments[0].type === 'html') {
     return (

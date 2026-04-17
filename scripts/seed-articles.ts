@@ -72,10 +72,9 @@ interface ArticleSpec {
 
 // ─── Reference lines reused across charts ───────────────────────
 const REF_LINES = {
-  deadPool: { y: 3370, label: 'Dead Pool (3,370 ft)', color: '#ef4444', strokeDasharray: '5 5' } as ReferenceLineSpec,
-  minPower: { y: 3490, label: 'Min Power Pool (3,490 ft)', color: '#f59e0b', strokeDasharray: '5 5' } as ReferenceLineSpec,
-  healthy: { y: 3525, label: 'Healthy (3,525 ft)', color: '#8b9a6b', strokeDasharray: '5 5' } as ReferenceLineSpec,
-  fullPool: { y: 3700, label: 'Full Pool (3,700 ft)', color: '#0284c7', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  deadPool: { y: 3370, label: 'Dead Pool (3,370)', color: '#ef4444', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  minPower: { y: 3490, label: 'Min Power (3,490)', color: '#f59e0b', strokeDasharray: '5 5' } as ReferenceLineSpec,
+  fullPool: { y: 3700, label: 'Full Pool (3,700)', color: '#0284c7', strokeDasharray: '5 5' } as ReferenceLineSpec,
 }
 
 // ─── Article 0: The Real Problem Isn't Drought, It's Math ──────
@@ -122,10 +121,8 @@ function buildArticle0(): ArticleSpec {
     yLabel: 'Elevation (ft)',
     referenceLines: [
       { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
-      { y: 3588, label: 'Antelope Pt (3,588)', color: '#8b5cf6', strokeDasharray: '3 3' },
-      { y: 3583, label: 'The Cut (3,583)', color: '#a855f7', strokeDasharray: '3 3' },
+      { y: 3585, label: 'Antelope / The Cut', color: '#8b5cf6', strokeDasharray: '3 3' },
       { y: 3550, label: 'Wahweap (3,550)', color: '#c084fc', strokeDasharray: '3 3' },
-      REF_LINES.healthy,
       REF_LINES.minPower,
       REF_LINES.deadPool,
     ],
@@ -275,7 +272,7 @@ function buildArticle7(): ArticleSpec {
     xKey: 'monthsOut',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
     caption:
       'Median (p50) trajectory under the driest decade on record. Same starting point, same inflow sampling, only the operating rule changes.',
   }
@@ -304,7 +301,7 @@ function buildArticle7(): ArticleSpec {
     xKey: 'monthsOut',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
     caption:
       'Augmentation scenarios layered on the 2007 Guidelines. Note the delayed onset (buildout ~2045) — augmentation is a long-run lift, not a short-run rescue.',
   }
@@ -502,17 +499,10 @@ function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
     xKey: 'monthsOut',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
     caption:
       'Projected Lake Powell elevation under the driest decade on record. Median line shows the most likely outcome; p10 line is the 10th-percentile worst case.',
   }
-
-  const rampsAt40 = h40.ramps
-    .map(
-      (r: any) =>
-        `<li><strong>${r.name}</strong> (min ${r.elevation} ft): accessible ${r.probability}% of the time</li>`
-    )
-    .join('\n')
 
   const bodyHtml = `
 <p>${input.whatItIs}</p>
@@ -531,12 +521,6 @@ function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
 <tr><td>40 years</td><td>${h40.medianEnd} ft</td><td>${h40.lowestP10} ft</td><td><strong>${h40.grade}</strong></td></tr>
 </tbody>
 </table>
-
-<h3>Marina access (40-year horizon)</h3>
-
-<ul>
-${rampsAt40}
-</ul>
 
 <h2>Strengths</h2>
 
@@ -609,7 +593,7 @@ function buildArticle6(): ArticleSpec {
     xKey: 'monthsOut',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
     caption:
       'Augmentation adds water to Mead / Lower Basin, which reduces the releases Powell has to make. All three scenarios use the 2007 Guidelines as the operating rule.',
   }
