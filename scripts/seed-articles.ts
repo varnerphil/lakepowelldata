@@ -21,6 +21,12 @@ const COUNTERFACTUALS = JSON.parse(
   readFileSync(join(DATA_DIR, 'counterfactuals.json'), 'utf8')
 )
 
+/** Convert monthsOut to a calendar year for chart x-axes. */
+const START_YEAR = new Date(SCORECARDS.startDate).getFullYear()
+function monthsToYear(m: number): number {
+  return Math.round((START_YEAR + m / 12) * 10) / 10
+}
+
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL environment variable is required')
   process.exit(1)
@@ -77,6 +83,16 @@ const REF_LINES = {
   fullPool: { y: 3700, label: 'Full Pool (3,700)', color: '#0284c7', strokeDasharray: '5 5' } as ReferenceLineSpec,
 }
 
+/** Standard ramp + threshold reference lines for all article charts. */
+const STANDARD_REF_LINES: ReferenceLineSpec[] = [
+  { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
+  { y: 3585, label: 'Antelope / The Cut', color: '#8b5cf6', strokeDasharray: '3 3' },
+  { y: 3578, label: 'Bullfrog (3,578)', color: '#7c3aed', strokeDasharray: '3 3' },
+  { y: 3553, label: 'Wahweap / Halls', color: '#c084fc', strokeDasharray: '3 3' },
+  REF_LINES.minPower,
+  REF_LINES.deadPool,
+]
+
 // ─── Article 0: The Real Problem Isn't Drought, It's Math ──────
 
 function buildArticle0(): ArticleSpec {
@@ -119,13 +135,7 @@ function buildArticle0(): ArticleSpec {
     xKey: 'date',
     xType: 'date',
     yLabel: 'Elevation (ft)',
-    referenceLines: [
-      { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
-      { y: 3585, label: 'Antelope / The Cut', color: '#8b5cf6', strokeDasharray: '3 3' },
-      { y: 3550, label: 'Wahweap (3,550)', color: '#c084fc', strokeDasharray: '3 3' },
-      REF_LINES.minPower,
-      REF_LINES.deadPool,
-    ],
+    referenceLines: STANDARD_REF_LINES,
     caption:
       'Replaying actual inflows from Jan 1996 under reduced release rates. Accounts for evaporation and spillway. Dashed lines show key boat ramp access thresholds.',
   }
@@ -249,7 +259,7 @@ function buildArticle7(): ArticleSpec {
     ...[noAction, basic, enhanced, maxFlex, supply, currentOps].map((s) => s.dailyP50.length)
   )
   const chartPlansOverlayData = Array.from({ length: maxLen }).map((_, i) => ({
-    monthsOut: noAction.dailyP50[i]?.monthsOut ?? null,
+    year: noAction.dailyP50[i] ? monthsToYear(noAction.dailyP50[i].monthsOut) : null,
     noAction: noAction.dailyP50[i]?.elevation ?? null,
     basic: basic.dailyP50[i]?.elevation ?? null,
     enhanced: enhanced.dailyP50[i]?.elevation ?? null,
@@ -269,10 +279,10 @@ function buildArticle7(): ArticleSpec {
       { dataKey: 'currentOps', color: '#ca8a04', name: '2007 Guidelines (status quo)' },
       { dataKey: 'noAction', color: '#dc2626', name: 'No Action' },
     ],
-    xKey: 'monthsOut',
+    xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: STANDARD_REF_LINES,
     caption:
       'Median (p50) trajectory under the driest decade on record. Same starting point, same inflow sampling, only the operating rule changes.',
   }
@@ -282,7 +292,7 @@ function buildArticle7(): ArticleSpec {
     ...[maxFlex, augPhase1, augRealistic, augFull].map((s) => s.dailyP50.length)
   )
   const chartAugData = Array.from({ length: augMaxLen }).map((_, i) => ({
-    monthsOut: maxFlex.dailyP50[i]?.monthsOut ?? null,
+    year: maxFlex.dailyP50[i] ? monthsToYear(maxFlex.dailyP50[i].monthsOut) : null,
     maxFlex: maxFlex.dailyP50[i]?.elevation ?? null,
     phase1: augPhase1.dailyP50[i]?.elevation ?? null,
     realistic: augRealistic.dailyP50[i]?.elevation ?? null,
@@ -298,10 +308,10 @@ function buildArticle7(): ArticleSpec {
       { dataKey: 'realistic', color: '#7c3aed', name: 'Current Ops + Abundance Realistic (3 MAF)' },
       { dataKey: 'full', color: '#d4a574', name: 'Current Ops + Abundance Full (7 MAF)' },
     ],
-    xKey: 'monthsOut',
+    xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: STANDARD_REF_LINES,
     caption:
       'Augmentation scenarios layered on the 2007 Guidelines. Note the delayed onset (buildout ~2045) — augmentation is a long-run lift, not a short-run rescue.',
   }
@@ -327,17 +337,56 @@ function buildArticle7(): ArticleSpec {
 
 <p>At the 40-year horizon, under the worst inflow regime in the record:</p>
 
-<table>
-<thead><tr><th>Plan</th><th>Median ending</th><th>Worst-case floor (p10)</th><th>Grade</th></tr></thead>
+<div style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
+<table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
+<thead>
+<tr style="border-bottom:2px solid #e5e7eb; text-align:left; background:#f9fafb;">
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Plan</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Median Ending</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Worst-Case Floor</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151; text-align:center;">Grade</th>
+</tr>
+</thead>
 <tbody>
-<tr><td><strong>Max Operational Flexibility</strong></td><td>${winnerH40.medianEnd} ft</td><td>${winnerH40.lowestP10} ft</td><td><strong>A</strong></td></tr>
-<tr><td>Supply Driven</td><td>${supplyH40.medianEnd} ft</td><td>${supplyH40.lowestP10} ft</td><td>B</td></tr>
-<tr><td>Enhanced Coordination</td><td>${enhancedH40.medianEnd} ft</td><td>${enhancedH40.lowestP10} ft</td><td>B</td></tr>
-<tr><td>Basic Coordination</td><td>${getH(basic, 40).medianEnd} ft</td><td>${getH(basic, 40).lowestP10} ft</td><td>D</td></tr>
-<tr><td>2007 Guidelines (status quo)</td><td>${currentOpsH40.medianEnd} ft</td><td>${currentOpsH40.lowestP10} ft</td><td>D</td></tr>
-<tr><td>No Action</td><td>${noActionH40.medianEnd} ft</td><td>${noActionH40.lowestP10} ft</td><td>F</td></tr>
+<tr style="border-bottom:1px solid #f3f4f6; background:#f0fdf4;">
+<td style="padding:0.75rem 1rem; font-weight:500;">Max Operational Flexibility</td>
+<td style="padding:0.75rem 1rem; font-weight:600;">${winnerH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${winnerH40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#d1fae5; color:#065f46;">A</span></td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6;">
+<td style="padding:0.75rem 1rem;">Supply Driven</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${supplyH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${supplyH40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#dbeafe; color:#1e40af;">B</span></td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
+<td style="padding:0.75rem 1rem;">Enhanced Coordination</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${enhancedH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${enhancedH40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#dbeafe; color:#1e40af;">B</span></td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6;">
+<td style="padding:0.75rem 1rem;">Basic Coordination</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${getH(basic, 40).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${getH(basic, 40).lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#f3f4f6; color:#374151;">D</span></td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
+<td style="padding:0.75rem 1rem;">2007 Guidelines (status quo)</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${currentOpsH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${currentOpsH40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#f3f4f6; color:#374151;">D</span></td>
+</tr>
+<tr>
+<td style="padding:0.75rem 1rem;">No Action</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${noActionH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${noActionH40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#fee2e2; color:#991b1b;">F</span></td>
+</tr>
 </tbody>
 </table>
+</div>
 
 <p>(Grades are based on ending elevation and worst-case floor; see each plan's article for the full 10/20/40 year breakdown.)</p>
 
@@ -484,7 +533,7 @@ function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
   // Chart: p50 + p10 ribbon over 40 years
   const maxLen = Math.max(scenario.dailyP50.length, scenario.dailyP10.length)
   const chartData = Array.from({ length: maxLen }).map((_, i) => ({
-    monthsOut: scenario.dailyP50[i]?.monthsOut ?? null,
+    year: scenario.dailyP50[i] ? monthsToYear(scenario.dailyP50[i].monthsOut) : null,
     p50: scenario.dailyP50[i]?.elevation ?? null,
     p10: scenario.dailyP10[i]?.elevation ?? null,
   }))
@@ -496,10 +545,10 @@ function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
       { dataKey: 'p50', color: '#0d7377', name: 'Median (p50)' },
       { dataKey: 'p10', color: '#c99a7a', name: 'Worst case (p10)' },
     ],
-    xKey: 'monthsOut',
+    xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: STANDARD_REF_LINES,
     caption:
       'Projected Lake Powell elevation under the driest decade on record. Median line shows the most likely outcome; p10 line is the 10th-percentile worst case.',
   }
@@ -513,14 +562,38 @@ function buildPlanArticle(input: PlanArticleInput): ArticleSpec {
 
 <p>We ran this plan through our standard stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 Monte Carlo iterations, 40 years forward. Same starting point as every other plan we evaluate. Same inflow sampling. Only the operating rule changes.</p>
 
-<table>
-<thead><tr><th>Horizon</th><th>Median ending elevation</th><th>Worst-case floor (p10 lowest)</th><th>Grade</th></tr></thead>
+<div style="overflow-x:auto; margin: 1.5rem 0;">
+<table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
+<thead>
+<tr style="border-bottom:2px solid #e5e7eb; text-align:left;">
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Horizon</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Median Ending</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Worst-Case Floor</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151; text-align:center;">Grade</th>
+</tr>
+</thead>
 <tbody>
-<tr><td>10 years</td><td>${h10.medianEnd} ft</td><td>${h10.lowestP10} ft</td><td><strong>${h10.grade}</strong></td></tr>
-<tr><td>20 years</td><td>${h20.medianEnd} ft</td><td>${h20.lowestP10} ft</td><td><strong>${h20.grade}</strong></td></tr>
-<tr><td>40 years</td><td>${h40.medianEnd} ft</td><td>${h40.lowestP10} ft</td><td><strong>${h40.grade}</strong></td></tr>
+<tr style="border-bottom:1px solid #f3f4f6;">
+<td style="padding:0.75rem 1rem; color:#6b7280;">10 years</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${h10.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${h10.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${h10.grade === 'A' ? 'background:#d1fae5; color:#065f46;' : h10.grade === 'B' ? 'background:#dbeafe; color:#1e40af;' : h10.grade === 'F' ? 'background:#fee2e2; color:#991b1b;' : 'background:#f3f4f6; color:#374151;'}">${h10.grade}</span></td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
+<td style="padding:0.75rem 1rem; color:#6b7280;">20 years</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${h20.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${h20.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${h20.grade === 'A' ? 'background:#d1fae5; color:#065f46;' : h20.grade === 'B' ? 'background:#dbeafe; color:#1e40af;' : h20.grade === 'F' ? 'background:#fee2e2; color:#991b1b;' : 'background:#f3f4f6; color:#374151;'}">${h20.grade}</span></td>
+</tr>
+<tr>
+<td style="padding:0.75rem 1rem; color:#6b7280;">40 years</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${h40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${h40.lowestP10} ft</td>
+<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${h40.grade === 'A' ? 'background:#d1fae5; color:#065f46;' : h40.grade === 'B' ? 'background:#dbeafe; color:#1e40af;' : h40.grade === 'F' ? 'background:#fee2e2; color:#991b1b;' : 'background:#f3f4f6; color:#374151;'}">${h40.grade}</span></td>
+</tr>
 </tbody>
 </table>
+</div>
 
 <h2>Strengths</h2>
 
@@ -574,7 +647,7 @@ function buildArticle6(): ArticleSpec {
     full.dailyP50.length
   )
   const chartData = Array.from({ length: maxLen }).map((_, i) => ({
-    monthsOut: currentOps.dailyP50[i]?.monthsOut ?? null,
+    year: currentOps.dailyP50[i] ? monthsToYear(currentOps.dailyP50[i].monthsOut) : null,
     baseline: currentOps.dailyP50[i]?.elevation ?? null,
     phase1: phase1.dailyP50[i]?.elevation ?? null,
     realistic: realistic.dailyP50[i]?.elevation ?? null,
@@ -590,10 +663,10 @@ function buildArticle6(): ArticleSpec {
       { dataKey: 'realistic', color: '#7c3aed', name: '+ Realistic (3 MAF/yr by 2065)' },
       { dataKey: 'full', color: '#d4a574', name: '+ Full buildout (7 MAF/yr by 2055)' },
     ],
-    xKey: 'monthsOut',
+    xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: STANDARD_REF_LINES,
     caption:
       'Augmentation adds water to Mead / Lower Basin, which reduces the releases Powell has to make. All three scenarios use the 2007 Guidelines as the operating rule.',
   }
@@ -626,15 +699,49 @@ function buildArticle6(): ArticleSpec {
 
 <p>Same stress test as every other plan we evaluate: last-10-years inflow, 2,000 Monte Carlo iterations, 40-year horizon.</p>
 
-<table>
-<thead><tr><th>Scenario</th><th>10 yr median</th><th>20 yr median</th><th>40 yr median</th><th>40 yr p10 floor</th></tr></thead>
+<div style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
+<table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
+<thead>
+<tr style="border-bottom:2px solid #e5e7eb; text-align:left; background:#f9fafb;">
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Scenario</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">10 yr</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">20 yr</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">40 yr</th>
+<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">40 yr floor</th>
+</tr>
+</thead>
 <tbody>
-<tr><td>2007 Guidelines alone (baseline)</td><td>${getH(currentOps, 10).medianEnd} ft</td><td>${getH(currentOps, 20).medianEnd} ft</td><td>${baselineH40.medianEnd} ft</td><td>${baselineH40.lowestP10} ft</td></tr>
-<tr><td>+ Phase 1 (2 MAF/yr)</td><td>${getH(phase1, 10).medianEnd} ft</td><td>${getH(phase1, 20).medianEnd} ft</td><td>${phase1H40.medianEnd} ft</td><td>${phase1H40.lowestP10} ft</td></tr>
-<tr><td>+ Realistic (3 MAF/yr)</td><td>${getH(realistic, 10).medianEnd} ft</td><td>${getH(realistic, 20).medianEnd} ft</td><td>${realisticH40.medianEnd} ft</td><td>${realisticH40.lowestP10} ft</td></tr>
-<tr><td>+ Full (7 MAF/yr)</td><td>${getH(full, 10).medianEnd} ft</td><td>${getH(full, 20).medianEnd} ft</td><td>${fullH40.medianEnd} ft</td><td>${fullH40.lowestP10} ft</td></tr>
+<tr style="border-bottom:1px solid #f3f4f6;">
+<td style="padding:0.75rem 1rem; color:#6b7280;">2007 Guidelines (baseline)</td>
+<td style="padding:0.75rem 1rem;">${getH(currentOps, 10).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${getH(currentOps, 20).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${baselineH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${baselineH40.lowestP10} ft</td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
+<td style="padding:0.75rem 1rem;">+ Phase 1 (2 MAF/yr)</td>
+<td style="padding:0.75rem 1rem;">${getH(phase1, 10).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${getH(phase1, 20).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${phase1H40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${phase1H40.lowestP10} ft</td>
+</tr>
+<tr style="border-bottom:1px solid #f3f4f6;">
+<td style="padding:0.75rem 1rem;">+ Realistic (3 MAF/yr)</td>
+<td style="padding:0.75rem 1rem;">${getH(realistic, 10).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${getH(realistic, 20).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${realisticH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${realisticH40.lowestP10} ft</td>
+</tr>
+<tr style="background:#fafafa;">
+<td style="padding:0.75rem 1rem;">+ Full (7 MAF/yr)</td>
+<td style="padding:0.75rem 1rem;">${getH(full, 10).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem;">${getH(full, 20).medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; font-weight:500;">${fullH40.medianEnd} ft</td>
+<td style="padding:0.75rem 1rem; color:#6b7280;">${fullH40.lowestP10} ft</td>
+</tr>
 </tbody>
 </table>
+</div>
 
 <h2>What the data shows</h2>
 
