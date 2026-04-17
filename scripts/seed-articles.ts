@@ -398,11 +398,17 @@ function buildArticle7(): ArticleSpec {
 
 <p><a href="/articles/max-operational-flexibility-plan">Full scorecard for Max Operational Flexibility →</a></p>
 
-<h2>Runner-up: Enhanced Coordination</h2>
+<h2>Runner-up: Supply Driven</h2>
 
-<p>Supply Driven has a higher median ending elevation (${supplyH40.medianEnd} ft vs ${enhancedH40.medianEnd} ft). But it has a built-in 4.7 MAF minimum annual release floor. In consecutive dry years, that floor forces water out of Powell even when it probably should not, dragging the worst-case p10 lower than Enhanced Coordination's.</p>
+<p>Supply Driven produces the <strong>highest median elevation of any plan</strong> — ${supplyH40.medianEnd} ft at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from today. That is near Hite territory. For anyone who cares about what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full."</p>
 
-<p><strong>Enhanced Coordination is the better bet for the runner-up spot</strong> — not because the median is higher, but because it is more robust in the bottom half of outcomes. If Max Op Flex is politically unworkable, Enhanced Coordination is the fallback that still earns a B at every horizon.</p>
+<p>It earns an A at the 20-year and 40-year horizons. At 10 years it scores B because the 4.7 MAF minimum release floor can bite during consecutive dry years in the short run — but over time, the supply-tracking logic produces the strongest recovery of any plan.</p>
+
+<p><a href="/articles/supply-driven-plan">Full scorecard for Supply Driven →</a></p>
+
+<h2>Third place: Enhanced Coordination</h2>
+
+<p>Enhanced Coordination earns B at every horizon. Its median (${enhancedH40.medianEnd} ft) is lower than Supply Driven's, but its worst-case floor (${enhancedH40.lowestP10} ft) is better than Supply Driven's (${supplyH40.lowestP10} ft). If you value downside protection above all else and Max Op Flex is politically out of reach, Enhanced Coordination is the conservative fallback.</p>
 
 <p><a href="/articles/enhanced-coordination-plan">Full scorecard for Enhanced Coordination →</a></p>
 
@@ -432,9 +438,9 @@ function buildArticle7(): ArticleSpec {
 
 <h2>The bottom line</h2>
 
-<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle. One plan clearly wins the stress test, one is a solid runner-up, and the status quo is a failing grade.</p>
+<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle. Two plans clearly rise above the rest, and the status quo is a failing grade.</p>
 
-<p>If you live near the lake, launch boats on it, run a business that depends on it, or just love the place — the plan worth pushing for is <strong>Max Operational Flexibility</strong>, with <strong>Enhanced Coordination</strong> as the acceptable fallback. Anything less than those two is mathematically worse than either.</p>
+<p>If you live near the lake, launch boats on it, run a business that depends on it, or just love the place — the plans worth pushing for are <strong>Max Operational Flexibility</strong> (best overall protection) and <strong>Supply Driven</strong> (best lake recovery). Enhanced Coordination is a solid third if neither of those is politically achievable. Anything less is mathematically worse.</p>
 
 <p><em>Every number in this article comes from Monte Carlo simulations you can re-run on this site's <a href="/simulator">simulator</a>. Sources and methodology are documented on the <a href="/about">About page</a>.</em></p>
 `.trim()
@@ -853,7 +859,7 @@ async function main() {
       slug: 'enhanced-coordination-plan',
       title: 'Enhanced Coordination: Letting Powell and Mead Work Together',
       subtitle:
-        'Combined-storage balancing between Powell and Mead. Our runner-up recommendation.',
+        'Combined-storage balancing between Powell and Mead. Solid third-place option.',
       readTimeMinutes: 6,
       scenarioKey: 'federal-plan-enhanced-coordination',
       whatItIs:
@@ -870,7 +876,7 @@ async function main() {
         'Requires both basins to agree on what "balance" means. If one side games the rule, the benefits diminish.',
       ],
       verdict:
-        '<strong>Enhanced Coordination is our runner-up recommendation.</strong> If Max Operational Flexibility proves politically unworkable, this is the plan to support. It is the most robust B-grade option — its worst-case floor is the second-best of any plan, and it stays within the existing Compact framework. If you are a decision-maker looking for a plan that balances "good outcomes" with "actually can get adopted," this one is the answer.',
+        '<strong>Enhanced Coordination is our third-place recommendation.</strong> It sits behind Max Operational Flexibility and Supply Driven, both of which produce better outcomes. But if neither of those is politically achievable, Enhanced Coordination is a solid fallback — it earns B at every horizon and stays within the existing Compact framework.',
     }),
     buildPlanArticle({
       slug: 'max-operational-flexibility-plan',

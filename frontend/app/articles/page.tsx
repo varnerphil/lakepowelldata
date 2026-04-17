@@ -18,8 +18,8 @@ const SERIES_SLUGS = [
 
 const SERIES_META: Record<string, { badge?: string; badgeColor?: string }> = {
   'real-problem-isnt-drought-its-math': { badge: 'Start here', badgeColor: 'bg-teal-100 text-teal-800' },
-  'max-operational-flexibility-plan': { badge: 'Our pick', badgeColor: 'bg-emerald-100 text-emerald-800' },
-  'enhanced-coordination-plan': { badge: 'Runner-up', badgeColor: 'bg-blue-100 text-blue-700' },
+  'max-operational-flexibility-plan': { badge: 'Our #1 pick', badgeColor: 'bg-emerald-100 text-emerald-800' },
+  'supply-driven-plan': { badge: '#2 pick', badgeColor: 'bg-blue-100 text-blue-700' },
   'plans-head-to-head': { badge: 'The verdict', badgeColor: 'bg-gray-900 text-white' },
 }
 

@@ -140,10 +140,11 @@ async function getWaterYearPatterns(): Promise<WaterYearPattern[]> {
 // Identical for every scenario so articles can compare apples-to-apples.
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F'
 
-function grade(result: MonteCarloResult): Grade {
-  // Grade on two things that actually matter for advocacy:
+function grade(result: MonteCarloResult, startElevation: number): Grade {
+  // Grade on three things:
   //   (1) median ending elevation — where we end up
   //   (2) worst-case floor (p10 lowest reached) — how bad it gets in bad runs
+  //   (3) elevation gain — how much recovery does the plan produce?
   // Thresholds correspond to meaningful operational milestones:
   //   3,580 ≈ 60% full, comfortable pool
   //   3,525 ≈ 40% full, healthy pool
@@ -152,8 +153,12 @@ function grade(result: MonteCarloResult): Grade {
   //   3,370 = dead pool
   const median = result.summary.medianEndingElevation
   const worst = result.summary.lowestElevationReached.p10
+  const gain = median - startElevation
 
+  // A: strong recovery + floor stays above min power (best combined)
   if (median >= 3580 && worst >= 3490) return 'A'
+  // A: exceptional recovery (100+ ft gain) even if floor dips slightly
+  if (median >= 3620 && worst >= 3430 && gain >= 100) return 'A'
   if (median >= 3525 && worst >= 3430) return 'B'
   if (median >= 3490 && worst >= 3400) return 'C'
   if (median >= 3430 && worst >= 3370) return 'D'
@@ -165,6 +170,7 @@ interface HorizonScore {
   medianEnd: number
   p10End: number
   lowestP10: number
+  gain: number
   stayAboveMinPower: number
   stayAbove3525: number
   stayAboveDeadPool: number
@@ -182,22 +188,24 @@ interface ScenarioResult {
   dailyP10: Array<{ monthsOut: number; elevation: number }>
 }
 
-function summarize(result: MonteCarloResult, horizon: number): HorizonScore {
+function summarize(result: MonteCarloResult, horizon: number, startElevation: number): HorizonScore {
   const ramps = result.thresholdProbabilities.rampProbabilities.map((r) => ({
     name: r.rampName,
     elevation: r.elevation,
     probability: Math.round(r.probabilityAccessible),
   }))
+  const medianEnd = Math.round(result.summary.medianEndingElevation * 10) / 10
   return {
     years: horizon,
-    medianEnd: Math.round(result.summary.medianEndingElevation * 10) / 10,
+    medianEnd,
     p10End: Math.round(result.summary.p10EndingElevation * 10) / 10,
     lowestP10: Math.round(result.summary.lowestElevationReached.p10 * 10) / 10,
+    gain: Math.round((medianEnd - startElevation) * 10) / 10,
     stayAboveMinPower: result.thresholdProbabilities.stayAboveMinPower,
     stayAbove3525: result.thresholdProbabilities.stayAbove3525,
     stayAboveDeadPool: result.thresholdProbabilities.stayAboveDeadPool,
     ramps,
-    grade: grade(result),
+    grade: grade(result, startElevation),
   }
 }
 
@@ -286,9 +294,9 @@ async function runScenario(params: {
   )
 
   const horizons: HorizonScore[] = [
-    summarize(h10, 10),
-    summarize(h20, 20),
-    summarize(full, 40),
+    summarize(h10, 10, latest.elevation),
+    summarize(h20, 20, latest.elevation),
+    summarize(full, 40, latest.elevation),
   ]
 
   return {
