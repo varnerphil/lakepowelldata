@@ -120,9 +120,17 @@ function buildArticle0(): ArticleSpec {
     xKey: 'date',
     xType: 'date',
     yLabel: 'Elevation (ft)',
-    referenceLines: [REF_LINES.healthy, REF_LINES.minPower, REF_LINES.deadPool],
+    referenceLines: [
+      { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
+      { y: 3588, label: 'Antelope Pt (3,588)', color: '#8b5cf6', strokeDasharray: '3 3' },
+      { y: 3583, label: 'The Cut (3,583)', color: '#a855f7', strokeDasharray: '3 3' },
+      { y: 3550, label: 'Wahweap (3,550)', color: '#c084fc', strokeDasharray: '3 3' },
+      REF_LINES.healthy,
+      REF_LINES.minPower,
+      REF_LINES.deadPool,
+    ],
     caption:
-      'Replaying actual inflows from Jan 1996 under reduced release rates. Accounts for evaporation and spillway.',
+      'Replaying actual inflows from Jan 1996 under reduced release rates. Accounts for evaporation and spillway. Dashed lines show key boat ramp access thresholds.',
   }
 
   // CHART 2: Annual inflow vs outflow bars
@@ -188,12 +196,6 @@ function buildArticle0(): ArticleSpec {
 <p>Evaporation is not on the outflow ledger. It is not counted against anyone's allocation. It is just gone. Accounting for 30 years of it is approximately ${((550_000 * 30) / 1_000_000).toFixed(0)} MAF — comparable to the <em>entire capacity</em> of Lake Powell.</p>
 
 <p>If the operating rules for the system pretend that evaporation is not happening, the system will slowly drain whenever inflow falls short of outflow. That is exactly what we have watched happen.</p>
-
-<h2>We've seen dry stretches before</h2>
-
-<p>There were consecutive dry years in the 1950s. The early '60s. The late '70s. Yet Lake Powell recovered after each of them. The difference now is not a uniquely dry climate — it is that the system is operated at the edge of its margin, and margin has been stretched thinner by each passing agreement.</p>
-
-<p>The last 25 years combined a long dry stretch with operating rules that did not adjust fast enough. Both things are true. But only one of them is under human control going forward.</p>
 
 <h2>What this means</h2>
 
