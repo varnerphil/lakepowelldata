@@ -96,9 +96,10 @@ export default function ArticleChart({ spec }: { spec: ChartSpec }) {
     return null
   }
 
+  const hasRefLines = (spec.referenceLines?.length ?? 0) > 0
   const margin = isMobile
-    ? { top: 10, right: 10, left: 0, bottom: 0 }
-    : { top: 10, right: 30, left: 20, bottom: 10 }
+    ? { top: 10, right: hasRefLines ? 80 : 10, left: 0, bottom: 0 }
+    : { top: 10, right: hasRefLines ? 120 : 30, left: 20, bottom: 10 }
 
   const isDateAxis = spec.xType === 'date' || (!spec.xType && spec.data[0]?.[spec.xKey]?.match?.(/^\d{4}-\d{2}/))
 
