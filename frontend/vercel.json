@@ -1,0 +1,14 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "x-vercel-protection-bypass",
+          "value": "false"
+        }
+      ]
+    }
+  ],
+  "cleanUrls": true
+}
