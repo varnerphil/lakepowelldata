@@ -85,11 +85,11 @@ export default function ArticleChart({ spec }: { spec: ChartSpec }) {
     )
     const refValues = (spec.referenceLines || []).map(r => r.y)
     const all = [...allValues, ...refValues]
-    if (all.length === 0) return ['auto', 'auto'] as const
+    if (all.length === 0) return ['auto', 'auto'] as [string, string]
     const min = Math.min(...all)
     const max = Math.max(...all)
     const pad = (max - min) * 0.05
-    return [Math.floor(min - pad), Math.ceil(max + pad)] as const
+    return [Math.floor(min - pad), Math.ceil(max + pad)] as [number, number]
   }, [spec.data, spec.series, spec.referenceLines])
 
   if (!spec.data || spec.data.length === 0) {
