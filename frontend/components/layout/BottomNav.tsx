@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TrendingUp, PlayCircle, MapPin, Info } from 'lucide-react'
+import { TrendingUp, PlayCircle, MapPin, BookOpen } from 'lucide-react'
 
 const navItems = [
   {
@@ -21,9 +21,9 @@ const navItems = [
     icon: MapPin
   },
   {
-    href: '/about',
-    label: 'About',
-    icon: Info
+    href: '/articles',
+    label: 'Articles',
+    icon: BookOpen
   },
 ]
 
