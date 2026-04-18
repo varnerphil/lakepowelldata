@@ -91,17 +91,17 @@ export function getSeasonalStatus(
       showDropProjection = true
       showRunoffProjection = true
       dropProjectionLabel = 'Projected Drop to Spring Low'
-      runoffProjectionLabel = 'Projected Spring Runoff Gain'
+      runoffProjectionLabel = 'Pure Projected Spring Runoff Gain'
       break
-      
+
     case 'runoff-rising':
       showDropProjection = false // Don't show - lake is going up!
       showRunoffProjection = true
       showRunoffSummary = false
       dropProjectionLabel = ''
-      runoffProjectionLabel = currentGainFromLow !== null 
-        ? 'Runoff Progress' 
-        : 'Projected Spring Runoff Gain'
+      runoffProjectionLabel = currentGainFromLow !== null
+        ? 'Runoff Progress'
+        : 'Pure Projected Spring Runoff Gain'
       break
       
     case 'post-peak':

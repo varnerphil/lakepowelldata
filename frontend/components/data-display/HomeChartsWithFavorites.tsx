@@ -423,15 +423,25 @@ export default function HomeChartsWithFavorites({
       )}
 
       {/* 4. Snowpack-Based Runoff Projection - only show during runoff season */}
-      {showRunoffProjection && snowpackProjection && (
+      {/* Hidden for WY2026: the federal 1.48 MAF release cut + Flaming Gorge additions
+          alter inflow/outflow beyond the pure-snowpack baseline this card models.
+          TODO: surface behind a sub-tab alongside the Water Addition Calculator. */}
+      {false && showRunoffProjection && snowpackProjection && (
         <div className="mt-8 lg:mt-12">
           <div className="card p-4 sm:p-6 lg:p-8">
             <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
-              {seasonalStatus?.runoffProjectionLabel || 'Spring Runoff Projection'}
+              {seasonalStatus?.runoffProjectionLabel || 'Pure Projected Spring Runoff Gain'}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 font-light">
-              Projection based on historical years with similar peak snowpack percentage. 
+              Projection based on historical years with similar peak snowpack percentage.
               Shows expected elevation gain during the runoff season (April-August).
+            </p>
+            <p className="text-xs sm:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4 sm:mb-6 font-light">
+              <strong>Note:</strong> This projection assumes normal operations and is only useful
+              when no extra measures (like reduced releases or Flaming Gorge transfers) are changing
+              Powell&apos;s inflow/outflow. For WY2026, the federal plan&apos;s 1.48 MAF release cut
+              and Flaming Gorge additions fall outside this model — see the Water Addition Calculator
+              above for the relevant numbers.
             </p>
             
             {/* Show current progress if we're actively tracking */}
