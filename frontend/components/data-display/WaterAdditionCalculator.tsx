@@ -19,9 +19,9 @@ const RAMP_MARKERS = [
 ]
 
 const PRESETS = [
-  { label: '1 MAF (Flaming Gorge)', value: 1.0 },
-  { label: '1.48 MAF (reduced releases)', value: 1.48 },
-  { label: '2.48 MAF (both combined)', value: 2.48 },
+  { label: '1.48 MAF (release cuts)', value: 1.48 },
+  { label: '~2 MAF (by Sep 30)', value: 2.0 },
+  { label: '2.48 MAF (by Apr 2027)', value: 2.48 },
   { label: '3 MAF', value: 3.0 },
   { label: '4 MAF', value: 4.0 },
 ]
@@ -207,7 +207,7 @@ export default function WaterAdditionCalculator({
   elevationStorageData,
   currentElevation,
 }: WaterAdditionCalculatorProps) {
-  const [addedMAF, setAddedMAF] = useState(2.48)
+  const [addedMAF, setAddedMAF] = useState(2.0)
 
   const sorted = useMemo(
     () => [...elevationStorageData].sort((a, b) => a.elevation - b.elevation),
@@ -290,6 +290,24 @@ export default function WaterAdditionCalculator({
         See how many feet the lake would rise with additional inflows at the current elevation.
         The canyon is narrower at lower levels, so each acre-foot of water raises the lake more.
       </p>
+
+      {/* Federal announcement context */}
+      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600 font-light leading-relaxed">
+        <p className="mb-2">
+          <span className="font-medium text-gray-800">April 2026 Federal Announcement:</span>{' '}
+          The Bureau of Reclamation reduced Lake Powell&apos;s Water Year 2026 release from
+          7.48 MAF to 6.0 MAF — saving <strong>1.48 MAF</strong> that stays in Powell. Since
+          Oct–Mar releases already went out at the old rate, the full 1.48 MAF of savings
+          lands in the remaining Apr–Sep window. An additional <strong>660K–1 MAF</strong> is
+          being released from Flaming Gorge into Powell through April 2027.
+        </p>
+        <p className="text-xs text-gray-500">
+          This calculator shows the <em>theoretical maximum</em> elevation gain if the selected
+          volume were added to today&apos;s lake level all at once. Actual gains will be lower
+          because evaporation (~500–600 KAF/yr) and ongoing releases continue throughout the period.
+          The presets below reflect the federal plan&apos;s expected net additions at key milestones.
+        </p>
+      </div>
 
       {/* MAF selector */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
