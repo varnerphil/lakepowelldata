@@ -1,5 +1,175 @@
 import { WaterMeasurement, ElevationStorageCapacity } from './db'
-import { type OutflowPolicy, applyPolicy } from './monte-carlo'
+import { type OutflowPolicy, applyPolicy, getDailyEvaporationAf } from './monte-carlo'
+import { type FederalReleaseAnnouncement, getAnnouncementDerived } from './federal-announcement'
+
+// ─── Phase 1: Federal Release Projection ──────────────────────────
+
+/**
+ * Monthly distribution of snowpack runoff. Colorado River hydrology
+ * peaks in June with the bulk of melt Apr–Jul.
+ * Index 0 = January. Values should sum to 1.0 for the runoff months.
+ */
+const RUNOFF_MONTHLY_FRACTIONS: Record<number, number> = {
+  3: 0.10,  // Apr — early melt at lower elevations
+  4: 0.25,  // May — rapid melt
+  5: 0.35,  // Jun — peak runoff
+  6: 0.20,  // Jul — declining melt
+  7: 0.05,  // Aug — monsoon + tail
+  8: 0.05,  // Sep — base flow recovery
+}
+
+/** Base inflow from tributaries, return flows, etc. (cfs) */
+const BASE_FLOW_CFS = 3500
+const CFS_TO_AF_PER_DAY = 1.9835
+
+export interface Phase1DailyPoint {
+  date: string
+  p10: number
+  p50: number
+  p90: number
+}
+
+export interface Phase1Result {
+  daily: Phase1DailyPoint[]
+  ending: {
+    p10Elevation: number
+    p50Elevation: number
+    p90Elevation: number
+    p50Content: number
+  }
+  endDate: string
+  totalInflowAf: number
+  totalOutflowAf: number
+  totalEvaporationAf: number
+}
+
+/**
+ * Compute a deterministic Phase 1 projection from today through the end of
+ * the federal announcement period (Sep 30, 2026).
+ *
+ * Runs three passes at low/central/high snowpack (±20%) to produce a narrow
+ * p10/p50/p90 band showing honest uncertainty.
+ *
+ * All inputs are pure values — no DB calls, runs client-side in milliseconds.
+ */
+export function computePhase1Projection(params: {
+  startDate: string
+  startElevation: number
+  startContent: number
+  projectedRunoffInflowAf: number
+  announcement: FederalReleaseAnnouncement
+  storageCapacity: ElevationStorageCapacity[]
+}): Phase1Result {
+  const { startDate, startContent, projectedRunoffInflowAf, announcement, storageCapacity } = params
+
+  const derived = getAnnouncementDerived(announcement)
+
+  const sortedStorage = [...storageCapacity].sort((a, b) => a.elevation - b.elevation)
+
+  // Three inflow scenarios
+  const scenarios = [
+    { label: 'low', runoffScale: 0.8 },
+    { label: 'central', runoffScale: 1.0 },
+    { label: 'high', runoffScale: 1.2 },
+  ]
+
+  const start = new Date(startDate + 'T00:00:00')
+  const end = new Date(announcement.endDate + 'T00:00:00')
+
+  // Build date list
+  const dates: string[] = []
+  const d = new Date(start)
+  while (d <= end) {
+    dates.push(d.toISOString().split('T')[0])
+    d.setDate(d.getDate() + 1)
+  }
+
+  // Pre-compute days per month in the window for runoff distribution
+  const monthDayCounts = new Map<number, number>()
+  for (const dt of dates) {
+    const month = new Date(dt + 'T00:00:00').getMonth()
+    monthDayCounts.set(month, (monthDayCounts.get(month) || 0) + 1)
+  }
+
+  // Run each scenario
+  const curvesByScenario: Array<{ elevations: number[]; endContent: number }> = []
+  let centralTotalInflow = 0
+  let centralTotalOutflow = 0
+  let centralTotalEvap = 0
+
+  for (const scenario of scenarios) {
+    const totalRunoff = projectedRunoffInflowAf * scenario.runoffScale
+    let content = startContent
+    const elevations: number[] = []
+
+    let totalInflow = 0
+    let totalOutflow = 0
+    let totalEvap = 0
+
+    for (let i = 0; i < dates.length; i++) {
+      const dt = new Date(dates[i] + 'T00:00:00')
+      const month = dt.getMonth()
+
+      // Inflow: snowpack runoff (distributed by month) + base flow + Flaming Gorge
+      const runoffFraction = RUNOFF_MONTHLY_FRACTIONS[month] || 0
+      const daysInMonth = monthDayCounts.get(month) || 30
+      const runoffAfToday = runoffFraction > 0
+        ? (totalRunoff * runoffFraction) / daysInMonth
+        : 0
+      const baseFlowAf = BASE_FLOW_CFS * CFS_TO_AF_PER_DAY
+      const fgAf = derived.flamingGorgeAfPerDay
+      const inflowAf = runoffAfToday + baseFlowAf + fgAf
+
+      // Outflow: remaining release budget spread evenly
+      const outflowAf = derived.remainingReleaseAfPerDay
+
+      // Evaporation
+      const elevation = contentToElevation(content, sortedStorage)
+      const evapAf = getDailyEvaporationAf(month, elevation)
+
+      // Water balance
+      content = content + inflowAf - outflowAf - evapAf
+      if (content < 0) content = 0
+
+      totalInflow += inflowAf
+      totalOutflow += outflowAf
+      totalEvap += evapAf
+
+      elevations.push(contentToElevation(content, sortedStorage))
+    }
+
+    curvesByScenario.push({ elevations, endContent: content })
+
+    if (scenario.label === 'central') {
+      centralTotalInflow = totalInflow
+      centralTotalOutflow = totalOutflow
+      centralTotalEvap = totalEvap
+    }
+  }
+
+  // Assemble daily p10/p50/p90 from the three scenarios
+  // low = p10, central = p50, high = p90
+  const daily: Phase1DailyPoint[] = dates.map((date, i) => ({
+    date,
+    p10: Math.round(curvesByScenario[0].elevations[i] * 10) / 10,
+    p50: Math.round(curvesByScenario[1].elevations[i] * 10) / 10,
+    p90: Math.round(curvesByScenario[2].elevations[i] * 10) / 10,
+  }))
+
+  return {
+    daily,
+    ending: {
+      p10Elevation: daily[daily.length - 1].p10,
+      p50Elevation: daily[daily.length - 1].p50,
+      p90Elevation: daily[daily.length - 1].p90,
+      p50Content: Math.round(curvesByScenario[1].endContent),
+    },
+    endDate: announcement.endDate,
+    totalInflowAf: Math.round(centralTotalInflow),
+    totalOutflowAf: Math.round(centralTotalOutflow),
+    totalEvaporationAf: Math.round(centralTotalEvap),
+  }
+}
 
 /**
  * Calculate projected runoff based on snowpack percentage and historical data

@@ -2,10 +2,27 @@
 
 import { useState, useMemo } from 'react'
 import { ElevationStorageCapacity } from '@/lib/db'
+import { computePhase1Projection, type Phase1Result } from '@/lib/calculations'
+import { CURRENT_ANNOUNCEMENT } from '@/lib/federal-announcement'
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts'
+import { parseLocalDate, formatDateString } from '@/lib/date-utils'
 
 interface WaterAdditionCalculatorProps {
   elevationStorageData: ElevationStorageCapacity[]
   currentElevation: number
+  currentContent?: number
+  currentDate?: string
+  projectedRunoffInflowAf?: number
 }
 
 const RAMP_MARKERS = [
@@ -206,6 +223,9 @@ function CanyonProfile({
 export default function WaterAdditionCalculator({
   elevationStorageData,
   currentElevation,
+  currentContent,
+  currentDate,
+  projectedRunoffInflowAf,
 }: WaterAdditionCalculatorProps) {
   const [addedMAF, setAddedMAF] = useState(2.0)
 
@@ -393,6 +413,178 @@ export default function WaterAdditionCalculator({
           Still below: {result.stillBelow.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
         </p>
       )}
+
+      {/* Phase 1 September Projection Chart */}
+      {currentContent && currentDate && projectedRunoffInflowAf !== undefined && (
+        <Phase1Chart
+          currentElevation={currentElevation}
+          currentContent={currentContent}
+          currentDate={currentDate}
+          projectedRunoffInflowAf={projectedRunoffInflowAf}
+          storageCapacity={elevationStorageData}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Phase 1 Projection Chart ────────────────────────────────────
+
+function Phase1Chart({
+  currentElevation,
+  currentContent,
+  currentDate,
+  projectedRunoffInflowAf,
+  storageCapacity,
+}: {
+  currentElevation: number
+  currentContent: number
+  currentDate: string
+  projectedRunoffInflowAf: number
+  storageCapacity: ElevationStorageCapacity[]
+}) {
+  const phase1 = useMemo(
+    () =>
+      computePhase1Projection({
+        startDate: currentDate,
+        startElevation: currentElevation,
+        startContent: currentContent,
+        projectedRunoffInflowAf,
+        announcement: CURRENT_ANNOUNCEMENT,
+        storageCapacity,
+      }),
+    [currentDate, currentElevation, currentContent, projectedRunoffInflowAf, storageCapacity]
+  )
+
+  const chartData = useMemo(() => {
+    // Sample weekly for a compact chart
+    return phase1.daily
+      .filter((_, i) => i % 7 === 0 || i === phase1.daily.length - 1)
+      .map((d) => ({
+        timestamp: parseLocalDate(d.date).getTime(),
+        date: d.date,
+        p50: d.p50,
+        p10: d.p10,
+        p90: d.p90,
+      }))
+  }, [phase1])
+
+  const rise = phase1.ending.p50Elevation - currentElevation
+  const yMin = Math.floor(Math.min(currentElevation, phase1.ending.p10Elevation) / 10) * 10 - 10
+  const yMax = Math.ceil(Math.max(phase1.ending.p90Elevation, currentElevation) / 10) * 10 + 10
+
+  const rampLines = RAMP_MARKERS.filter((r) => r.elevation >= yMin && r.elevation <= yMax)
+
+  return (
+    <div className="mt-8 pt-6 border-t border-gray-100">
+      <h3 className="text-base sm:text-lg font-light text-gray-900 mb-1">
+        Projected elevation through September 30
+      </h3>
+      <p className="text-xs sm:text-sm text-gray-500 font-light mb-4">
+        Daily water balance model using the federal release reduction (WY2026: 7.48 → 6.0 MAF),
+        Flaming Gorge inflows, current snowpack estimates (±20% range), and seasonal evaporation.
+      </p>
+
+      {/* Ending elevation callout */}
+      <div className="bg-blue-50/60 rounded-lg px-4 py-3 mb-4">
+        <p className="text-sm text-blue-900 font-light">
+          By end of water year (Sep 30):{' '}
+          <span className="font-semibold text-lg">{phase1.ending.p50Elevation.toFixed(0)} ft</span>
+          <span className="text-blue-700 ml-2">
+            ({rise >= 0 ? '+' : ''}{rise.toFixed(0)} ft from today)
+          </span>
+          <span className="text-xs text-blue-600 ml-2">
+            range: {phase1.ending.p10Elevation.toFixed(0)}–{phase1.ending.p90Elevation.toFixed(0)} ft
+          </span>
+        </p>
+      </div>
+
+      {/* Chart */}
+      <div className="h-[280px] sm:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 5, right: 80, left: 40, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" strokeOpacity={0.8} />
+            <XAxis
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(ts) => {
+                const d = new Date(ts)
+                return d.toLocaleDateString('en-US', { month: 'short' })
+              }}
+              tick={{ fontSize: 11, fill: '#888' }}
+            />
+            <YAxis
+              domain={[yMin, yMax]}
+              tick={{ fontSize: 11, fill: '#888' }}
+              label={{ value: 'Elevation (ft)', angle: -90, position: 'insideLeft', offset: -25, style: { fill: '#888', fontSize: 12 } }}
+            />
+            <Tooltip
+              labelFormatter={(ts: number) => {
+                const d = new Date(ts)
+                return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+              }}
+              formatter={(value: number, name: string) => {
+                const label = name === 'p50' ? 'Projected' : name === 'p10' ? 'Low estimate' : 'High estimate'
+                return [`${value.toFixed(1)} ft`, label]
+              }}
+            />
+
+            {/* Uncertainty band */}
+            <Area
+              dataKey="p90"
+              stroke="none"
+              fill="#93c5fd"
+              fillOpacity={0.3}
+              isAnimationActive={false}
+            />
+            <Area
+              dataKey="p10"
+              stroke="none"
+              fill="#ffffff"
+              fillOpacity={1}
+              isAnimationActive={false}
+            />
+
+            {/* Median line */}
+            <Line
+              dataKey="p50"
+              type="monotone"
+              stroke="#1d4ed8"
+              strokeWidth={2.5}
+              dot={false}
+              isAnimationActive={false}
+              name="Federal Projection"
+            />
+
+            {/* Ramp reference lines */}
+            {rampLines.map((r) => (
+              <ReferenceLine
+                key={r.name}
+                y={r.elevation}
+                stroke="#8b5cf680"
+                strokeDasharray="3 3"
+                strokeWidth={1}
+                label={{ value: r.name, position: 'right', fill: '#8b5cf6', fontSize: 10 }}
+              />
+            ))}
+
+            {/* Min power pool */}
+            <ReferenceLine
+              y={3490}
+              stroke="#f59e0b"
+              strokeDasharray="5 5"
+              label={{ value: 'Min Power', position: 'right', fill: '#f59e0b', fontSize: 10 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <p className="text-[10px] text-gray-400 font-light text-center mt-2 italic">
+        Blue line: projected median elevation. Shaded band: ±20% snowpack uncertainty.
+        Based on {CURRENT_ANNOUNCEMENT.label}.
+      </p>
     </div>
   )
 }

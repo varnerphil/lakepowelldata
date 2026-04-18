@@ -946,6 +946,9 @@ export default async function HomePage({
         <WaterAdditionCalculator
           elevationStorageData={elevationStorageData}
           currentElevation={current.elevation}
+          currentContent={current.content}
+          currentDate={today}
+          projectedRunoffInflowAf={snowpackProjection?.projectedRunoffInflow}
         />
       </div>
 
