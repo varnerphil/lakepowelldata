@@ -119,29 +119,33 @@ function CanyonProfile({
             )
           })}
 
-          {/* Current elevation line — aligned to band boundary */}
+          {/* Current elevation line — label sits below the line inside the water */}
           {currentIdx >= 0 && (
             <div
-              className="absolute left-0 right-0 flex items-center justify-center"
+              className="absolute left-0 right-0"
               style={{ top: `${currentIdx * bandHeight}px` }}
             >
-              <div className="absolute w-full border-t-2 border-[#8b9a6b]" />
-              <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap">
-                Current: {currentElevation.toFixed(1)} ft
-              </span>
+              <div className="w-full border-t-2 border-[#8b9a6b]" />
+              <div className="flex justify-center mt-0.5">
+                <span className="bg-white/80 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap rounded">
+                  Current: {currentElevation.toFixed(1)} ft
+                </span>
+              </div>
             </div>
           )}
 
-          {/* New elevation line — aligned to band boundary */}
+          {/* New elevation line — label sits below the line inside the teal */}
           {addedMAF > 0 && newIdx >= 0 && newIdx < currentIdx && (
             <div
-              className="absolute left-0 right-0 flex items-center justify-center"
+              className="absolute left-0 right-0"
               style={{ top: `${newIdx * bandHeight}px` }}
             >
-              <div className="absolute w-full border-t-2 border-teal-600" />
-              <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap">
-                +{addedMAF} MAF: {newElevation.toFixed(1)} ft
-              </span>
+              <div className="w-full border-t-2 border-teal-600" />
+              <div className="flex justify-center mt-0.5">
+                <span className="bg-white/80 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap rounded">
+                  +{addedMAF} MAF: {newElevation.toFixed(1)} ft
+                </span>
+              </div>
             </div>
           )}
 
