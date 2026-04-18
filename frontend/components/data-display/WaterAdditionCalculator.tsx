@@ -143,7 +143,7 @@ function CanyonProfile({
               <div className="w-full border-t-2 border-teal-600" />
               <div className="flex justify-center mt-0.5">
                 <span className="bg-white/80 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap rounded">
-                  +{addedMAF} MAF: {newElevation.toFixed(1)} ft
+                  +{addedMAF} MAF: {newElevation.toFixed(1)} ft (+{(newElevation - currentElevation).toFixed(1)} ft)
                 </span>
               </div>
             </div>
