@@ -102,6 +102,7 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
+import WaterAdditionCalculator from '@/components/data-display/WaterAdditionCalculator'
 import QuickJumpHeader from '@/components/layout/QuickJumpHeader'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
@@ -939,7 +940,16 @@ export default async function HomePage({
         currentSnowpackPercent={currentSnowpackPercent}
       />
 
-      {/* 5. Storage Profile - Below the fold, can load after initial render */}
+      {/* 5. Water Addition Calculator — what does X MAF mean for the lake? */}
+      <div className="mt-8 lg:mt-12">
+        <div id="calculator" className="scroll-mt-24" />
+        <WaterAdditionCalculator
+          elevationStorageData={elevationStorageData}
+          currentElevation={current.elevation}
+        />
+      </div>
+
+      {/* 6. Storage Profile - Below the fold, can load after initial render */}
       <Suspense fallback={
         <div className="mt-12 h-[400px] flex items-center justify-center">
           <div className="text-gray-400">Loading storage visualization...</div>
