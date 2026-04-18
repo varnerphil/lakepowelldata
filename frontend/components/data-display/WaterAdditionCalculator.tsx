@@ -41,46 +41,45 @@ function CanyonProfile({
   rampMarkers: Array<{ name: string; elevation: number }>
   newlyAccessible: Array<{ name: string; elevation: number }>
 }) {
-  // Build bands at ~2ft resolution for a smooth canyon shape
   const BAND_HEIGHT = 2
   const minElev = 3370
   const maxElev = 3710
-  const maxCap = Math.max(
-    ...elevationStorageData
-      .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
-      .map((d) => d.storage_per_foot || 0)
-  )
 
-  // Build smoothed data (enforce monotonic increase as canyon widens upward)
-  const bands: Array<{
-    elevation: number
-    width: number
-    color: string
-  }> = []
+  // Build bands bottom-up, enforcing monotonic width increase (canyon widens upward)
+  const bandsBottomUp: Array<{ elevation: number; width: number }> = []
+  {
+    // Get max capacity for normalization
+    const maxCap = Math.max(
+      ...elevationStorageData
+        .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
+        .map((d) => d.storage_per_foot || 0)
+    )
 
-  let prevWidth = 0
-  for (let elev = maxElev; elev >= minElev; elev -= 1) {
-    const entry = elevationStorageData.find((d) => d.elevation === elev)
-    const rawWidth = entry?.storage_per_foot
-      ? (entry.storage_per_foot / maxCap) * 100
-      : prevWidth
-    const width = Math.max(rawWidth, prevWidth * 0.95) // gentle smoothing
-    prevWidth = width
+    let prevWidth = 0
+    for (let elev = minElev; elev <= maxElev; elev += 1) {
+      const entry = elevationStorageData.find((d) => d.elevation === elev)
+      const rawWidth = entry?.storage_per_foot
+        ? (entry.storage_per_foot / maxCap) * 100
+        : prevWidth
+      // Enforce monotonic: each higher band must be at least as wide as the one below
+      const width = Math.max(rawWidth, prevWidth)
+      prevWidth = width
+      bandsBottomUp.push({ elevation: elev, width })
+    }
+  }
 
+  // Reverse for top-down rendering, add colors
+  const bands = [...bandsBottomUp].reverse().map((b) => {
     let color: string
-    if (elev <= currentElevation) {
+    if (b.elevation <= currentElevation) {
       color = '#6b8a9a' // water
-    } else if (elev <= newElevation) {
-      color = '#5eead4' // added water (teal-300)
+    } else if (b.elevation <= newElevation) {
+      color = '#5eead4' // added water (teal)
     } else {
       color = '#d4a574' // empty
     }
-
-    bands.push({ elevation: elev, width, color })
-  }
-
-  // Reverse so we render top-down
-  // bands are already top-down (maxElev first)
+    return { ...b, color }
+  })
 
   return (
     <div className="mb-6">
