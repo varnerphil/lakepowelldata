@@ -26,6 +26,165 @@ const PRESETS = [
   { label: '4 MAF', value: 4.0 },
 ]
 
+function CanyonProfile({
+  elevationStorageData,
+  currentElevation,
+  newElevation,
+  addedMAF,
+  rampMarkers,
+  newlyAccessible,
+}: {
+  elevationStorageData: ElevationStorageCapacity[]
+  currentElevation: number
+  newElevation: number
+  addedMAF: number
+  rampMarkers: Array<{ name: string; elevation: number }>
+  newlyAccessible: Array<{ name: string; elevation: number }>
+}) {
+  // Build bands at ~2ft resolution for a smooth canyon shape
+  const BAND_HEIGHT = 2
+  const minElev = 3370
+  const maxElev = 3710
+  const maxCap = Math.max(
+    ...elevationStorageData
+      .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
+      .map((d) => d.storage_per_foot || 0)
+  )
+
+  // Build smoothed data (enforce monotonic increase as canyon widens upward)
+  const bands: Array<{
+    elevation: number
+    width: number
+    color: string
+  }> = []
+
+  let prevWidth = 0
+  for (let elev = maxElev; elev >= minElev; elev -= 1) {
+    const entry = elevationStorageData.find((d) => d.elevation === elev)
+    const rawWidth = entry?.storage_per_foot
+      ? (entry.storage_per_foot / maxCap) * 100
+      : prevWidth
+    const width = Math.max(rawWidth, prevWidth * 0.95) // gentle smoothing
+    prevWidth = width
+
+    let color: string
+    if (elev <= currentElevation) {
+      color = '#6b8a9a' // water
+    } else if (elev <= newElevation) {
+      color = '#5eead4' // added water (teal-300)
+    } else {
+      color = '#d4a574' // empty
+    }
+
+    bands.push({ elevation: elev, width, color })
+  }
+
+  // Reverse so we render top-down
+  // bands are already top-down (maxElev first)
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-start w-full gap-2 sm:gap-4">
+        {/* Left elevation labels */}
+        <div
+          className="w-14 sm:w-20 flex flex-col justify-between text-right text-[10px] sm:text-xs text-gray-500 font-light flex-shrink-0"
+          style={{ height: `${bands.length * BAND_HEIGHT}px` }}
+        >
+          <span>{maxElev} ft</span>
+          <span>{Math.round((maxElev + minElev) / 2)} ft</span>
+          <span>{minElev} ft</span>
+        </div>
+
+        {/* Canyon bands */}
+        <div className="flex-1 flex flex-col items-center relative">
+          {bands.map((band) => (
+            <div
+              key={band.elevation}
+              style={{
+                width: `${band.width}%`,
+                height: `${BAND_HEIGHT}px`,
+                backgroundColor: band.color,
+              }}
+            />
+          ))}
+
+          {/* Current elevation label */}
+          <div
+            className="absolute left-0 right-0 flex items-center justify-center"
+            style={{
+              top: `${(maxElev - currentElevation) * BAND_HEIGHT}px`,
+            }}
+          >
+            <div className="absolute w-full border-t-2 border-[#8b9a6b]" />
+            <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap">
+              Current: {currentElevation.toFixed(1)} ft
+            </span>
+          </div>
+
+          {/* New elevation label */}
+          {addedMAF > 0 && newElevation > currentElevation + 0.5 && (
+            <div
+              className="absolute left-0 right-0 flex items-center justify-center"
+              style={{
+                top: `${(maxElev - newElevation) * BAND_HEIGHT}px`,
+              }}
+            >
+              <div className="absolute w-full border-t-2 border-teal-600" />
+              <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap">
+                +{addedMAF} MAF: {newElevation.toFixed(1)} ft
+              </span>
+            </div>
+          )}
+
+          {/* Ramp markers on right side */}
+          {rampMarkers
+            .filter((r) => r.elevation > minElev + 50 && r.elevation < maxElev - 10)
+            .map((r) => {
+              const isGained = newlyAccessible.some((n) => n.name === r.name)
+              const isAccessible = currentElevation >= r.elevation
+              const top = (maxElev - r.elevation) * BAND_HEIGHT
+              return (
+                <div
+                  key={r.name}
+                  className="absolute right-0 flex items-center"
+                  style={{ top: `${top}px` }}
+                >
+                  <span
+                    className={`text-[8px] sm:text-[10px] font-light pr-1 whitespace-nowrap ${
+                      isGained
+                        ? 'text-teal-700 font-medium'
+                        : isAccessible
+                          ? 'text-[#8b9a6b]/70'
+                          : 'text-gray-400'
+                    }`}
+                  >
+                    {r.name}
+                  </span>
+                </div>
+              )
+            })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-col gap-2 text-[10px] text-gray-500 font-light w-16 sm:w-20 flex-shrink-0">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#5eead4' }} />
+            <span>+{addedMAF} MAF</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#6b8a9a' }} />
+            <span>Current</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#d4a574' }} />
+            <span>Empty</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function WaterAdditionCalculator({
   elevationStorageData,
   currentElevation,
@@ -104,15 +263,6 @@ export default function WaterAdditionCalculator({
     }
   }, [currentElevation, addedMAF, sorted])
 
-  // Visual: simplified cross-section
-  const VISUAL_MIN = 3370
-  const VISUAL_MAX = 3710
-  const VISUAL_RANGE = VISUAL_MAX - VISUAL_MIN
-
-  const currentPct = ((currentElevation - VISUAL_MIN) / VISUAL_RANGE) * 100
-  const newPct = ((result.newElevation - VISUAL_MIN) / VISUAL_RANGE) * 100
-  const risePct = newPct - currentPct
-
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
@@ -183,70 +333,15 @@ export default function WaterAdditionCalculator({
         </p>
       </div>
 
-      {/* Visual bar */}
-      <div className="relative mb-6">
-        <div className="flex items-end gap-4">
-          {/* Profile bar */}
-          <div className="flex-1 relative bg-gray-100 rounded-lg overflow-hidden" style={{ height: '200px' }}>
-            {/* Water (current) */}
-            <div
-              className="absolute bottom-0 left-0 right-0 bg-[#7ca5b8] transition-all duration-300"
-              style={{ height: `${currentPct}%` }}
-            />
-            {/* Added water band */}
-            <div
-              className="absolute left-0 right-0 bg-teal-400/60 border-t-2 border-teal-500 transition-all duration-300"
-              style={{ bottom: `${currentPct}%`, height: `${risePct}%` }}
-            />
-            {/* Current elevation line */}
-            <div
-              className="absolute left-0 right-0 border-t-2 border-[#8b9a6b]"
-              style={{ bottom: `${currentPct}%` }}
-            />
-
-            {/* Ramp markers */}
-            {RAMP_MARKERS.filter(r => r.elevation >= VISUAL_MIN + 100 && r.elevation <= VISUAL_MAX - 20).map((r) => {
-              const pct = ((r.elevation - VISUAL_MIN) / VISUAL_RANGE) * 100
-              const isGained = result.newlyAccessible.some(n => n.name === r.name)
-              const isAccessible = currentElevation >= r.elevation
-              return (
-                <div
-                  key={r.name}
-                  className="absolute left-0 right-0 border-t border-dashed"
-                  style={{
-                    bottom: `${pct}%`,
-                    borderColor: isGained ? '#0d9488' : isAccessible ? '#8b9a6b80' : '#d1d5db',
-                  }}
-                >
-                  <span
-                    className={`absolute right-1 text-[9px] font-light leading-none -translate-y-full ${
-                      isGained ? 'text-teal-700 font-medium' : isAccessible ? 'text-[#8b9a6b]' : 'text-gray-400'
-                    }`}
-                  >
-                    {r.name}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="flex flex-col gap-2 text-[10px] text-gray-500 font-light w-20 flex-shrink-0">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-teal-400/60 border border-teal-500" />
-              <span>+{addedMAF} MAF</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-[#7ca5b8]" />
-              <span>Current</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
-              <span>Empty</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Canyon-shaped visual */}
+      <CanyonProfile
+        elevationStorageData={sorted}
+        currentElevation={currentElevation}
+        newElevation={result.newElevation}
+        addedMAF={addedMAF}
+        rampMarkers={RAMP_MARKERS}
+        newlyAccessible={result.newlyAccessible}
+      />
 
       {/* Ramps gained/lost summary */}
       {result.newlyAccessible.length > 0 && (
