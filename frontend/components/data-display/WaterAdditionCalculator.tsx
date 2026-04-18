@@ -26,6 +26,11 @@ const PRESETS = [
   { label: '4 MAF', value: 4.0 },
 ]
 
+/**
+ * Canyon profile that exactly matches the StorageVisualization 1ft view,
+ * but with three colors: water (blue), added water (teal), and empty (tan).
+ * Uses the same smoothing logic (monotonic enforcement, sorted ascending).
+ */
 function CanyonProfile({
   elevationStorageData,
   currentElevation,
@@ -41,45 +46,32 @@ function CanyonProfile({
   rampMarkers: Array<{ name: string; elevation: number }>
   newlyAccessible: Array<{ name: string; elevation: number }>
 }) {
-  const BAND_HEIGHT = 2
-  const minElev = 3370
-  const maxElev = 3710
+  const bandHeight = 2
 
-  // Build bands bottom-up, enforcing monotonic width increase (canyon widens upward)
-  const bandsBottomUp: Array<{ elevation: number; width: number }> = []
-  {
-    // Get max capacity for normalization
-    const maxCap = Math.max(
-      ...elevationStorageData
-        .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
-        .map((d) => d.storage_per_foot || 0)
-    )
+  // Exact same smoothing as StorageVisualization 1ft view
+  const validData = elevationStorageData
+    .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
+    .sort((a, b) => a.elevation - b.elevation)
 
-    let prevWidth = 0
-    for (let elev = minElev; elev <= maxElev; elev += 1) {
-      const entry = elevationStorageData.find((d) => d.elevation === elev)
-      const rawWidth = entry?.storage_per_foot
-        ? (entry.storage_per_foot / maxCap) * 100
-        : prevWidth
-      // Enforce monotonic: each higher band must be at least as wide as the one below
-      const width = Math.max(rawWidth, prevWidth)
-      prevWidth = width
-      bandsBottomUp.push({ elevation: elev, width })
+  const smoothed: typeof validData = []
+  for (let i = 0; i < validData.length; i++) {
+    const d = validData[i]
+    if (i === 0) {
+      smoothed.push({ ...d })
+    } else {
+      const prev = smoothed[i - 1].storage_per_foot || 0
+      const curr = d.storage_per_foot || 0
+      smoothed.push({ ...d, storage_per_foot: Math.max(curr, prev) })
     }
   }
 
-  // Reverse for top-down rendering, add colors
-  const bands = [...bandsBottomUp].reverse().map((b) => {
-    let color: string
-    if (b.elevation <= currentElevation) {
-      color = '#6b8a9a' // water
-    } else if (b.elevation <= newElevation) {
-      color = '#5eead4' // added water (teal)
-    } else {
-      color = '#d4a574' // empty
-    }
-    return { ...b, color }
-  })
+  const maxSpf = Math.max(...smoothed.map((d) => d.storage_per_foot || 0))
+  const reversed = [...smoothed].reverse()
+
+  // Line positions: use the index in the reversed array for pixel-perfect alignment
+  const currentIdx = reversed.findIndex((d) => d.elevation <= Math.floor(currentElevation))
+  const newIdx = reversed.findIndex((d) => d.elevation <= Math.floor(newElevation))
+  const totalHeight = reversed.length * bandHeight
 
   return (
     <div className="mb-6">
@@ -87,46 +79,64 @@ function CanyonProfile({
         {/* Left elevation labels */}
         <div
           className="w-14 sm:w-20 flex flex-col justify-between text-right text-[10px] sm:text-xs text-gray-500 font-light flex-shrink-0"
-          style={{ height: `${bands.length * BAND_HEIGHT}px` }}
+          style={{ height: `${totalHeight}px` }}
         >
-          <span>{maxElev} ft</span>
-          <span>{Math.round((maxElev + minElev) / 2)} ft</span>
-          <span>{minElev} ft</span>
+          <span>{reversed[0]?.elevation} ft</span>
+          <span>{reversed[Math.floor(reversed.length / 2)]?.elevation} ft</span>
+          <span>{reversed[reversed.length - 1]?.elevation} ft</span>
         </div>
 
-        {/* Canyon bands */}
+        {/* Canyon bands — identical structure to StorageVisualization 1ft */}
         <div className="flex-1 flex flex-col items-center relative">
-          {bands.map((band) => (
-            <div
-              key={band.elevation}
-              style={{
-                width: `${band.width}%`,
-                height: `${BAND_HEIGHT}px`,
-                backgroundColor: band.color,
-              }}
-            />
-          ))}
+          {reversed.map((data) => {
+            const widthPercent = ((data.storage_per_foot || 0) / maxSpf) * 100
+            const isFull = currentElevation >= data.elevation + 1
+            const isCurrentBand =
+              currentElevation >= data.elevation && currentElevation < data.elevation + 1
+            const isAdded =
+              data.elevation >= Math.floor(currentElevation) &&
+              data.elevation < Math.floor(newElevation)
+            const isEmpty = data.elevation >= Math.floor(newElevation)
 
-          {/* Current elevation label */}
-          <div
-            className="absolute left-0 right-0 flex items-center justify-center"
-            style={{
-              top: `${(maxElev - currentElevation) * BAND_HEIGHT}px`,
-            }}
-          >
-            <div className="absolute w-full border-t-2 border-[#8b9a6b]" />
-            <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap">
-              Current: {currentElevation.toFixed(1)} ft
-            </span>
-          </div>
+            let color: string
+            if (isFull || isCurrentBand) {
+              color = '#6b8a9a' // water
+            } else if (isAdded) {
+              color = '#5eead4' // added water
+            } else {
+              color = '#d4a574' // empty
+            }
 
-          {/* New elevation label */}
-          {addedMAF > 0 && newElevation > currentElevation + 0.5 && (
+            return (
+              <div
+                key={data.elevation}
+                style={{
+                  width: `${widthPercent}%`,
+                  height: `${bandHeight}px`,
+                  backgroundColor: color,
+                }}
+              />
+            )
+          })}
+
+          {/* Current elevation line — aligned to band boundary */}
+          {currentIdx >= 0 && (
             <div
               className="absolute left-0 right-0 flex items-center justify-center"
-              style={{
-                top: `${(maxElev - newElevation) * BAND_HEIGHT}px`,
-              }}
+              style={{ top: `${currentIdx * bandHeight}px` }}
+            >
+              <div className="absolute w-full border-t-2 border-[#8b9a6b]" />
+              <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap">
+                Current: {currentElevation.toFixed(1)} ft
+              </span>
+            </div>
+          )}
+
+          {/* New elevation line — aligned to band boundary */}
+          {addedMAF > 0 && newIdx >= 0 && newIdx < currentIdx && (
+            <div
+              className="absolute left-0 right-0 flex items-center justify-center"
+              style={{ top: `${newIdx * bandHeight}px` }}
             >
               <div className="absolute w-full border-t-2 border-teal-600" />
               <span className="relative bg-white px-1.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap">
@@ -136,48 +146,53 @@ function CanyonProfile({
           )}
 
           {/* Ramp markers on right side */}
-          {rampMarkers
-            .filter((r) => r.elevation > minElev + 50 && r.elevation < maxElev - 10)
-            .map((r) => {
-              const isGained = newlyAccessible.some((n) => n.name === r.name)
-              const isAccessible = currentElevation >= r.elevation
-              const top = (maxElev - r.elevation) * BAND_HEIGHT
-              return (
-                <div
-                  key={r.name}
-                  className="absolute right-0 flex items-center"
-                  style={{ top: `${top}px` }}
+          {rampMarkers.map((r) => {
+            const idx = reversed.findIndex((d) => d.elevation <= r.elevation)
+            if (idx < 0) return null
+            const isGained = newlyAccessible.some((n) => n.name === r.name)
+            const isAccessible = currentElevation >= r.elevation
+            return (
+              <div
+                key={r.name}
+                className="absolute right-0 flex items-center"
+                style={{ top: `${idx * bandHeight}px` }}
+              >
+                <span
+                  className={`text-[8px] sm:text-[10px] font-light pr-1 whitespace-nowrap ${
+                    isGained
+                      ? 'text-teal-700 font-medium'
+                      : isAccessible
+                        ? 'text-[#8b9a6b]/70'
+                        : 'text-gray-400'
+                  }`}
                 >
-                  <span
-                    className={`text-[8px] sm:text-[10px] font-light pr-1 whitespace-nowrap ${
-                      isGained
-                        ? 'text-teal-700 font-medium'
-                        : isAccessible
-                          ? 'text-[#8b9a6b]/70'
-                          : 'text-gray-400'
-                    }`}
-                  >
-                    {r.name}
-                  </span>
-                </div>
-              )
-            })}
+                  {r.name}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-col gap-2 text-[10px] text-gray-500 font-light w-16 sm:w-20 flex-shrink-0">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#5eead4' }} />
-            <span>+{addedMAF} MAF</span>
+        {/* Right side: AF/ft scale + legend */}
+        <div className="w-16 sm:w-24 flex flex-col justify-between text-left text-[10px] sm:text-xs text-gray-500 font-light flex-shrink-0" style={{ height: `${totalHeight}px` }}>
+          <div>
+            <span>{Math.round(maxSpf / 1000)}K af/ft</span>
+            <div className="flex flex-col gap-2 mt-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#5eead4' }} />
+                <span>+{addedMAF} MAF</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#6b8a9a' }} />
+                <span>Current</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#d4a574' }} />
+                <span>Empty</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#6b8a9a' }} />
-            <span>Current</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#d4a574' }} />
-            <span>Empty</span>
-          </div>
+          <span>{Math.round((smoothed[0]?.storage_per_foot || 0) / 1000)}K af/ft</span>
         </div>
       </div>
     </div>
