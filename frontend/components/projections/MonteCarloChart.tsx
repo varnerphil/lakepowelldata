@@ -14,10 +14,12 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { DailyPercentile, RampProbability } from '@/lib/monte-carlo'
+import type { Phase1Result } from '@/lib/calculations'
 import { parseLocalDate, formatDateString } from '@/lib/date-utils'
 
 interface MonteCarloChartProps {
   data: DailyPercentile[]
+  phase1Data?: Phase1Result | null
   ramps?: Array<{ name: string; elevation: number }>
   policyTiers?: Array<{ aboveElevation: number; percent: number }>
 }
@@ -42,7 +44,7 @@ function shortenRampName(name: string): string {
   return RAMP_SHORT_NAMES[name] ?? name.replace(/ Ramp$/, '').replace(/ \(.*\)$/, '')
 }
 
-export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: MonteCarloChartProps) {
+export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTiers = [] }: MonteCarloChartProps) {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -52,16 +54,49 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Timestamp of Phase 1/Phase 2 boundary for the vertical marker
+  const phase1EndTimestamp = phase1Data
+    ? parseLocalDate(phase1Data.endDate).getTime()
+    : null
+
   const chartData = useMemo(() => {
-    return data.map((d) => ({
+    // Phase 2 (Monte Carlo) data
+    const phase2 = data.map((d) => ({
       ...d,
       timestamp: parseLocalDate(d.date).getTime(),
       bandBase: d.p10,
       band10to25: Math.max(0, d.p25 - d.p10),
       band25to75: Math.max(0, d.p75 - d.p25),
       band75to90: Math.max(0, d.p90 - d.p75),
+      federalProjection: null as number | null,
     }))
-  }, [data])
+
+    if (!phase1Data || phase1Data.daily.length === 0) return phase2
+
+    // Phase 1 (deterministic) — sample every 3 days for performance
+    const phase1Points = phase1Data.daily
+      .filter((_, i) => i % 3 === 0 || i === phase1Data.daily.length - 1)
+      .map((d) => {
+        const p25 = d.p10 + (d.p50 - d.p10) * 0.4
+        const p75 = d.p50 + (d.p90 - d.p50) * 0.4
+        return {
+          date: d.date,
+          p10: d.p10,
+          p25,
+          p50: d.p50,
+          p75,
+          p90: d.p90,
+          timestamp: parseLocalDate(d.date).getTime(),
+          bandBase: d.p10,
+          band10to25: Math.max(0, p25 - d.p10),
+          band25to75: Math.max(0, p75 - p25),
+          band75to90: Math.max(0, d.p90 - p75),
+          federalProjection: d.p50,
+        }
+      })
+
+    return [...phase1Points, ...phase2]
+  }, [data, phase1Data])
 
   const { yMin, yMax } = useMemo(() => {
     if (chartData.length === 0) return { yMin: DEAD_POOL - 20, yMax: FULL_POOL + 20 }
@@ -354,6 +389,36 @@ export default function MonteCarloChart({ data, ramps = [], policyTiers = [] }: 
             legendType="none"
             isAnimationActive={false}
           />
+
+          {/* Phase 1 federal projection overlay line */}
+          {phase1Data && (
+            <Line
+              type="monotone"
+              dataKey="federalProjection"
+              stroke="#1d4ed8"
+              strokeWidth={2.5}
+              dot={false}
+              name="Federal Projection"
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+          )}
+
+          {/* Sep 30 vertical marker — Phase 1/Phase 2 boundary */}
+          {phase1EndTimestamp && (
+            <ReferenceLine
+              x={phase1EndTimestamp}
+              stroke="#6366f1"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              label={{
+                value: 'Federal Release Period Ends',
+                position: isMobile ? 'insideTopLeft' : 'top',
+                fill: '#6366f1',
+                fontSize: isMobile ? 9 : 11,
+              }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>

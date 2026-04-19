@@ -22,6 +22,8 @@ import PolicySelector from './PolicySelector'
 import PolicyComparison from './PolicyComparison'
 import { TrendingUp, TrendingDown, Loader2, CheckCircle2, AlertTriangle, XCircle, Link2, Info } from 'lucide-react'
 import ShareButton from '@/components/ui/ShareButton'
+import { computePhase1Projection, type Phase1Result } from '@/lib/calculations'
+import { CURRENT_ANNOUNCEMENT } from '@/lib/federal-announcement'
 
 export type StreamflowTrend = 'historical' | 'moderate_decline' | 'federal_baseline'
 
@@ -81,6 +83,10 @@ export default function MonteCarloSimulator({
   }, [])
 
   const [result, setResult] = useState<MonteCarloResult | null>(null)
+  const [phase1Result, setPhase1Result] = useState<Phase1Result | null>(null)
+  const [includeFederalRelease, setIncludeFederalRelease] = useState(
+    () => new Date() < new Date(CURRENT_ANNOUNCEMENT.endDate + 'T00:00:00')
+  )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('')
@@ -158,6 +164,39 @@ export default function MonteCarloSimulator({
 
       setLoadingStatus('Computing simulation...')
 
+      // Phase 1: deterministic federal release projection (Apr → Sep)
+      let phase1: Phase1Result | null = null
+      const announcementActive =
+        includeFederalRelease &&
+        new Date(data.startDate) < new Date(CURRENT_ANNOUNCEMENT.endDate + 'T00:00:00')
+
+      if (announcementActive && data.snowpackData?.projectedRunoffInflowAf) {
+        phase1 = computePhase1Projection({
+          startDate: data.startDate,
+          startElevation: data.startElevation,
+          startContent: data.startContent,
+          projectedRunoffInflowAf: data.snowpackData.projectedRunoffInflowAf,
+          announcement: CURRENT_ANNOUNCEMENT,
+          storageCapacity: data.storageCapacity,
+        })
+        setPhase1Result(phase1)
+      } else {
+        setPhase1Result(null)
+      }
+
+      // Phase 2 start: use Phase 1 ending state if available, else today
+      const phase2Start = phase1
+        ? {
+            startDate: phase1.endDate,
+            startElevation: phase1.ending.p50Elevation,
+            startContent: phase1.ending.p50Content,
+          }
+        : {
+            startDate: data.startDate,
+            startElevation: data.startElevation,
+            startContent: data.startContent,
+          }
+
       const worker = new Worker(
         new URL('../../workers/monte-carlo.worker.ts', import.meta.url)
       )
@@ -193,9 +232,9 @@ export default function MonteCarloSimulator({
 
       worker.postMessage({
         config: {
-          startDate: data.startDate,
-          startElevation: data.startElevation,
-          startContent: data.startContent,
+          startDate: phase2Start.startDate,
+          startElevation: phase2Start.startElevation,
+          startContent: phase2Start.startContent,
           yearsToProject,
           iterations: 1000,
           policy,
@@ -219,7 +258,7 @@ export default function MonteCarloSimulator({
       setError(err.message || 'Failed to run projection')
       setIsLoading(false)
     }
-  }, [policy, yearsToProject, inflowScenario, streamflowTrend, augmentationKey, startMode, customElevation, favoriteRamps])
+  }, [policy, yearsToProject, inflowScenario, streamflowTrend, augmentationKey, includeFederalRelease, startMode, customElevation, favoriteRamps])
 
   const getShareUrl = useCallback(async (origin: string) => {
     const config: SharedSimConfig = {
@@ -395,6 +434,22 @@ export default function MonteCarloSimulator({
               </div>
             </div>
           )}
+          {new Date() < new Date('2026-10-01') && (
+            <label className="flex items-start gap-2 mb-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeFederalRelease}
+                onChange={(e) => setIncludeFederalRelease(e.target.checked)}
+                className="rounded border-gray-300 text-teal-600 focus:ring-teal-500 mt-0.5"
+              />
+              <div>
+                <span className="text-xs text-gray-700 font-medium">Include Apr 2026 federal release reduction</span>
+                <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
+                  Deterministic projection through Sep 30 using reduced WY2026 releases (7.48→6.0 MAF) + Flaming Gorge inflows. Monte Carlo starts from the projected September elevation.
+                </p>
+              </div>
+            </label>
+          )}
           <button
             onClick={runProjection}
             disabled={isLoading}
@@ -460,6 +515,7 @@ export default function MonteCarloSimulator({
           </div>
           <MonteCarloChart
             data={result.dailyPercentiles}
+            phase1Data={phase1Result}
             ramps={favoriteRamps}
             policyTiers={policy.type === 'tiered' ? policy.tiers : undefined}
           />
