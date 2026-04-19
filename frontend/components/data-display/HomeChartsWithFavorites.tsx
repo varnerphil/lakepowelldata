@@ -153,7 +153,12 @@ export default function HomeChartsWithFavorites({
 
   // Determine what to show based on seasonal status
   const showDropProjection = seasonalStatus?.showDropProjection ?? true
-  const showRunoffProjection = seasonalStatus?.showRunoffProjection ?? false
+  // Snowpack-based projection is hidden for WY2026: federal release cut + Flaming Gorge
+  // additions change inflow/outflow beyond this pure-snowpack model. Typed as `boolean`
+  // so TypeScript can't const-fold it and break narrowing in the still-present JSX.
+  // TODO: resurface behind a sub-tab alongside the Water Addition Calculator.
+  const HIDE_RUNOFF_PROJECTION_CARD: boolean = true
+  const showRunoffProjection = !HIDE_RUNOFF_PROJECTION_CARD && (seasonalStatus?.showRunoffProjection ?? false)
   const showRunoffSummary = seasonalStatus?.showRunoffSummary ?? false
   const currentGainFromLow = seasonalStatus?.currentGainFromLow ?? null
 
@@ -422,11 +427,8 @@ export default function HomeChartsWithFavorites({
         </div>
       )}
 
-      {/* 4. Snowpack-Based Runoff Projection - only show during runoff season */}
-      {/* Hidden for WY2026: the federal 1.48 MAF release cut + Flaming Gorge additions
-          alter inflow/outflow beyond the pure-snowpack baseline this card models.
-          TODO: surface behind a sub-tab alongside the Water Addition Calculator. */}
-      {false && showRunoffProjection && snowpackProjection && (
+      {/* 4. Snowpack-Based Runoff Projection - hidden for WY2026 via HIDE_RUNOFF_PROJECTION_CARD above */}
+      {showRunoffProjection && snowpackProjection && (
         <div className="mt-8 lg:mt-12">
           <div className="card p-4 sm:p-6 lg:p-8">
             <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
