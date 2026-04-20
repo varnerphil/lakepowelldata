@@ -783,6 +783,13 @@ export default async function HomePage({
   
   // Process recent historical data
   const recentHistoricalData = recentHistoricalDataRaw.map(d => ({ date: d.date, elevation: d.elevation }))
+
+  // 2022 DROA window — Flaming Gorge released ~500 KAF into Powell May 2022 → Apr 2023.
+  // We overlay this on the Phase 1 projection chart (shifted forward 4 years) so users
+  // can see how the last emergency release actually affected lake levels.
+  const historical2022Measurements = await getCachedWaterMeasurements('2022-04-01', '2023-04-30')
+    .then((rows) => rows.map((d) => ({ date: d.date, elevation: d.elevation })))
+    .catch(() => [] as Array<{ date: string; elevation: number }>)
   
   // Get typical low date - use median historical low date's month/day, but apply to CURRENT year
   let typicalLowDate: string
@@ -950,6 +957,7 @@ export default async function HomePage({
           currentDate={today}
           projectedRunoffInflowAf={snowpackProjection?.projectedRunoffInflow}
           allRamps={allRamps}
+          historical2022Measurements={historical2022Measurements}
         />
       </div>
 

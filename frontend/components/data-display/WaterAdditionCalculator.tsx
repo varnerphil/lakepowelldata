@@ -24,6 +24,10 @@ interface WaterAdditionCalculatorProps {
   currentDate?: string
   projectedRunoffInflowAf?: number
   allRamps?: Ramp[]
+  // Daily Powell elevations from the 2022 DROA window (Apr 2022 → Apr 2023).
+  // Overlaid on the Phase 1 projection chart, shifted forward 4 years so calendar
+  // months align — shows how the last Flaming Gorge emergency release actually played out.
+  historical2022Measurements?: Array<{ date: string; elevation: number }>
 }
 
 const DEFAULT_RAMPS: Array<{ name: string; elevation: number }> = [
@@ -308,6 +312,7 @@ export default function WaterAdditionCalculator({
   currentDate,
   projectedRunoffInflowAf,
   allRamps,
+  historical2022Measurements,
 }: WaterAdditionCalculatorProps) {
   const [presetId, setPresetId] = useState<string>('federal-plan')
   const preset = useMemo(
@@ -506,6 +511,7 @@ export default function WaterAdditionCalculator({
           storageCapacity={elevationStorageData}
           afPerFoot={result.afPerFoot}
           rampMarkers={rampMarkers}
+          historical2022Measurements={historical2022Measurements}
         />
       )}
     </div>
@@ -526,6 +532,7 @@ function Phase1Chart({
   storageCapacity,
   afPerFoot,
   rampMarkers,
+  historical2022Measurements,
 }: {
   preset: PlanPreset
   presetId: string
@@ -538,6 +545,7 @@ function Phase1Chart({
   storageCapacity: ElevationStorageCapacity[]
   afPerFoot: number
   rampMarkers: Array<{ name: string; elevation: number }>
+  historical2022Measurements?: Array<{ date: string; elevation: number }>
 }) {
   const phase1 = useMemo(
     () =>
@@ -552,6 +560,36 @@ function Phase1Chart({
     [currentDate, currentElevation, currentContent, projectedRunoffInflowAf, announcement, storageCapacity]
   )
 
+  // Shift 2022 DROA measurements forward 4 years so calendar months align with the
+  // current projection window. Lookup by shifted date (with nearest-day fallback up
+  // to ±3 days) since the projection samples weekly and 2022 daily dates won't match.
+  const hist2022ByShiftedDate = useMemo(() => {
+    if (!historical2022Measurements?.length) return null
+    const map = new Map<string, number>()
+    for (const m of historical2022Measurements) {
+      const yyyy = parseInt(m.date.slice(0, 4), 10)
+      const shifted = `${yyyy + 4}${m.date.slice(4)}`
+      map.set(shifted, m.elevation)
+    }
+    return map
+  }, [historical2022Measurements])
+
+  const lookupHist2022 = (date: string): number | null => {
+    if (!hist2022ByShiftedDate) return null
+    if (hist2022ByShiftedDate.has(date)) return hist2022ByShiftedDate.get(date)!
+    const base = parseLocalDate(date)
+    for (let delta = 1; delta <= 3; delta++) {
+      for (const sign of [-1, 1]) {
+        const probe = new Date(base)
+        probe.setDate(probe.getDate() + sign * delta)
+        const key = probe.toISOString().split('T')[0]
+        const v = hist2022ByShiftedDate.get(key)
+        if (v !== undefined) return v
+      }
+    }
+    return null
+  }
+
   const chartData = useMemo(() => {
     const baselineByDate = new Map(phase1.baseline.daily.map((d) => [d.date, d.p50]))
     return phase1.intervention.daily
@@ -563,8 +601,10 @@ function Phase1Chart({
         p10: d.p10,
         p90: d.p90,
         baseline: baselineByDate.get(d.date) ?? null,
+        hist2022: lookupHist2022(d.date),
       }))
-  }, [phase1])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase1, hist2022ByShiftedDate])
 
   const phase1Rise = phase1.intervention.phase1End.p50Elevation - currentElevation
   const endRise = phase1.intervention.ending.p50Elevation - currentElevation
@@ -573,6 +613,9 @@ function Phase1Chart({
   const phase1EndTs = parseLocalDate(phase1.intervention.phase1End.date).getTime()
   const planEndTs = parseLocalDate(phase1.intervention.ending.date).getTime()
 
+  const hist2022Values = chartData
+    .map((d) => d.hist2022)
+    .filter((v): v is number => v !== null)
   const allElevations = [
     currentElevation,
     phase1.intervention.phase1End.p10Elevation,
@@ -582,6 +625,7 @@ function Phase1Chart({
     phase1.baseline.ending.p50Elevation,
     phase1.baseline.phase1End.p50Elevation,
     3370, // Dead pool — always include in y-range so the reference line is visible
+    ...hist2022Values,
   ]
   const yMin = Math.floor(Math.min(...allElevations) / 10) * 10 - 10
   const yMax = Math.ceil(Math.max(...allElevations) / 10) * 10 + 10
@@ -726,6 +770,20 @@ function Phase1Chart({
             <strong className="font-medium text-[#dc2626]">Without plan</strong> — normal 7.48 MAF releases, no Flaming Gorge transfer
           </span>
         </div>
+        {hist2022Values.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block w-6 h-[2px]"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(to right, #6b7280 0, #6b7280 2px, transparent 2px, transparent 5px)',
+              }}
+            />
+            <span className="text-gray-700">
+              <strong className="font-medium text-[#6b7280]">2022 actuals</strong> — last Flaming Gorge emergency release (~500 KAF)
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Chart */}
@@ -761,7 +819,8 @@ function Phase1Chart({
                 const label =
                   key === 'p50' ? 'With federal plan' :
                   key === 'baseline' ? 'Without plan (7.48 MAF releases, no Flaming Gorge)' :
-                  key === 'p90' ? 'With plan — high estimate' : String(name)
+                  key === 'p90' ? 'With plan — high estimate' :
+                  key === 'hist2022' ? '2022 actual (during DROA release)' : String(name)
                 return [`${value.toFixed(1)} ft`, label]
               }}
             />
@@ -802,6 +861,20 @@ function Phase1Chart({
               dot={false}
               isAnimationActive={false}
             />
+
+            {/* 2022 DROA actuals — calendar-shifted 4 years forward */}
+            {hist2022Values.length > 0 && (
+              <Line
+                dataKey="hist2022"
+                type="monotone"
+                stroke="#6b7280"
+                strokeWidth={1.75}
+                strokeDasharray="2 4"
+                dot={false}
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
 
             {/* Ramp reference lines */}
             {rampLines.map((r) => (
@@ -865,6 +938,19 @@ function Phase1Chart({
       <p className="text-[10px] text-gray-400 font-light text-center mt-2 italic">
         The gap between the two lines is what the plan buys.
       </p>
+
+      {hist2022Values.length >= 2 && (
+        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
+          <span className="font-medium text-gray-800">Context — the 2022 release:</span>{' '}
+          The last Flaming Gorge emergency release (~500 KAF under the 2022 DROA)
+          ran roughly May 2022 → April 2023. Over that same 12-month window, Powell
+          went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft
+          — a net <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
+          {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
+          Emergency releases from Flaming Gorge slow Powell&apos;s decline; they don&apos;t reverse it on their own.
+          The 2022 window had different snowpack and smaller cuts, so this is a historical reference — not a forecast.
+        </div>
+      )}
     </div>
   )
 }
