@@ -949,6 +949,7 @@ export default async function HomePage({
           currentContent={current.content}
           currentDate={today}
           projectedRunoffInflowAf={snowpackProjection?.projectedRunoffInflow}
+          allRamps={allRamps}
         />
       </div>
 

@@ -13,45 +13,59 @@ export interface FederalReleaseAnnouncement {
   label: string
   /** First day the new release rate applies */
   effectiveDate: string
-  /** End of the reduced-release window (end of WY2026) */
-  endDate: string
+  /** End of the reduced-release window — end of WY2026 (reverts to normal rate after) */
+  phase1EndDate: string
+  /** End of the full federal intervention window — when Flaming Gorge releases stop and Monte Carlo takes over */
+  planEndDate: string
   /** WY2026 original planned annual release (MAF) */
   baselineAnnualReleaseMaf: number
   /** WY2026 revised annual release (MAF) */
   newAnnualReleaseMaf: number
+  /** Assumed WY2027 annual release (MAF) — reverts to baseline by default */
+  wy2027AnnualReleaseMaf: number
   /** Estimated MAF already released Oct 2025 – effectiveDate at the old rate */
   alreadyReleasedMaf: number
-  /** Flaming Gorge inflow to Powell through endDate (MAF) */
-  flamingGorgeThroughEndMaf: number
-  /** Full Flaming Gorge program (MAF) — runs through Apr 2027 */
+  /** Total Flaming Gorge program (MAF) delivered from effectiveDate through planEndDate */
   flamingGorgeTotalMaf: number
 }
 
 /**
- * Derived values computed from the announcement.
+ * Derived per-day rates for each window of the federal plan.
  */
 export function getAnnouncementDerived(a: FederalReleaseAnnouncement) {
-  const remainingReleaseMaf = a.newAnnualReleaseMaf - a.alreadyReleasedMaf
-  const releaseSavingsMaf = a.baselineAnnualReleaseMaf - a.newAnnualReleaseMaf
-
   const startMs = new Date(a.effectiveDate + 'T00:00:00').getTime()
-  const endMs = new Date(a.endDate + 'T00:00:00').getTime()
-  const dayCount = Math.round((endMs - startMs) / (1000 * 60 * 60 * 24))
+  const phase1EndMs = new Date(a.phase1EndDate + 'T00:00:00').getTime()
+  const planEndMs = new Date(a.planEndDate + 'T00:00:00').getTime()
 
-  const remainingReleaseAfPerDay = (remainingReleaseMaf * 1_000_000) / dayCount
-  const flamingGorgeAfPerDay = (a.flamingGorgeThroughEndMaf * 1_000_000) / dayCount
+  const dayMs = 1000 * 60 * 60 * 24
+  const phase1aDays = Math.round((phase1EndMs - startMs) / dayMs)
+  const phase1bDays = Math.round((planEndMs - phase1EndMs) / dayMs)
+  const totalDays = phase1aDays + phase1bDays
+
+  // Phase 1a (reduced release): remaining WY2026 budget spread across Apr–Sep
+  const remainingReleaseMaf = a.newAnnualReleaseMaf - a.alreadyReleasedMaf
+  const reducedReleaseAfPerDay = (remainingReleaseMaf * 1_000_000) / phase1aDays
+
+  // Phase 1b (normal release): WY2027 annual rate prorated to daily
+  const normalReleaseAfPerDay = (a.wy2027AnnualReleaseMaf * 1_000_000) / 365
+
+  // Flaming Gorge: distributed evenly over the full plan window
+  const flamingGorgeAfPerDay = (a.flamingGorgeTotalMaf * 1_000_000) / totalDays
+
+  // Flaming Gorge share that arrives by phase1EndDate (for the calculator's Sep 30 milestone)
+  const flamingGorgeThroughPhase1Maf =
+    (a.flamingGorgeTotalMaf * phase1aDays) / totalDays
 
   return {
-    /** MAF still to be released from Powell between effectiveDate and endDate */
+    phase1aDays,
+    phase1bDays,
+    totalDays,
     remainingReleaseMaf,
-    /** Total MAF saved by the reduction (baseline - new) */
-    releaseSavingsMaf,
-    /** Number of days in the reduced-release window */
-    dayCount,
-    /** Daily release rate (AF/day) under the new plan */
-    remainingReleaseAfPerDay,
-    /** Daily Flaming Gorge inflow (AF/day) through endDate */
+    releaseSavingsMaf: a.baselineAnnualReleaseMaf - a.newAnnualReleaseMaf,
+    reducedReleaseAfPerDay,
+    normalReleaseAfPerDay,
     flamingGorgeAfPerDay,
+    flamingGorgeThroughPhase1Maf,
   }
 }
 
@@ -59,10 +73,11 @@ export const CURRENT_ANNOUNCEMENT: FederalReleaseAnnouncement = {
   id: '2026-04-federal',
   label: 'April 2026 Federal Release Reduction',
   effectiveDate: '2026-04-18',
-  endDate: '2026-09-30',
+  phase1EndDate: '2026-09-30',
+  planEndDate: '2027-04-30',
   baselineAnnualReleaseMaf: 7.48,
   newAnnualReleaseMaf: 6.0,
-  alreadyReleasedMaf: 4.05, // ~7.48 × (6.5/12) for Oct 1 2025 – Apr 17 2026
-  flamingGorgeThroughEndMaf: 0.5,
+  wy2027AnnualReleaseMaf: 7.48,
+  alreadyReleasedMaf: 4.05,
   flamingGorgeTotalMaf: 1.0,
 }

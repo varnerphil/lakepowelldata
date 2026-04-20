@@ -69,9 +69,12 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
       band25to75: Math.max(0, d.p75 - d.p25),
       band75to90: Math.max(0, d.p90 - d.p75),
       federalProjection: null as number | null,
+      federalBaseline: null as number | null,
     }))
 
     if (!phase1Data || phase1Data.daily.length === 0) return phase2
+
+    const baselineByDate = new Map(phase1Data.baseline.daily.map((d) => [d.date, d.p50]))
 
     // Phase 1 (deterministic) — sample every 3 days for performance
     const phase1Points = phase1Data.daily
@@ -92,6 +95,7 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
           band25to75: Math.max(0, p75 - p25),
           band75to90: Math.max(0, d.p90 - p75),
           federalProjection: d.p50,
+          federalBaseline: baselineByDate.get(d.date) ?? null,
         }
       })
 
@@ -100,7 +104,11 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
 
   const { yMin, yMax } = useMemo(() => {
     if (chartData.length === 0) return { yMin: DEAD_POOL - 20, yMax: FULL_POOL + 20 }
-    const allVals = chartData.flatMap((d) => [d.p10, d.p90])
+    const allVals = chartData.flatMap((d) => [
+      d.p10,
+      d.p90,
+      ...(d.federalBaseline != null ? [d.federalBaseline] : []),
+    ])
     const min = Math.min(...allVals, DEAD_POOL)
     const max = Math.max(...allVals, FULL_POOL)
     const pad = (max - min) * 0.05 || 20
@@ -389,6 +397,21 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
             legendType="none"
             isAnimationActive={false}
           />
+
+          {/* Phase 1 no-intervention baseline (dashed red) */}
+          {phase1Data && (
+            <Line
+              type="monotone"
+              dataKey="federalBaseline"
+              stroke="#dc2626"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={false}
+              name="Without intervention"
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+          )}
 
           {/* Phase 1 federal projection overlay line */}
           {phase1Data && (

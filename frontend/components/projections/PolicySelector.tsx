@@ -322,6 +322,11 @@ interface PolicySelectorProps {
   onChange: (policy: OutflowPolicy) => void
 }
 
+// Flip to `true` to expose the custom-policy builder, % of compact presets, and
+// user-saved policies in the dropdown again. All the underlying state,
+// handlers, and UI below remain wired up so it can be re-enabled in place.
+const ENABLE_CUSTOM_POLICIES = false
+
 export default function PolicySelector({ value, onChange }: PolicySelectorProps) {
   const [isCustom, setIsCustom] = useState(false)
   const [customType, setCustomType] = useState<'simple' | 'tiered'>('simple')
@@ -573,11 +578,11 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
           }}
           className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-colors"
         >
-          {POLICY_PRESETS.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.name}
-            </option>
-          ))}
+          {/* Current operations first */}
+          <option key={POLICY_PRESETS[0].name} value={POLICY_PRESETS[0].name}>
+            {POLICY_PRESETS[0].name}
+          </option>
+          {/* Federal plans directly under current ops */}
           <optgroup label="Federal Plan — Post-2026 Proposed Alternatives (Bureau of Reclamation)">
             {DEIS_PRESETS.map((p) => (
               <option key={p.name} value={p.name}>
@@ -585,22 +590,31 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
               </option>
             ))}
           </optgroup>
-          <option value="__custom__">Custom Policy</option>
-          {savedPolicies.length > 0 && (
-            <optgroup label="Your saved policies">
-              {savedPolicies.map((p) => (
-                <option key={`saved-${p.name}`} value={`__saved__:${p.name}`}>
+          {ENABLE_CUSTOM_POLICIES && (
+            <>
+              {POLICY_PRESETS.slice(1).map((p) => (
+                <option key={p.name} value={p.name}>
                   {p.name}
                 </option>
               ))}
-            </optgroup>
+              <option value="__custom__">Custom Policy</option>
+              {savedPolicies.length > 0 && (
+                <optgroup label="Your saved policies">
+                  {savedPolicies.map((p) => (
+                    <option key={`saved-${p.name}`} value={`__saved__:${p.name}`}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </>
           )}
         </select>
         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
       </div>
 
       {/* Custom config */}
-      {isCustom && (
+      {ENABLE_CUSTOM_POLICIES && isCustom && (
         <div className="bg-gray-50 rounded-lg p-3 space-y-3 border border-gray-100">
           {/* Type toggle */}
           <div className="flex gap-2">

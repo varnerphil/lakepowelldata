@@ -65,13 +65,45 @@ function defaultStreamflowTrend(policy: OutflowPolicy): StreamflowTrend {
   return 'historical'
 }
 
+function scrollToControl(id: string) {
+  const el = document.getElementById(id)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function ChipButton({
+  targetId,
+  variant = 'neutral',
+  children,
+}: {
+  targetId: string
+  variant?: 'primary' | 'neutral' | 'amber' | 'emerald' | 'blue'
+  children: React.ReactNode
+}) {
+  const styles = {
+    primary: 'bg-teal-600 text-white hover:bg-teal-700',
+    neutral: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+    amber: 'bg-amber-100 text-amber-800 hover:bg-amber-200',
+    emerald: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
+    blue: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+  }[variant]
+  return (
+    <button
+      type="button"
+      onClick={() => scrollToControl(targetId)}
+      className={`px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${styles}`}
+    >
+      {children}
+    </button>
+  )
+}
+
 export default function MonteCarloSimulator({
   currentElevation,
   currentDate,
   sharedConfig,
 }: MonteCarloSimulatorProps) {
   const [policy, setPolicy] = useState<OutflowPolicy>(sharedConfig?.policy ?? POLICY_PRESETS[0])
-  const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 20)
+  const [yearsToProject, setYearsToProject] = useState(sharedConfig?.yearsToProject ?? 5)
   const [inflowScenario, setInflowScenario] = useState<InflowScenario>(sharedConfig?.inflowScenario ?? 'last20')
   const [streamflowTrend, setStreamflowTrend] = useState<StreamflowTrend>(sharedConfig?.streamflowTrend ?? 'historical')
   const [augmentationKey, setAugmentationKey] = useState<AugmentationKey>(sharedConfig?.augmentation ?? 'ioc-only')
@@ -85,7 +117,7 @@ export default function MonteCarloSimulator({
   const [result, setResult] = useState<MonteCarloResult | null>(null)
   const [phase1Result, setPhase1Result] = useState<Phase1Result | null>(null)
   const [includeFederalRelease, setIncludeFederalRelease] = useState(
-    () => new Date() < new Date(CURRENT_ANNOUNCEMENT.endDate + 'T00:00:00')
+    () => new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
   )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -164,11 +196,11 @@ export default function MonteCarloSimulator({
 
       setLoadingStatus('Computing simulation...')
 
-      // Phase 1: deterministic federal release projection (Apr → Sep)
+      // Phase 1: deterministic federal plan projection (today → Apr 30, 2027)
       let phase1: Phase1Result | null = null
       const announcementActive =
         includeFederalRelease &&
-        new Date(data.startDate) < new Date(CURRENT_ANNOUNCEMENT.endDate + 'T00:00:00')
+        new Date(data.startDate) < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
 
       if (announcementActive && data.snowpackData?.projectedRunoffInflowAf) {
         phase1 = computePhase1Projection({
@@ -290,15 +322,56 @@ export default function MonteCarloSimulator({
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {/* Mobile-only sticky config summary — sits at the top of the page and
+          pins as the user scrolls down. Each chip scrolls back to the control
+          that sets it. */}
+      <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border border-gray-200 rounded-lg shadow-sm px-3 py-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-light">
+          <ChipButton targetId="ctrl-policy" variant="primary">
+            Plan: {policy.name.replace(/^Federal Plan: /, 'Fed: ').replace(/ \([^)]+\)/, '')}
+          </ChipButton>
+          <ChipButton targetId="ctrl-horizon">
+            Sim for {yearsToProject} yr
+          </ChipButton>
+          <ChipButton targetId="ctrl-horizon">
+            {inflowScenario === 'full'
+              ? 'Inflow like all history (recent 2×)'
+              : inflowScenario === 'full_unweighted'
+                ? 'Inflow like all history'
+                : `Inflow like last ${inflowScenario.replace('last', '')} yr`}
+          </ChipButton>
+          <ChipButton targetId="ctrl-start">
+            {startMode === 'custom'
+              ? `Starting from ${customElevation.toFixed(0)} ft`
+              : `Starting from today (${currentElevation.toFixed(0)} ft)`}
+          </ChipButton>
+          {streamflowTrend !== 'historical' && (
+            <ChipButton targetId="ctrl-horizon" variant="amber">
+              {STREAMFLOW_TRENDS[streamflowTrend].label}
+            </ChipButton>
+          )}
+          {augmentationKey !== 'none' && (
+            <ChipButton targetId="ctrl-horizon" variant="emerald">
+              +{AUGMENTATION_PRESETS.find((p) => p.key === augmentationKey)?.label ?? augmentationKey}
+            </ChipButton>
+          )}
+          {includeFederalRelease && new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00') && (
+            <ChipButton targetId="ctrl-start" variant="blue">
+              +Apr 2026 plan
+            </ChipButton>
+          )}
+        </div>
+      </div>
+
       {/* Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Policy */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+        <div id="ctrl-policy" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
           <PolicySelector value={policy} onChange={handlePolicyChange} />
         </div>
 
         {/* Time Horizon */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+        <div id="ctrl-horizon" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
           <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
             Time Horizon
           </label>
@@ -392,7 +465,7 @@ export default function MonteCarloSimulator({
         </div>
 
         {/* Starting Point & Run */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5">
+        <div id="ctrl-start" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
           <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
             Starting Point
           </label>
@@ -445,7 +518,7 @@ export default function MonteCarloSimulator({
               <div>
                 <span className="text-xs text-gray-700 font-medium">Include Apr 2026 federal release reduction</span>
                 <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
-                  Deterministic projection through Sep 30 using reduced WY2026 releases (7.48→6.0 MAF) + Flaming Gorge inflows. Monte Carlo starts from the projected September elevation.
+                  Deterministic projection through April 2027 using reduced WY2026 releases (7.48→6.0 MAF), WY2027 reverting to normal, and Flaming Gorge inflows across the full plan window. Monte Carlo takes over after April 2027.
                 </p>
               </div>
             </label>

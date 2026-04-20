@@ -22,6 +22,13 @@ const RUNOFF_MONTHLY_FRACTIONS: Record<number, number> = {
 const BASE_FLOW_CFS = 3500
 const CFS_TO_AF_PER_DAY = 1.9835
 
+/**
+ * Median historical total spring runoff (AF). Used for WY2027 runoff modeling
+ * when no snowpack data is yet available. Roughly matches long-run Apr–Jul
+ * natural flow into Powell.
+ */
+const DEFAULT_WY2027_RUNOFF_AF = 5_000_000
+
 export interface Phase1DailyPoint {
   date: string
   p10: number
@@ -29,23 +36,49 @@ export interface Phase1DailyPoint {
   p90: number
 }
 
-export interface Phase1Result {
+export interface Phase1Milestone {
+  date: string
+  p10Elevation: number
+  p50Elevation: number
+  p90Elevation: number
+  p50Content: number
+}
+
+export interface Phase1Scenario {
   daily: Phase1DailyPoint[]
-  ending: {
-    p10Elevation: number
-    p50Elevation: number
-    p90Elevation: number
-    p50Content: number
-  }
-  endDate: string
+  /** Ending state at the full federal plan window (planEndDate — Apr 30 2027) */
+  ending: Phase1Milestone
+  /** Intermediate milestone at phase1EndDate (Sep 30 2026 — end of reduced-release window) */
+  phase1End: Phase1Milestone
   totalInflowAf: number
   totalOutflowAf: number
   totalEvaporationAf: number
 }
 
 /**
- * Compute a deterministic Phase 1 projection from today through the end of
- * the federal announcement period (Sep 30, 2026).
+ * Phase 1 result contains two parallel scenarios so charts can compare:
+ *  - intervention: federal plan active (reduced releases Apr–Sep 2026, FG inflows through Apr 2027)
+ *  - baseline: no intervention (normal 7.48 MAF/yr outflow, no Flaming Gorge)
+ *
+ * Top-level `daily` / `ending` / `phase1End` mirror the intervention scenario
+ * for backward compatibility with call sites that don't know about baseline.
+ */
+export interface Phase1Result extends Phase1Scenario {
+  intervention: Phase1Scenario
+  baseline: Phase1Scenario
+  endDate: string
+}
+
+/**
+ * Compute a deterministic projection through the full federal plan window
+ * (today → April 30, 2027).
+ *
+ * The model walks daily through two sub-windows:
+ *   Phase 1a (today → Sep 30, 2026): reduced WY2026 release rate (6.0 MAF/yr)
+ *   Phase 1b (Oct 1, 2026 → Apr 30, 2027): normal WY2027 release rate
+ * Flaming Gorge inflow continues evenly across both windows. WY2026 runoff is
+ * driven by the snowpack estimate; WY2027 spring runoff (~Apr 2027) is assumed
+ * to be a median historical year.
  *
  * Runs three passes at low/central/high snowpack (±20%) to produce a narrow
  * p10/p50/p90 band showing honest uncertainty.
@@ -59,12 +92,22 @@ export function computePhase1Projection(params: {
   projectedRunoffInflowAf: number
   announcement: FederalReleaseAnnouncement
   storageCapacity: ElevationStorageCapacity[]
+  wy2027RunoffEstimateAf?: number
 }): Phase1Result {
-  const { startDate, startContent, projectedRunoffInflowAf, announcement, storageCapacity } = params
+  const {
+    startDate,
+    startContent,
+    projectedRunoffInflowAf,
+    announcement,
+    storageCapacity,
+    wy2027RunoffEstimateAf = DEFAULT_WY2027_RUNOFF_AF,
+  } = params
 
   const derived = getAnnouncementDerived(announcement)
-
   const sortedStorage = [...storageCapacity].sort((a, b) => a.elevation - b.elevation)
+
+  const phase1EndMs = new Date(announcement.phase1EndDate + 'T00:00:00').getTime()
+  const planEndMs = new Date(announcement.planEndDate + 'T00:00:00').getTime()
 
   // Three inflow scenarios
   const scenarios = [
@@ -73,10 +116,9 @@ export function computePhase1Projection(params: {
     { label: 'high', runoffScale: 1.2 },
   ]
 
+  // Build full date list today → planEndDate
   const start = new Date(startDate + 'T00:00:00')
-  const end = new Date(announcement.endDate + 'T00:00:00')
-
-  // Build date list
+  const end = new Date(announcement.planEndDate + 'T00:00:00')
   const dates: string[] = []
   const d = new Date(start)
   while (d <= end) {
@@ -84,90 +126,128 @@ export function computePhase1Projection(params: {
     d.setDate(d.getDate() + 1)
   }
 
-  // Pre-compute days per month in the window for runoff distribution
-  const monthDayCounts = new Map<number, number>()
+  // Track the index at phase1EndDate for milestone extraction
+  let phase1EndIdx = dates.length - 1
+  for (let i = 0; i < dates.length; i++) {
+    if (new Date(dates[i] + 'T00:00:00').getTime() >= phase1EndMs) {
+      phase1EndIdx = i
+      break
+    }
+  }
+
+  // Pre-compute days per (year, month) for runoff distribution
+  const monthDayCounts = new Map<string, number>()
   for (const dt of dates) {
-    const month = new Date(dt + 'T00:00:00').getMonth()
-    monthDayCounts.set(month, (monthDayCounts.get(month) || 0) + 1)
+    const d = new Date(dt + 'T00:00:00')
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    monthDayCounts.set(key, (monthDayCounts.get(key) || 0) + 1)
   }
 
-  // Run each scenario
-  const curvesByScenario: Array<{ elevations: number[]; endContent: number }> = []
-  let centralTotalInflow = 0
-  let centralTotalOutflow = 0
-  let centralTotalEvap = 0
+  // Normal (no-intervention) baseline: full 7.48 MAF/yr outflow throughout, no FG
+  const normalOutflowAfPerDay = (announcement.baselineAnnualReleaseMaf * 1_000_000) / 365
 
-  for (const scenario of scenarios) {
-    const totalRunoff = projectedRunoffInflowAf * scenario.runoffScale
-    let content = startContent
-    const elevations: number[] = []
+  function runScenario(opts: { intervention: boolean }): Phase1Scenario {
+    const curvesByScenario: Array<{ elevations: number[]; contents: number[] }> = []
+    let centralTotalInflow = 0
+    let centralTotalOutflow = 0
+    let centralTotalEvap = 0
 
-    let totalInflow = 0
-    let totalOutflow = 0
-    let totalEvap = 0
+    for (const scenario of scenarios) {
+      const wy2026Runoff = projectedRunoffInflowAf * scenario.runoffScale
+      const wy2027Runoff = wy2027RunoffEstimateAf * scenario.runoffScale
+      let content = startContent
+      const elevations: number[] = []
+      const contents: number[] = []
 
-    for (let i = 0; i < dates.length; i++) {
-      const dt = new Date(dates[i] + 'T00:00:00')
-      const month = dt.getMonth()
+      let totalInflow = 0
+      let totalOutflow = 0
+      let totalEvap = 0
 
-      // Inflow: snowpack runoff (distributed by month) + base flow + Flaming Gorge
-      const runoffFraction = RUNOFF_MONTHLY_FRACTIONS[month] || 0
-      const daysInMonth = monthDayCounts.get(month) || 30
-      const runoffAfToday = runoffFraction > 0
-        ? (totalRunoff * runoffFraction) / daysInMonth
-        : 0
-      const baseFlowAf = BASE_FLOW_CFS * CFS_TO_AF_PER_DAY
-      const fgAf = derived.flamingGorgeAfPerDay
-      const inflowAf = runoffAfToday + baseFlowAf + fgAf
+      for (let i = 0; i < dates.length; i++) {
+        const dt = new Date(dates[i] + 'T00:00:00')
+        const month = dt.getMonth()
+        const year = dt.getFullYear()
+        const ms = dt.getTime()
 
-      // Outflow: remaining release budget spread evenly
-      const outflowAf = derived.remainingReleaseAfPerDay
+        const waterYear = month >= 9 ? year + 1 : year
+        const totalRunoffThisYear = waterYear === 2026 ? wy2026Runoff : wy2027Runoff
 
-      // Evaporation
-      const elevation = contentToElevation(content, sortedStorage)
-      const evapAf = getDailyEvaporationAf(month, elevation)
+        const runoffFraction = RUNOFF_MONTHLY_FRACTIONS[month] || 0
+        const dayKey = `${year}-${month}`
+        const daysInMonth = monthDayCounts.get(dayKey) || 30
+        const runoffAfToday = runoffFraction > 0
+          ? (totalRunoffThisYear * runoffFraction) / daysInMonth
+          : 0
 
-      // Water balance
-      content = content + inflowAf - outflowAf - evapAf
-      if (content < 0) content = 0
+        const baseFlowAf = BASE_FLOW_CFS * CFS_TO_AF_PER_DAY
+        const fgAf = opts.intervention ? derived.flamingGorgeAfPerDay : 0
+        const inflowAf = runoffAfToday + baseFlowAf + fgAf
 
-      totalInflow += inflowAf
-      totalOutflow += outflowAf
-      totalEvap += evapAf
+        let outflowAf: number
+        if (opts.intervention) {
+          outflowAf = ms < phase1EndMs
+            ? derived.reducedReleaseAfPerDay
+            : derived.normalReleaseAfPerDay
+        } else {
+          outflowAf = normalOutflowAfPerDay
+        }
 
-      elevations.push(contentToElevation(content, sortedStorage))
+        const elevation = contentToElevation(content, sortedStorage)
+        const evapAf = getDailyEvaporationAf(month, elevation)
+
+        content = content + inflowAf - outflowAf - evapAf
+        if (content < 0) content = 0
+
+        totalInflow += inflowAf
+        totalOutflow += outflowAf
+        totalEvap += evapAf
+
+        elevations.push(contentToElevation(content, sortedStorage))
+        contents.push(content)
+      }
+
+      curvesByScenario.push({ elevations, contents })
+
+      if (scenario.label === 'central') {
+        centralTotalInflow = totalInflow
+        centralTotalOutflow = totalOutflow
+        centralTotalEvap = totalEvap
+      }
     }
 
-    curvesByScenario.push({ elevations, endContent: content })
+    const daily: Phase1DailyPoint[] = dates.map((date, i) => ({
+      date,
+      p10: Math.round(curvesByScenario[0].elevations[i] * 10) / 10,
+      p50: Math.round(curvesByScenario[1].elevations[i] * 10) / 10,
+      p90: Math.round(curvesByScenario[2].elevations[i] * 10) / 10,
+    }))
 
-    if (scenario.label === 'central') {
-      centralTotalInflow = totalInflow
-      centralTotalOutflow = totalOutflow
-      centralTotalEvap = totalEvap
+    const buildMilestone = (idx: number, date: string): Phase1Milestone => ({
+      date,
+      p10Elevation: daily[idx].p10,
+      p50Elevation: daily[idx].p50,
+      p90Elevation: daily[idx].p90,
+      p50Content: Math.round(curvesByScenario[1].contents[idx]),
+    })
+
+    return {
+      daily,
+      phase1End: buildMilestone(phase1EndIdx, announcement.phase1EndDate),
+      ending: buildMilestone(daily.length - 1, announcement.planEndDate),
+      totalInflowAf: Math.round(centralTotalInflow),
+      totalOutflowAf: Math.round(centralTotalOutflow),
+      totalEvaporationAf: Math.round(centralTotalEvap),
     }
   }
 
-  // Assemble daily p10/p50/p90 from the three scenarios
-  // low = p10, central = p50, high = p90
-  const daily: Phase1DailyPoint[] = dates.map((date, i) => ({
-    date,
-    p10: Math.round(curvesByScenario[0].elevations[i] * 10) / 10,
-    p50: Math.round(curvesByScenario[1].elevations[i] * 10) / 10,
-    p90: Math.round(curvesByScenario[2].elevations[i] * 10) / 10,
-  }))
+  const intervention = runScenario({ intervention: true })
+  const baseline = runScenario({ intervention: false })
 
   return {
-    daily,
-    ending: {
-      p10Elevation: daily[daily.length - 1].p10,
-      p50Elevation: daily[daily.length - 1].p50,
-      p90Elevation: daily[daily.length - 1].p90,
-      p50Content: Math.round(curvesByScenario[1].endContent),
-    },
-    endDate: announcement.endDate,
-    totalInflowAf: Math.round(centralTotalInflow),
-    totalOutflowAf: Math.round(centralTotalOutflow),
-    totalEvaporationAf: Math.round(centralTotalEvap),
+    ...intervention,
+    intervention,
+    baseline,
+    endDate: announcement.planEndDate,
   }
 }
 

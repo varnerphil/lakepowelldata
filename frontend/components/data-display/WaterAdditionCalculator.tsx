@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { ElevationStorageCapacity } from '@/lib/db'
+import { useState, useMemo, useEffect } from 'react'
+import { ElevationStorageCapacity, type Ramp } from '@/lib/db'
 import { computePhase1Projection, type Phase1Result } from '@/lib/calculations'
-import { CURRENT_ANNOUNCEMENT } from '@/lib/federal-announcement'
+import { CURRENT_ANNOUNCEMENT, type FederalReleaseAnnouncement } from '@/lib/federal-announcement'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -23,25 +23,106 @@ interface WaterAdditionCalculatorProps {
   currentContent?: number
   currentDate?: string
   projectedRunoffInflowAf?: number
+  allRamps?: Ramp[]
 }
 
-const RAMP_MARKERS = [
+const DEFAULT_RAMPS: Array<{ name: string; elevation: number }> = [
   { name: 'Hite', elevation: 3650 },
   { name: 'Antelope Pt', elevation: 3588 },
   { name: 'The Cut', elevation: 3583 },
   { name: 'Bullfrog', elevation: 3578 },
-  { name: 'Wahweap', elevation: 3550 },
   { name: 'Halls', elevation: 3556 },
+  { name: 'Wahweap', elevation: 3550 },
   { name: 'Stateline', elevation: 3520 },
 ]
 
-const PRESETS = [
-  { label: '1.48 MAF (release cuts)', value: 1.48 },
-  { label: '~2 MAF (by Sep 30)', value: 2.0 },
-  { label: '2.48 MAF (by Apr 2027)', value: 2.48 },
-  { label: '3 MAF', value: 3.0 },
-  { label: '4 MAF', value: 4.0 },
+interface PlanPreset {
+  id: string
+  label: string
+  shortLabel: string
+  releaseCutsMaf: number
+  flamingGorgeMaf: number
+  newAnnualReleaseMaf: number
+  wy2027AnnualReleaseMaf: number
+  flamingGorgeTotalMaf: number
+  summary: string
+}
+
+const PLAN_PRESETS: PlanPreset[] = [
+  {
+    id: 'cuts-only',
+    label: 'Release cuts only (1.48 MAF)',
+    shortLabel: 'Cuts only',
+    releaseCutsMaf: 1.48,
+    flamingGorgeMaf: 0,
+    newAnnualReleaseMaf: 6.0,
+    wy2027AnnualReleaseMaf: 7.48,
+    flamingGorgeTotalMaf: 0,
+    summary:
+      'Powell releases cut 7.48 → 6.0 MAF through Sep 30, 2026. No Flaming Gorge transfer. WY2027 reverts to normal.',
+  },
+  {
+    id: 'federal-plan',
+    label: 'Full federal plan (2.48 MAF)',
+    shortLabel: 'Federal plan',
+    releaseCutsMaf: 1.48,
+    flamingGorgeMaf: 1.0,
+    newAnnualReleaseMaf: 6.0,
+    wy2027AnnualReleaseMaf: 7.48,
+    flamingGorgeTotalMaf: 1.0,
+    summary:
+      'Powell releases cut 7.48 → 6.0 MAF through Sep 30, 2026 (end of WY2026). Plus up to 1 MAF transferred from Flaming Gorge, Apr 2026 → Apr 2027.',
+  },
+  {
+    id: 'extended',
+    label: 'Extended plan — WY2027 also reduced (3.48 MAF)',
+    shortLabel: 'Extended',
+    releaseCutsMaf: 2.48,
+    flamingGorgeMaf: 1.0,
+    newAnnualReleaseMaf: 6.0,
+    wy2027AnnualReleaseMaf: 6.0,
+    flamingGorgeTotalMaf: 1.0,
+    summary:
+      'Federal plan + keep WY2027 releases at 6.0 MAF (vs reverting to 7.48 on Oct 1). What it would take to hold Powell near min power through April 2027.',
+  },
 ]
+
+function buildAnnouncementForPreset(preset: PlanPreset): FederalReleaseAnnouncement {
+  return {
+    ...CURRENT_ANNOUNCEMENT,
+    newAnnualReleaseMaf: preset.newAnnualReleaseMaf,
+    wy2027AnnualReleaseMaf: preset.wy2027AnnualReleaseMaf,
+    flamingGorgeTotalMaf: preset.flamingGorgeTotalMaf,
+  }
+}
+
+function PresetPills({
+  presetId,
+  setPresetId,
+  useShortLabel = false,
+}: {
+  presetId: string
+  setPresetId: (id: string) => void
+  useShortLabel?: boolean
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {PLAN_PRESETS.map((p) => (
+        <button
+          key={p.id}
+          onClick={() => setPresetId(p.id)}
+          className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-light transition-colors ${
+            presetId === p.id
+              ? 'bg-teal-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {useShortLabel ? p.shortLabel : p.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 /**
  * Canyon profile that exactly matches the StorageVisualization 1ft view,
@@ -226,8 +307,39 @@ export default function WaterAdditionCalculator({
   currentContent,
   currentDate,
   projectedRunoffInflowAf,
+  allRamps,
 }: WaterAdditionCalculatorProps) {
-  const [addedMAF, setAddedMAF] = useState(2.0)
+  const [presetId, setPresetId] = useState<string>('federal-plan')
+  const preset = useMemo(
+    () => PLAN_PRESETS.find((p) => p.id === presetId) ?? PLAN_PRESETS[1],
+    [presetId]
+  )
+  const addedMAF = preset.releaseCutsMaf + preset.flamingGorgeMaf
+  const announcement = useMemo(() => buildAnnouncementForPreset(preset), [preset])
+
+  // Load user's favorite ramps from localStorage — fall back to DEFAULT_RAMPS
+  const [favoriteIds, setFavoriteIds] = useState<number[] | null>(null)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('favoriteRamps')
+      if (stored) setFavoriteIds(JSON.parse(stored))
+      else setFavoriteIds([])
+    } catch {
+      setFavoriteIds([])
+    }
+  }, [])
+  const rampMarkers = useMemo(() => {
+    if (allRamps && favoriteIds && favoriteIds.length > 0) {
+      const favs = allRamps.filter((r) => favoriteIds.includes(r.id))
+      if (favs.length > 0) {
+        return favs.map((r) => ({
+          name: r.name.replace(/ (Ramp|Launch|Business Ramp|North Ramp|South Ramp)$/, ''),
+          elevation: r.min_safe_elevation || r.min_usable_elevation,
+        }))
+      }
+    }
+    return DEFAULT_RAMPS
+  }, [allRamps, favoriteIds])
 
   const sorted = useMemo(
     () => [...elevationStorageData].sort((a, b) => a.elevation - b.elevation),
@@ -280,13 +392,13 @@ export default function WaterAdditionCalculator({
     }
 
     // Which ramps are gained
-    const currentlyAccessible = RAMP_MARKERS.filter(
+    const currentlyAccessible = rampMarkers.filter(
       (r) => currentElevation >= r.elevation
     )
-    const newlyAccessible = RAMP_MARKERS.filter(
+    const newlyAccessible = rampMarkers.filter(
       (r) => currentElevation < r.elevation && newElevation >= r.elevation
     )
-    const stillBelow = RAMP_MARKERS.filter(
+    const stillBelow = rampMarkers.filter(
       (r) => newElevation < r.elevation
     )
 
@@ -299,79 +411,47 @@ export default function WaterAdditionCalculator({
       newlyAccessible,
       stillBelow,
     }
-  }, [currentElevation, addedMAF, sorted])
+  }, [currentElevation, addedMAF, sorted, rampMarkers])
 
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
-        What does additional water mean for Lake Powell?
+        What the federal plan actually does to Lake Powell
       </h3>
       <p className="text-xs sm:text-sm text-gray-500 font-light mb-5">
-        See how many feet the lake would rise with additional inflows at the current elevation.
-        The canyon is narrower at lower levels, so each acre-foot of water raises the lake more.
+        The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 → 6.0 MAF
+        through Sep 30, 2026, and transfers up to 1 MAF from Flaming Gorge through April 2027.
+        Pick a scenario below.
       </p>
 
-      {/* Federal announcement context */}
-      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-600 font-light leading-relaxed">
-        <p className="mb-2">
-          <span className="font-medium text-gray-800">April 2026 Federal Announcement:</span>{' '}
-          The Bureau of Reclamation reduced Lake Powell&apos;s Water Year 2026 release from
-          7.48 MAF to 6.0 MAF — saving <strong>1.48 MAF</strong> that stays in Powell. Since
-          Oct–Mar releases already went out at the old rate, the full 1.48 MAF of savings
-          lands in the remaining Apr–Sep window. An additional <strong>660K–1 MAF</strong> is
-          being released from Flaming Gorge into Powell through April 2027.
-        </p>
-        <p className="text-xs text-gray-500">
-          This calculator shows the <em>theoretical maximum</em> elevation gain if the selected
-          volume were added to today&apos;s lake level all at once. Actual gains will be lower
-          because evaporation (~500–600 KAF/yr) and ongoing releases continue throughout the period.
-          The presets below reflect the federal plan&apos;s expected net additions at key milestones.
-        </p>
+      {/* Preset selector */}
+      <div className="mb-5">
+        <PresetPills presetId={presetId} setPresetId={setPresetId} />
       </div>
 
-      {/* MAF selector */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-sm text-gray-600 font-light">Add:</span>
-        {PRESETS.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => setAddedMAF(p.value)}
-            className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-light transition-colors ${
-              addedMAF === p.value
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-        <div className="flex items-center gap-1.5 ml-2">
-          <input
-            type="number"
-            min={0.1}
-            max={15}
-            step={0.1}
-            value={addedMAF}
-            onChange={(e) => setAddedMAF(Math.max(0.1, Math.min(15, parseFloat(e.target.value) || 0.1)))}
-            className="w-16 px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-1 focus:ring-teal-400"
-          />
-          <span className="text-xs text-gray-500">MAF</span>
-        </div>
+      {/* Preset summary */}
+      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
+        {preset.summary}
       </div>
 
-      {/* Result headline */}
+      {/* Result headline — canyon scale */}
       <div className="bg-teal-50/60 rounded-xl p-4 sm:p-6 mb-6">
+        <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-2">
+          Step 1 — if all the water stayed
+        </div>
         <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
           <div>
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">Lake would rise</div>
+            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
+              {addedMAF.toFixed(2)} MAF dropped in today
+            </div>
             <div className="text-3xl sm:text-4xl font-light text-teal-800">
               +{result.rise.toFixed(1)} ft
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">New elevation</div>
+            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">Lake reaches</div>
             <div className="text-3xl sm:text-4xl font-light text-teal-800">
-              {result.newElevation.toFixed(1)} ft
+              {result.newElevation.toFixed(0)} ft
             </div>
           </div>
           <div className="sm:ml-auto text-right">
@@ -381,11 +461,9 @@ export default function WaterAdditionCalculator({
             </div>
           </div>
         </div>
-
-        {/* Context line */}
-        <p className="text-xs text-teal-700/80 mt-3 font-light">
-          At {currentElevation.toFixed(0)} ft, each foot of rise requires ~{Math.round(result.afPerFoot).toLocaleString()} acre-feet.
-          {result.rise > 20 && ' The rate slows as the lake rises because the canyon widens.'}
+        <p className="text-xs text-teal-700/80 mt-3 font-light italic">
+          But water keeps flowing out — releases to the Lower Basin, evaporation off
+          the surface — the whole time it&apos;s being added. The real outcome is in Step 2, below.
         </p>
       </div>
 
@@ -395,7 +473,7 @@ export default function WaterAdditionCalculator({
         currentElevation={currentElevation}
         newElevation={result.newElevation}
         addedMAF={addedMAF}
-        rampMarkers={RAMP_MARKERS}
+        rampMarkers={rampMarkers}
         newlyAccessible={result.newlyAccessible}
       />
 
@@ -403,7 +481,7 @@ export default function WaterAdditionCalculator({
       {result.newlyAccessible.length > 0 && (
         <div className="bg-emerald-50/60 rounded-lg px-4 py-3 mb-4">
           <p className="text-sm text-emerald-800 font-light">
-            <span className="font-medium">Ramps gained with +{addedMAF} MAF:</span>{' '}
+            <span className="font-medium">Ramps reached at that elevation:</span>{' '}
             {result.newlyAccessible.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
           </p>
         </div>
@@ -414,14 +492,20 @@ export default function WaterAdditionCalculator({
         </p>
       )}
 
-      {/* Phase 1 September Projection Chart */}
+      {/* Phase 1 Projection Chart — step 2, realistic outcome */}
       {currentContent && currentDate && projectedRunoffInflowAf !== undefined && (
         <Phase1Chart
+          preset={preset}
+          presetId={presetId}
+          setPresetId={setPresetId}
+          announcement={announcement}
           currentElevation={currentElevation}
           currentContent={currentContent}
           currentDate={currentDate}
           projectedRunoffInflowAf={projectedRunoffInflowAf}
           storageCapacity={elevationStorageData}
+          afPerFoot={result.afPerFoot}
+          rampMarkers={rampMarkers}
         />
       )}
     </div>
@@ -431,17 +515,29 @@ export default function WaterAdditionCalculator({
 // ─── Phase 1 Projection Chart ────────────────────────────────────
 
 function Phase1Chart({
+  preset,
+  presetId,
+  setPresetId,
+  announcement,
   currentElevation,
   currentContent,
   currentDate,
   projectedRunoffInflowAf,
   storageCapacity,
+  afPerFoot,
+  rampMarkers,
 }: {
+  preset: PlanPreset
+  presetId: string
+  setPresetId: (id: string) => void
+  announcement: FederalReleaseAnnouncement
   currentElevation: number
   currentContent: number
   currentDate: string
   projectedRunoffInflowAf: number
   storageCapacity: ElevationStorageCapacity[]
+  afPerFoot: number
+  rampMarkers: Array<{ name: string; elevation: number }>
 }) {
   const phase1 = useMemo(
     () =>
@@ -450,53 +546,186 @@ function Phase1Chart({
         startElevation: currentElevation,
         startContent: currentContent,
         projectedRunoffInflowAf,
-        announcement: CURRENT_ANNOUNCEMENT,
+        announcement,
         storageCapacity,
       }),
-    [currentDate, currentElevation, currentContent, projectedRunoffInflowAf, storageCapacity]
+    [currentDate, currentElevation, currentContent, projectedRunoffInflowAf, announcement, storageCapacity]
   )
 
   const chartData = useMemo(() => {
-    // Sample weekly for a compact chart
-    return phase1.daily
-      .filter((_, i) => i % 7 === 0 || i === phase1.daily.length - 1)
+    const baselineByDate = new Map(phase1.baseline.daily.map((d) => [d.date, d.p50]))
+    return phase1.intervention.daily
+      .filter((_, i) => i % 7 === 0 || i === phase1.intervention.daily.length - 1)
       .map((d) => ({
         timestamp: parseLocalDate(d.date).getTime(),
         date: d.date,
         p50: d.p50,
         p10: d.p10,
         p90: d.p90,
+        baseline: baselineByDate.get(d.date) ?? null,
       }))
   }, [phase1])
 
-  const rise = phase1.ending.p50Elevation - currentElevation
-  const yMin = Math.floor(Math.min(currentElevation, phase1.ending.p10Elevation) / 10) * 10 - 10
-  const yMax = Math.ceil(Math.max(phase1.ending.p90Elevation, currentElevation) / 10) * 10 + 10
+  const phase1Rise = phase1.intervention.phase1End.p50Elevation - currentElevation
+  const endRise = phase1.intervention.ending.p50Elevation - currentElevation
+  const baselineEndRise = phase1.baseline.ending.p50Elevation - currentElevation
+  const interventionGain = phase1.intervention.ending.p50Elevation - phase1.baseline.ending.p50Elevation
+  const phase1EndTs = parseLocalDate(phase1.intervention.phase1End.date).getTime()
+  const planEndTs = parseLocalDate(phase1.intervention.ending.date).getTime()
 
-  const rampLines = RAMP_MARKERS.filter((r) => r.elevation >= yMin && r.elevation <= yMax)
+  const allElevations = [
+    currentElevation,
+    phase1.intervention.phase1End.p10Elevation,
+    phase1.intervention.phase1End.p90Elevation,
+    phase1.intervention.ending.p10Elevation,
+    phase1.intervention.ending.p90Elevation,
+    phase1.baseline.ending.p50Elevation,
+    phase1.baseline.phase1End.p50Elevation,
+    3370, // Dead pool — always include in y-range so the reference line is visible
+  ]
+  const yMin = Math.floor(Math.min(...allElevations) / 10) * 10 - 10
+  const yMax = Math.ceil(Math.max(...allElevations) / 10) * 10 + 10
+
+  const rampLines = rampMarkers.filter((r) => r.elevation >= yMin && r.elevation <= yMax)
+
+  const totalInputMaf = phase1.intervention.totalInflowAf / 1_000_000
+  const totalOutputMaf = phase1.intervention.totalOutflowAf / 1_000_000
+  const totalEvapMaf = phase1.intervention.totalEvaporationAf / 1_000_000
+  const netChangeMaf = totalInputMaf - totalOutputMaf - totalEvapMaf
+  const runoffMaf = (projectedRunoffInflowAf ?? 0) / 1_000_000
+  const addedMAF = preset.releaseCutsMaf + preset.flamingGorgeMaf
+  const outflowMultiple = (totalOutputMaf / addedMAF).toFixed(1)
+
+  const narrative = (() => {
+    const direction = endRise >= 0 ? 'rise' : 'drop'
+    const endElev = phase1.intervention.ending.p50Elevation
+    const baselineEndElev = phase1.baseline.ending.p50Elevation
+    const planName = preset.id === 'federal-plan'
+      ? 'April 2026 federal plan'
+      : preset.id === 'extended'
+      ? 'extended federal plan'
+      : 'release cuts'
+
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-amber-800/70 uppercase tracking-wider">
+          Over the next 12 months
+        </p>
+        <ul className="list-none space-y-1 ml-0 pl-3 border-l-2 border-amber-300 text-[13px]">
+          <li>
+            <strong>In:</strong> ≈{totalInputMaf.toFixed(1)} MAF
+            ({runoffMaf.toFixed(2)} MAF snowmelt
+            {preset.flamingGorgeMaf > 0 && ` + ${preset.flamingGorgeMaf} MAF FG`}
+            {' '}+ base flow)
+          </li>
+          <li>
+            <strong>Out:</strong> ≈{totalOutputMaf.toFixed(1)} MAF released to
+            the Lower Basin — <strong>{outflowMultiple}×</strong> what the {planName} adds
+          </li>
+          <li>
+            <strong>Evap:</strong> ≈{totalEvapMaf.toFixed(2)} MAF off the surface
+          </li>
+        </ul>
+        <p>
+          Net: <strong>{netChangeMaf > 0 ? '+' : ''}{netChangeMaf.toFixed(2)} MAF</strong>.
+          At {currentElevation.toFixed(0)} ft, each foot of canyon holds ~
+          {(afPerFoot / 1000).toFixed(0)}K af → that&apos;s a{' '}
+          <strong>{endRise.toFixed(0)}-ft {direction}</strong> to{' '}
+          <strong>{endElev.toFixed(0)} ft</strong> by April 2027.
+        </p>
+        <p>
+          <strong>The {planName} saves {interventionGain.toFixed(0)} ft.</strong>{' '}
+          Without it, Powell drops to {baselineEndElev.toFixed(0)} ft
+          ({baselineEndRise.toFixed(0)} ft). Not a rise — a rescue.
+        </p>
+      </div>
+    )
+  })()
 
   return (
     <div className="mt-8 pt-6 border-t border-gray-100">
       <h3 className="text-base sm:text-lg font-light text-gray-900 mb-1">
-        Projected elevation through September 30
+        Step 2 — what actually happens by April 2027
       </h3>
-      <p className="text-xs sm:text-sm text-gray-500 font-light mb-4">
-        Daily water balance model using the federal release reduction (WY2026: 7.48 → 6.0 MAF),
-        Flaming Gorge inflows, current snowpack estimates (±20% range), and seasonal evaporation.
+      <p className="text-xs sm:text-sm text-gray-500 font-light mb-3">
+        Daily water-balance: releases, evaporation, this year&apos;s snowpack (±20%).
       </p>
 
-      {/* Ending elevation callout */}
-      <div className="bg-blue-50/60 rounded-lg px-4 py-3 mb-4">
-        <p className="text-sm text-blue-900 font-light">
-          By end of water year (Sep 30):{' '}
-          <span className="font-semibold text-lg">{phase1.ending.p50Elevation.toFixed(0)} ft</span>
-          <span className="text-blue-700 ml-2">
-            ({rise >= 0 ? '+' : ''}{rise.toFixed(0)} ft from today)
+      {/* In-sync scenario selector, duplicated here so mobile users don't lose
+          track of which scenario is active by the time they reach the chart */}
+      <div className="mb-4">
+        <PresetPills presetId={presetId} setPresetId={setPresetId} useShortLabel />
+      </div>
+
+      {/* Narrative summary */}
+      <div className="bg-amber-50/60 border border-amber-100 rounded-lg px-4 py-3 mb-4 text-sm text-amber-900 font-light leading-relaxed">
+        {narrative}
+      </div>
+
+      {/* Milestone callouts: intervention vs baseline at April 2027 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div className="bg-blue-50/60 rounded-lg px-4 py-3">
+          <div className="text-xs uppercase tracking-wider text-blue-700/70 mb-1">
+            Sep 30, 2026 (with plan)
+          </div>
+          <div className="text-sm text-blue-900 font-light">
+            <span className="font-semibold text-lg">{phase1.intervention.phase1End.p50Elevation.toFixed(0)} ft</span>
+            <span className="text-blue-700 ml-2">
+              ({phase1Rise >= 0 ? '+' : ''}{phase1Rise.toFixed(0)} ft)
+            </span>
+          </div>
+          <div className="text-xs text-blue-600 mt-1">
+            vs. {phase1.baseline.phase1End.p50Elevation.toFixed(0)} ft without plan
+          </div>
+        </div>
+        <div className="bg-teal-50/60 rounded-lg px-4 py-3">
+          <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
+            April 2027 (with plan)
+          </div>
+          <div className="text-sm text-teal-900 font-light">
+            <span className="font-semibold text-lg">{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</span>
+            <span className="text-teal-700 ml-2">
+              ({endRise >= 0 ? '+' : ''}{endRise.toFixed(0)} ft)
+            </span>
+          </div>
+          <div className="text-xs text-teal-600 mt-1">
+            vs. {phase1.baseline.ending.p50Elevation.toFixed(0)} ft without plan
+          </div>
+        </div>
+        <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
+          <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
+            Federal plan benefit
+          </div>
+          <div className="text-sm text-emerald-900 font-light">
+            <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
+            <span className="text-emerald-700 ml-2 text-xs">at Apr 2027</span>
+          </div>
+          <div className="text-xs text-emerald-600 mt-1">
+            Prevents a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
+          </div>
+        </div>
+      </div>
+
+      {/* Legend — make the two scenarios crystal clear before the chart */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 mb-2 text-[11px] sm:text-xs font-light">
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-6 h-[3px] rounded-sm bg-[#1d4ed8]" />
+          <span className="text-gray-700">
+            <strong className="font-medium text-[#1d4ed8]">With plan</strong> — release cuts + Flaming Gorge water
           </span>
-          <span className="text-xs text-blue-600 ml-2">
-            range: {phase1.ending.p10Elevation.toFixed(0)}–{phase1.ending.p90Elevation.toFixed(0)} ft
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block w-6 h-[2px]"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(to right, #dc2626 0, #dc2626 4px, transparent 4px, transparent 7px)',
+            }}
+          />
+          <span className="text-gray-700">
+            <strong className="font-medium text-[#dc2626]">Without plan</strong> — normal 7.48 MAF releases, no Flaming Gorge transfer
           </span>
-        </p>
+        </div>
       </div>
 
       {/* Chart */}
@@ -511,7 +740,8 @@ function Phase1Chart({
               domain={['dataMin', 'dataMax']}
               tickFormatter={(ts) => {
                 const d = new Date(ts)
-                return d.toLocaleDateString('en-US', { month: 'short' })
+                const month = d.toLocaleDateString('en-US', { month: 'short' })
+                return d.getMonth() === 0 ? `${month} ${d.getFullYear()}` : month
               }}
               tick={{ fontSize: 11, fill: '#888' }}
             />
@@ -525,13 +755,18 @@ function Phase1Chart({
                 const d = new Date(ts)
                 return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
               }}
-              formatter={(value: number, name: string) => {
-                const label = name === 'p50' ? 'Projected' : name === 'p10' ? 'Low estimate' : 'High estimate'
+              formatter={(value: number, name: string, entry: { dataKey?: string | number }) => {
+                const key = entry?.dataKey
+                if (key === 'p10') return [null, null]
+                const label =
+                  key === 'p50' ? 'With federal plan' :
+                  key === 'baseline' ? 'Without plan (7.48 MAF releases, no Flaming Gorge)' :
+                  key === 'p90' ? 'With plan — high estimate' : String(name)
                 return [`${value.toFixed(1)} ft`, label]
               }}
             />
 
-            {/* Uncertainty band */}
+            {/* Uncertainty band (intervention scenario) */}
             <Area
               dataKey="p90"
               stroke="none"
@@ -547,7 +782,18 @@ function Phase1Chart({
               isAnimationActive={false}
             />
 
-            {/* Median line */}
+            {/* Baseline (no intervention) line */}
+            <Line
+              dataKey="baseline"
+              type="monotone"
+              stroke="#dc2626"
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              dot={false}
+              isAnimationActive={false}
+            />
+
+            {/* Intervention (with plan) median line */}
             <Line
               dataKey="p50"
               type="monotone"
@@ -555,7 +801,6 @@ function Phase1Chart({
               strokeWidth={2.5}
               dot={false}
               isAnimationActive={false}
-              name="Federal Projection"
             />
 
             {/* Ramp reference lines */}
@@ -577,13 +822,48 @@ function Phase1Chart({
               strokeDasharray="5 5"
               label={{ value: 'Min Power', position: 'right', fill: '#f59e0b', fontSize: 10 }}
             />
+
+            {/* Dead pool — lake can't release water below this elevation */}
+            <ReferenceLine
+              y={3370}
+              stroke="#dc2626"
+              strokeDasharray="5 5"
+              label={{ value: 'Dead Pool', position: 'right', fill: '#dc2626', fontSize: 10 }}
+            />
+
+            {/* Sep 30, 2026 — Powell release cuts end (WY2026 boundary) */}
+            <ReferenceLine
+              x={phase1EndTs}
+              stroke="#6366f1"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: 'Sep 30 — Powell cuts end',
+                position: 'top',
+                fill: '#6366f1',
+                fontSize: 10,
+              }}
+            />
+
+            {/* Apr 30, 2027 — Flaming Gorge transfers end (plan window end) */}
+            <ReferenceLine
+              x={planEndTs}
+              stroke="#0d7377"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: 'Apr 2027 — FG ends',
+                position: 'insideTopRight',
+                fill: '#0d7377',
+                fontSize: 10,
+              }}
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
       <p className="text-[10px] text-gray-400 font-light text-center mt-2 italic">
-        Blue line: projected median elevation. Shaded band: ±20% snowpack uncertainty.
-        Based on {CURRENT_ANNOUNCEMENT.label}.
+        The gap between the two lines is what the plan buys.
       </p>
     </div>
   )

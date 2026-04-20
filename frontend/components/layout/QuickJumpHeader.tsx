@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
 interface Section {
   href: string
@@ -13,36 +13,60 @@ interface QuickJumpHeaderProps {
   sections: Section[]
 }
 
-/**
- * Always-visible sticky bar at the top of the page. Acts as a breadcrumb:
- * shows current elevation + daily change on the left, and a row of chips for
- * each page section. The chip matching the section currently in view is
- * highlighted via scroll-spy (IntersectionObserver on each section).
- */
 export default function QuickJumpHeader({
   elevation,
   dailyChangeInches,
   sections,
 }: QuickJumpHeaderProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const clickLockRef = useRef<string | null>(null)
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const scrollToId = useCallback(
+    (id: string | null) => {
+      // Lock scroll-spy for 1.2s so the click target stays highlighted
+      // during smooth-scroll animation
+      clickLockRef.current = id
+      setActiveId(id)
+      if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+      lockTimerRef.current = setTimeout(() => {
+        clickLockRef.current = null
+      }, 1200)
+
+      if (id === null) {
+        const main = document.querySelector('main')
+        if (main) main.scrollTo({ top: 0, behavior: 'smooth' })
+        else window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    []
+  )
 
   useEffect(() => {
     const ids = sections.map((s) => s.href.replace('#', ''))
     const mainEl =
       (typeof document !== 'undefined' && document.querySelector('main')) || null
 
-    // A section is "active" when its top has scrolled above this line.
-    // Set it just below the sticky header (~56px) so activation matches
-    // what the user visually sees at the top of the viewport.
-    const ACTIVATION_LINE_PX = 80
-
     const compute = () => {
+      // Don't override during a click-initiated scroll
+      if (clickLockRef.current !== null) return
+
+      const scrollContainer = mainEl || document.documentElement
+      const scrollTop = mainEl ? mainEl.scrollTop : window.scrollY
+
+      // "At top" = scrolled less than 100px
+      if (scrollTop < 100) {
+        setActiveId(null)
+        return
+      }
+
       let active: string | null = null
       for (const id of ids) {
         const el = document.getElementById(id)
         if (!el) continue
-        const top = el.getBoundingClientRect().top
-        if (top <= ACTIVATION_LINE_PX) active = id
+        // Use offsetTop relative to scroll container
+        const elTop = el.offsetTop
+        if (elTop <= scrollTop + 160) active = id
       }
       setActiveId(active)
     }
@@ -50,13 +74,17 @@ export default function QuickJumpHeader({
     compute()
     window.addEventListener('scroll', compute, { passive: true })
     mainEl?.addEventListener('scroll', compute, { passive: true })
-    window.addEventListener('resize', compute)
     return () => {
       window.removeEventListener('scroll', compute)
       mainEl?.removeEventListener('scroll', compute)
-      window.removeEventListener('resize', compute)
     }
   }, [sections])
+
+  useEffect(() => {
+    return () => {
+      if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+    }
+  }, [])
 
   const changeIsPositive = dailyChangeInches?.startsWith('+')
   const changeColor = dailyChangeInches
@@ -68,17 +96,13 @@ export default function QuickJumpHeader({
     : 'text-gray-500'
 
   return (
-    <div className="sticky top-0 z-40 -mx-3 lg:-mx-4 mb-4">
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-200">
+    <div className="sticky top-0 z-40 mb-4">
+      <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 rounded-lg">
         <div className="px-3 lg:px-4">
           <div className="flex items-center gap-3 py-2">
             <button
               type="button"
-              onClick={() => {
-                const main = document.querySelector('main')
-                if (main) main.scrollTo({ top: 0, behavior: 'smooth' })
-                else window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
+              onClick={() => scrollToId(null)}
               aria-label="Scroll to top"
               className={`inline-flex items-baseline gap-1.5 flex-shrink-0 px-3 py-1 rounded-full transition-colors whitespace-nowrap ${
                 activeId === null
@@ -119,6 +143,7 @@ export default function QuickJumpHeader({
                     <li key={s.href}>
                       <a
                         href={s.href}
+                        onClick={() => scrollToId(id)}
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] lg:text-xs font-light transition-colors whitespace-nowrap ${
                           active
                             ? 'bg-gray-900 text-white'
