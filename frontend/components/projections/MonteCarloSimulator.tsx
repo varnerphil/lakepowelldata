@@ -90,7 +90,7 @@ function ChipButton({
     <button
       type="button"
       onClick={() => scrollToControl(targetId)}
-      className={`px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${styles}`}
+      className={`px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 transition-colors cursor-pointer ${styles}`}
     >
       {children}
     </button>
@@ -120,12 +120,46 @@ export default function MonteCarloSimulator({
     () => new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
   )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
+  const [bottomNavHeight, setBottomNavHeight] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
   const workerRef = useRef<Worker | null>(null)
   const mountedRef = useRef(true)
+
+  // Measure BottomNav height so the fixed chip footer can sit exactly on top
+  // of it. CSS calc with env(safe-area-inset-bottom) diverges from BottomNav's
+  // real rendered height on some devices, producing an ugly gap.
+  useEffect(() => {
+    let observer: ResizeObserver | null = null
+    let rafId = 0
+    let resizeHandler: (() => void) | null = null
+
+    const attach = () => {
+      const nav = document.querySelector<HTMLElement>('nav.fixed.bottom-0')
+      if (!nav) {
+        rafId = requestAnimationFrame(attach)
+        return
+      }
+      const apply = () => {
+        setBottomNavHeight(window.innerWidth >= 768 ? 0 : nav.getBoundingClientRect().height)
+      }
+      apply()
+      observer = new ResizeObserver(apply)
+      observer.observe(nav)
+      resizeHandler = apply
+      window.addEventListener('resize', apply)
+    }
+
+    attach()
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      observer?.disconnect()
+      if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+    }
+  }, [])
 
   // Load favorite ramps from localStorage
   useEffect(() => {
@@ -321,12 +355,23 @@ export default function MonteCarloSimulator({
   const summary = result?.summary
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Mobile-only sticky config summary — sits at the top of the page and
-          pins as the user scrolls down. Each chip scrolls back to the control
-          that sets it. */}
-      <div className="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border border-gray-200 rounded-lg shadow-sm px-3 py-2">
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-light">
+    <div className="space-y-6 sm:space-y-8 pb-40 lg:pb-0">
+      {/* Mobile-only fixed config footer — stays pinned at the bottom of the
+          viewport as the user scrolls. Each chip scrolls to the control that
+          sets it. The wrapper's pb-40 above reserves space at page bottom so
+          the footer never covers the last content. Sits above BottomNav on
+          phones (<md); drops to the very bottom on tablets where BottomNav
+          is hidden. */}
+      <div
+        className="lg:hidden fixed inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2 md:pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        style={{
+          bottom:
+            bottomNavHeight > 0
+              ? `${bottomNavHeight}px`
+              : 'calc(4rem + max(env(safe-area-inset-bottom, 0px), 8px))',
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-center gap-2 text-[14px] font-light">
           <ChipButton targetId="ctrl-policy" variant="primary">
             Plan: {policy.name.replace(/^Federal Plan: /, 'Fed: ').replace(/ \([^)]+\)/, '')}
           </ChipButton>
@@ -366,12 +411,12 @@ export default function MonteCarloSimulator({
       {/* Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Policy */}
-        <div id="ctrl-policy" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
+        <div id="ctrl-policy" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-4">
           <PolicySelector value={policy} onChange={handlePolicyChange} />
         </div>
 
         {/* Time Horizon */}
-        <div id="ctrl-horizon" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
+        <div id="ctrl-horizon" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-4">
           <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
             Time Horizon
           </label>
@@ -465,7 +510,7 @@ export default function MonteCarloSimulator({
         </div>
 
         {/* Starting Point & Run */}
-        <div id="ctrl-start" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-36">
+        <div id="ctrl-start" className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 scroll-mt-4">
           <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
             Starting Point
           </label>
