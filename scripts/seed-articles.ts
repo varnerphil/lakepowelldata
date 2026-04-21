@@ -193,6 +193,17 @@ function gradeSpeed(gain10yr: number): AxisGrade {
   if (gain10yr >= -20) return 'D'
   return 'F'
 }
+// Bad-case Ending: p10 ending elevation at 40yr — where the lake actually
+// lands in the worst 10% of futures. Differs from Floor (the lowest point
+// reached at any time during the simulation). A plan can dip low early
+// and recover by 40yr: its Floor is low but its Ending is high.
+function gradeBadCaseEnd(p10End: number): AxisGrade {
+  if (p10End >= 3580) return 'A'
+  if (p10End >= 3500) return 'B'
+  if (p10End >= 3430) return 'C'
+  if (p10End > 3370) return 'D'
+  return 'F'
+}
 
 const GRADE_STYLE: Record<AxisGrade, string> = {
   A: 'background:#d1fae5; color:#065f46;',
@@ -211,6 +222,7 @@ interface PlanRow {
   meta: PlanMeta
   recovery: { grade: AxisGrade; medianEnd: number }
   floor: { grade: AxisGrade; lowestP10: number }
+  badCaseEnd: { grade: AxisGrade; p10End: number }
   safety: { grade: AxisGrade; stayAboveMinPower: number }
   speed: { grade: AxisGrade; gain10yr: number }
   overallGrade: AxisGrade
@@ -227,6 +239,7 @@ function buildPlanRow(scenario: any): PlanRow | null {
     meta,
     recovery: { grade: gradeRecovery(h40.medianEnd), medianEnd: h40.medianEnd },
     floor: { grade: gradeFloor(h40.lowestP10), lowestP10: h40.lowestP10 },
+    badCaseEnd: { grade: gradeBadCaseEnd(h40.p10End), p10End: h40.p10End },
     safety: { grade: gradeSafety(h40.stayAboveMinPower), stayAboveMinPower: h40.stayAboveMinPower },
     speed: { grade: gradeSpeed(h10.gain), gain10yr: h10.gain },
     overallGrade: h40.grade,
@@ -271,14 +284,17 @@ function buildScorecardGrid({
       ? [
           th('Plan', undefined, 'left'),
           th('Recovery', 'lake fills (40yr median)'),
-          th('Floor', 'worst-case p10'),
+          th('Floor', 'worst-case low point'),
+          th('Bad-case End', '40yr p10 ending'),
           th('Speed', '10yr gain'),
           th('Overall'),
         ].join('')
       : [
           th('Plan', undefined, 'left'),
           th('Recovery', 'fills the lake'),
-          th('Floor', 'worst-case'),
+          th('Floor', 'worst-case low'),
+          th('Bad-case End', 'bad-luck ending'),
+          th('Speed', '10yr gain'),
           th('Overall'),
         ].join('')
 
@@ -293,19 +309,15 @@ function buildScorecardGrid({
         ? ''
         : 'background:#fafafa;'
       const cells =
-        variant === 'full'
-          ? `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
-            cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
-            cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
-            cell(
-              r.speed.grade,
-              `${r.speed.gain10yr >= 0 ? '+' : ''}${r.speed.gain10yr.toFixed(0)} ft`
-            ) +
-            cell(r.overallGrade)
-          : `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
-            cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
-            cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
-            cell(r.overallGrade)
+        `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
+        cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
+        cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
+        cell(r.badCaseEnd.grade, `${r.badCaseEnd.p10End.toFixed(0)} ft`) +
+        cell(
+          r.speed.grade,
+          `${r.speed.gain10yr >= 0 ? '+' : ''}${r.speed.gain10yr.toFixed(0)} ft`
+        ) +
+        cell(r.overallGrade)
       return `<tr style="border-bottom:1px solid #f3f4f6; ${bg}">${cells}</tr>`
     })
     .join('')
@@ -450,7 +462,7 @@ function buildArticle0(): ArticleSpec {
 
 ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'preview' })}
 
-<p style="font-size:0.85rem; color:#6b7280; font-style:italic; margin-top:-0.5rem;">A single "overall" grade hides a real trade-off: Max Operational Flexibility wins on <strong>floor</strong> (worst-case safety); Supply Driven wins on <strong>recovery</strong> (how full the lake gets). The full head-to-head breaks this apart.</p>
+<p style="font-size:0.85rem; color:#6b7280; font-style:italic; margin-top:-0.5rem;">A single "overall" grade hides real trade-offs: Max Operational Flexibility wins on <strong>Floor</strong> (lowest point reached); Supply Driven wins on <strong>Recovery</strong>, <strong>Bad-case End</strong>, and <strong>Speed</strong>. The full head-to-head breaks this apart.</p>
 
 <p><a href="/articles/plans-head-to-head" style="color:#0d7377; font-weight:500;">Full side-by-side analysis, with all four axes and the speed-of-recovery dimension →</a></p>
 
@@ -582,7 +594,8 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <ul>
 <li><strong>Recovery</strong> — median ending elevation at 40 years. How full does the lake actually get? <em>Supply Driven wins</em> at ${supplyH40.medianEnd} ft.</li>
-<li><strong>Floor</strong> — the worst 10% of simulated futures, i.e. bad luck across decades. How bad can it get? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below the post-plan baseline. Every other plan's worst-case drops ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ ft further.</li>
+<li><strong>Floor</strong> — the single lowest point reached in the worst 10% of simulated futures (can be transient). How bad can it get at any moment? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below the post-plan baseline. Every other plan's worst-case dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ ft further.</li>
+<li><strong>Bad-case End</strong> — where the lake actually <em>ends up</em> in the worst 10% of futures at the 40-year mark. Different from Floor: a plan can dip low early and recover by the end. <em>Supply Driven wins</em> at ${supplyH40.p10End.toFixed(0)} ft — in the bad-luck case, SD still leaves the lake above MOF's bad-case ending of ${winnerH40.p10End.toFixed(0)} ft. The floor dip for SD is transient; MOF's bad case is flatter.</li>
 <li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery from the post-plan baseline. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
 </ul>
 
