@@ -34,6 +34,7 @@ export default function OutflowSimulator({
   defaults,
 }: OutflowSimulatorProps) {
   const PRESET_DATES = [
+    { label: 'Jan 1, 1996', value: '1996-01-01' },
     { label: 'Jan 1, 2000', value: '2000-01-01' },
     { label: 'Apr 13, 2005', value: '2005-04-13' },
     { label: 'Mar 17, 2014', value: '2014-03-17' },

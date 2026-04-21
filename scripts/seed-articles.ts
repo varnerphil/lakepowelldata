@@ -415,6 +415,8 @@ function buildArticle0(): ArticleSpec {
 
 <p>The black line is what actually happened. The colored lines are what would have happened under tighter management of the same water.</p>
 
+<p style="font-size:0.9rem;"><a href="/simulator?tab=historical&amp;start=1996-01-01&amp;mode=percentage&amp;pct=95" style="color:#0d7377; font-weight:500;">Run the 5% less since 1996 scenario yourself in the simulator →</a></p>
+
 <h2>"But the drought did it"</h2>
 
 <p>Look at the next chart. It shows every water year since 1996 as two bars side by side: what came in (inflow) and what was let out (outflow).</p>
