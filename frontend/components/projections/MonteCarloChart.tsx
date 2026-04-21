@@ -54,9 +54,12 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Timestamp of Phase 1/Phase 2 boundary for the vertical marker
+  // Monte Carlo takes over at Phase 1's phase1End (Sep 30, 2026) — the end
+  // of the reduced-release window, when the post-2026 operating rule would
+  // take effect. The deterministic Phase 1 curve is cut off there so there
+  // is no overlap with the Monte Carlo bands beyond that point.
   const phase1EndTimestamp = phase1Data
-    ? parseLocalDate(phase1Data.endDate).getTime()
+    ? parseLocalDate(phase1Data.phase1End.date).getTime()
     : null
 
   const chartData = useMemo(() => {
@@ -75,10 +78,14 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
     if (!phase1Data || phase1Data.daily.length === 0) return phase2
 
     const baselineByDate = new Map(phase1Data.baseline.daily.map((d) => [d.date, d.p50]))
+    const phase1EndMs = parseLocalDate(phase1Data.phase1End.date).getTime()
 
-    // Phase 1 (deterministic) — sample every 3 days for performance
+    // Phase 1 (deterministic) — trim to the reduced-release window
+    // (today → Sep 30, 2026) so the Phase 1 curve ends where the Monte
+    // Carlo bands begin. Sample every 3 days for performance.
     const phase1Points = phase1Data.daily
-      .filter((_, i) => i % 3 === 0 || i === phase1Data.daily.length - 1)
+      .filter((d) => parseLocalDate(d.date).getTime() <= phase1EndMs)
+      .filter((_, i, arr) => i % 3 === 0 || i === arr.length - 1)
       .map((d) => {
         const p25 = d.p10 + (d.p50 - d.p10) * 0.4
         const p75 = d.p50 + (d.p90 - d.p50) * 0.4
