@@ -83,12 +83,25 @@ const REF_LINES = {
   fullPool: { y: 3700, label: 'Full Pool (3,700)', color: '#0284c7', strokeDasharray: '5 5' } as ReferenceLineSpec,
 }
 
-/** Standard ramp + threshold reference lines for all article charts. */
+/** Full ramp + threshold reference lines — four ramps clustered at
+ *  3,553–3,650 plus min power and dead pool. Fine for per-plan charts
+ *  with a single line but TOO CROWDED for multi-plan overlays on mobile
+ *  (labels stack on top of each other). */
 const STANDARD_REF_LINES: ReferenceLineSpec[] = [
   { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
   { y: 3585, label: 'Antelope / The Cut', color: '#8b5cf6', strokeDasharray: '3 3' },
   { y: 3578, label: 'Bullfrog (3,578)', color: '#7c3aed', strokeDasharray: '3 3' },
   { y: 3553, label: 'Wahweap / Halls', color: '#c084fc', strokeDasharray: '3 3' },
+  REF_LINES.minPower,
+  REF_LINES.deadPool,
+]
+
+/** Compact reference lines for multi-plan overlay charts. Three widely
+ *  spaced thresholds instead of six — readable on a phone, still shows
+ *  the operational milestones that matter (approaching full, losing
+ *  power, losing outflow). */
+const COMPACT_REF_LINES: ReferenceLineSpec[] = [
+  { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
   REF_LINES.minPower,
   REF_LINES.deadPool,
 ]
@@ -599,7 +612,11 @@ function buildArticle7(): ArticleSpec {
     xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: STANDARD_REF_LINES,
+    // Six overlaid plan lines already crowd this chart — use the compact
+    // reference set (Hite, Min Power, Dead Pool) instead of the full
+    // six ramp + threshold lines, which stacked "Antelope / The Cut"
+    // directly on top of "Bullfrog (3,578)" (only 7 ft apart).
+    referenceLines: COMPACT_REF_LINES,
     caption:
       'Median (p50) trajectory under the driest decade on record. Same starting point, same inflow sampling, only the operating rule changes.',
   }
@@ -617,20 +634,20 @@ function buildArticle7(): ArticleSpec {
   }))
   const chartAug: ChartSpec = {
     chartType: 'line',
-    title: 'Abundance Act augmentation overlays',
+    title: 'Adding new water on top of 2007 Guidelines',
     data: chartAugData,
     series: [
-      { dataKey: 'maxFlex', color: '#16a34a', name: 'Max Op Flex (no augmentation)' },
-      { dataKey: 'phase1', color: '#0284c7', name: 'Current Ops + Abundance Phase 1 (2 MAF)' },
-      { dataKey: 'realistic', color: '#7c3aed', name: 'Current Ops + Abundance Realistic (3 MAF)' },
-      { dataKey: 'full', color: '#d4a574', name: 'Current Ops + Abundance Full (7 MAF)' },
+      { dataKey: 'maxFlex', color: '#16a34a', name: 'Max Op Flex (no new water)' },
+      { dataKey: 'phase1', color: '#0284c7', name: '+ Phase 1 (2 MAF/yr)' },
+      { dataKey: 'realistic', color: '#7c3aed', name: '+ Realistic (3 MAF/yr)' },
+      { dataKey: 'full', color: '#d4a574', name: '+ Full buildout (7 MAF/yr)' },
     ],
     xKey: 'year',
     xType: 'number',
     yLabel: 'Elevation (ft)',
-    referenceLines: STANDARD_REF_LINES,
+    referenceLines: COMPACT_REF_LINES,
     caption:
-      'Augmentation scenarios layered on the 2007 Guidelines. Note the delayed onset (buildout ~2045) — augmentation is a long-run lift, not a short-run rescue.',
+      'New water layered on the 2007 Guidelines. Buildout reaches peak around 2045 — new water is a long-run lift, not a short-run rescue.',
   }
 
   const winnerH40 = getH(maxFlex, 40)
