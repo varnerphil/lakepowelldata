@@ -118,7 +118,7 @@ const PLAN_META: Record<string, PlanMeta> = {
     label: 'Max Operational Flexibility',
     slug: 'max-operational-flexibility-plan',
     emphasis: true,
-    note: 'Strongest worst-case protection — floor holds closest to the post-plan baseline',
+    note: 'Strongest worst-case protection — floor holds closest to the Oct 1, 2026 baseline',
     noteTone: 'good',
   },
   'federal-plan-supply-driven': {
@@ -173,7 +173,7 @@ function gradeRecovery(medianEnd: number): AxisGrade {
   return 'F'
 }
 function gradeFloor(lowestP10: number): AxisGrade {
-  // A threshold lowered to 3470 — within ~10 ft of the post-plan baseline
+  // A threshold lowered to 3470 — within ~10 ft of the Oct 1, 2026 baseline
   // (3479.6) counts as "holds the line" in a drought year. Previously this
   // was 3490 (min power pool), which was unreachable by construction once
   // the federal plan had dropped Powell below min power.
@@ -515,7 +515,7 @@ function buildArticle0(): ArticleSpec {
 
 <h2>How the plans score</h2>
 
-<p>The chart below is a preview — how each plan does at the 40-year horizon, starting from the state Powell will be in after the April 2026 federal plan finishes playing out (reduced releases through Sep 2026, Flaming Gorge transfers through April 2027). <strong>Click any plan for its full breakdown.</strong></p>
+<p>The chart below is a preview — how each plan does at the 40-year horizon, starting <strong>October 1, 2026</strong>, when the reduced-release window ends and the new post-2026 operating rule would take effect (whatever the states and feds agree to). <strong>Click any plan for its full breakdown.</strong></p>
 
 ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'preview' })}
 
@@ -635,7 +635,7 @@ function buildArticle7(): ArticleSpec {
 
 <p><strong>That is what's possible. This article is about which of the plans actually on the table for post-2026 operations gets us closest.</strong></p>
 
-<p>We ran the five federal-plan alternatives plus the current 2007 Guidelines through the same stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 iterations, 40 years of projection. The starting point is the state of Lake Powell after the April 2026 federal plan finishes playing out (reduced releases through Sep 30, 2026, plus Flaming Gorge transfers through Apr 30, 2027) — i.e., every plan is evaluated on what it does <em>on top of</em> the current emergency measures. Same everything, except the long-term operating rule changes.</p>
+<p>We ran the five federal-plan alternatives plus the current 2007 Guidelines through the same stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 iterations, 40 years of projection. The starting point is the state of Lake Powell on <strong>October 1, 2026</strong> — the end of the reduced-release window, when the states/feds would have agreed on a post-2026 operating rule and the new plan takes over. The April 2026 federal plan&apos;s Flaming Gorge transfers may continue past Sep 30, but that future is uncertain, so the long-run comparison starts from the Sep 30 milestone. Same everything, except the long-term operating rule changes.</p>
 
 <p>Here is what each plan produced:</p>
 
@@ -651,14 +651,14 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <ul>
 <li><strong>Recovery</strong> — median ending elevation at 40 years. How full does the lake actually get? <em>Supply Driven wins</em> at ${supplyH40.medianEnd} ft.</li>
-<li><strong>Floor</strong> — the single lowest point reached in the worst 10% of simulated futures (can be transient). How bad can it get at any moment? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below the post-plan baseline. Every other plan's worst-case dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ ft further.</li>
+<li><strong>Floor</strong> — the single lowest point reached in the worst 10% of simulated futures (can be transient). How bad can it get at any moment? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below the Oct 1, 2026 baseline. Every other plan's worst-case dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ ft further.</li>
 <li><strong>Bad-case End</strong> — where the lake actually <em>ends up</em> in the worst 10% of futures at the 40-year mark. Different from Floor: a plan can dip low early and recover by the end. <em>Supply Driven wins</em> at ${supplyH40.p10End.toFixed(0)} ft — in the bad-luck case, SD still leaves the lake above MOF's bad-case ending of ${winnerH40.p10End.toFixed(0)} ft. The floor dip for SD is transient; MOF's bad case is flatter.</li>
-<li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery from the post-plan baseline. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
+<li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery from the Oct 1, 2026 baseline. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
 </ul>
 
 <p>No plan wins every axis. MOF and SD split the top two (MOF takes Floor; SD takes Recovery and Speed), with SD's median ${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher at 40 years and MOF's floor ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft higher. Both are real outcomes; the grid lets you weigh them against each other instead of compressing them into a single grade.</p>
 
-<p style="font-size:0.9rem; color:#6b7280; font-style:italic;">Note on grades: with the current WY2026 snowpack at ~23% of median, the federal plan finishes with Powell at roughly ${SCORECARDS.startElevation.toFixed(0)} ft — below minimum power pool (3,490 ft). The Overall grade is a weighted GPA of the four axes with <strong>Floor weighted 2×</strong> — worst-case outcomes (dead pool, lost power, closed marinas) have asymmetric consequences that recovery can't undo, so they count more. That is why MOF (2 A's + 2 B's with an A on Floor) earns an A and Supply Driven (3 A's + 1 C, with the C being Floor) earns an A−.</p>
+<p style="font-size:0.9rem; color:#6b7280; font-style:italic;">Note on grades: the Monte Carlo starts on Oct 1, 2026 — the end of the federal reduced-release window — with Powell at roughly ${SCORECARDS.startElevation.toFixed(0)} ft. The Overall grade is a weighted GPA of the four axes with <strong>Floor weighted 2×</strong> — worst-case outcomes (dead pool, lost power, closed marinas) have asymmetric consequences that recovery can't undo, so they count more. MOF (A on Floor + A on Speed) and Supply Driven (A on Recovery, Bad-case End, and Speed) both earn A Overall through different profiles: MOF holds the line in bad luck, SD recovers highest in typical years.</p>
 
 <h2>Which plan wins depends on what you value</h2>
 
@@ -666,7 +666,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h3>If you prioritize worst-case safety — Max Operational Flexibility</h3>
 
-<p>Starting from the post-federal-plan baseline of ${SCORECARDS.startElevation.toFixed(0)} ft, MOF is the plan whose worst-case floor <strong>holds closest to the starting line</strong>: ${winnerH40.lowestP10} ft, only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below where the federal plan leaves us. Every other plan's bottom-10% dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ feet further — Supply Driven's worst-case reaches ${supplyH40.lowestP10} ft, Enhanced Coordination's ${enhancedH40.lowestP10} ft. In practical terms: in a bad-luck decade, MOF is the plan least likely to make the drought situation dramatically worse.</p>
+<p>Starting from the post-Phase-1 baseline of ${SCORECARDS.startElevation.toFixed(0)} ft, MOF is the plan whose worst-case floor <strong>holds closest to the starting line</strong>: ${winnerH40.lowestP10} ft, only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below where the federal plan leaves us. Every other plan's bottom-10% dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ feet further — Supply Driven's worst-case reaches ${supplyH40.lowestP10} ft, Enhanced Coordination's ${enhancedH40.lowestP10} ft. In practical terms: in a bad-luck decade, MOF is the plan least likely to make the drought situation dramatically worse.</p>
 
 <p><strong>Pick MOF if your top concern is:</strong> "don't let the lake drop further than it already has."</p>
 
@@ -674,7 +674,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h3>If you prioritize filling the lake — Supply Driven</h3>
 
-<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from the post-federal-plan baseline. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff is visible in the grid: its worst-case floor (${supplyH40.lowestP10} ft) is ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft lower than MOF's. SD trades more downside exposure for more upside.</p>
+<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from the post-Phase-1 baseline. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff is visible in the grid: its worst-case floor (${supplyH40.lowestP10} ft) is ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft lower than MOF's. SD trades more downside exposure for more upside.</p>
 
 <p><strong>Pick SD if your top concern is:</strong> "get the lake as high as possible over the long run, and accept more worst-case exposure to get there."</p>
 

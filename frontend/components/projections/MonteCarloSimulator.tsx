@@ -250,12 +250,17 @@ export default function MonteCarloSimulator({
         setPhase1Result(null)
       }
 
-      // Phase 2 start: use Phase 1 ending state if available, else today
+      // Phase 2 start: Monte Carlo takes over at phase1End (Sep 30, 2026),
+      // when the reduced-release window ends and the post-2026 operating
+      // rule would take effect. Flaming Gorge may continue past Sep 30 in
+      // the deterministic projection, but the long-run policy comparison
+      // starts from the Sep 30 milestone since that's when the rule change
+      // happens.
       const phase2Start = phase1
         ? {
-            startDate: phase1.endDate,
-            startElevation: phase1.ending.p50Elevation,
-            startContent: phase1.ending.p50Content,
+            startDate: phase1.phase1End.date,
+            startElevation: phase1.phase1End.p50Elevation,
+            startContent: phase1.phase1End.p50Content,
           }
         : {
             startDate: data.startDate,

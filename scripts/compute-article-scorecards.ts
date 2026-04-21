@@ -431,10 +431,13 @@ async function main() {
   console.log(`Storage capacity: ${storageCapacity.length} entries\n`)
 
   // ─── Phase 1: apply federal plan deterministically ────────────────
-  // If we're still inside the federal-plan window (through Apr 30, 2027),
-  // walk today's lake state forward through the reduced-release + Flaming
-  // Gorge transfer period. Monte Carlo then starts from Phase 1's p50
-  // ending state instead of today — matching how the simulator UI behaves.
+  // Walk today's lake state forward through the reduced-release window
+  // (today → Sep 30, 2026). Monte Carlo then starts from the Phase 1
+  // *phase1End* state — not the full-plan ending — because Oct 1, 2026
+  // is when the post-2026 operating rule would take effect (whatever the
+  // states/feds agree to). The Flaming Gorge transfer may continue past
+  // Sep 30, but that future is too uncertain to bake into the long-run
+  // policy comparison, so we stop Phase 1 at Sep 30.
   let phase1Start = {
     date: latest.date,
     elevation: latest.elevation,
@@ -463,12 +466,12 @@ async function main() {
           storageCapacity: storageCapacity as any,
         })
         phase1Start = {
-          date: phase1.endDate,
-          elevation: phase1.ending.p50Elevation,
-          content: phase1.ending.p50Content,
+          date: phase1.phase1End.date,
+          elevation: phase1.phase1End.p50Elevation,
+          content: phase1.phase1End.p50Content,
         }
         console.log(
-          `Federal Phase 1 applied: ${latest.elevation.toFixed(1)} ft → ${phase1.ending.p50Elevation.toFixed(1)} ft by ${phase1.endDate}`
+          `Federal Phase 1 applied: ${latest.elevation.toFixed(1)} ft → ${phase1.phase1End.p50Elevation.toFixed(1)} ft by ${phase1.phase1End.date} (reduced-release window ends)`
         )
         console.log(
           `  snowpack: ${snowpackPct.toFixed(0)}% of median · projected WY2026 runoff: ${(snowproj.projectedRunoffInflow / 1_000_000).toFixed(2)} MAF\n`
@@ -552,10 +555,16 @@ async function main() {
     federalPhase1: phase1
       ? {
           announcement: CURRENT_ANNOUNCEMENT,
-          endDate: phase1.endDate,
+          // Monte Carlo takes over at phase1End (Sep 30, 2026) — when the
+          // post-2026 operating rule would replace the federal emergency
+          // measures. Full federal-plan ending (Apr 30, 2027) is included
+          // for reference only.
+          mcStartDate: phase1.phase1End.date,
+          mcStartElevationP50: phase1.phase1End.p50Elevation,
+          mcStartContentP50: phase1.phase1End.p50Content,
           startElevation: latest.elevation,
-          endElevationP50: phase1.ending.p50Elevation,
-          endContentP50: phase1.ending.p50Content,
+          fullPlanEndDate: phase1.endDate,
+          fullPlanEndElevationP50: phase1.ending.p50Elevation,
         }
       : null,
     stressTest: {
