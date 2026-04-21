@@ -622,6 +622,23 @@ function buildArticle7(): ArticleSpec {
       'Median (p50) trajectory under the driest decade on record. Same starting point, same inflow sampling, only the operating rule changes.',
   }
 
+  // CHART A-zoom: same data, first 5 years only — near-term readability
+  const chartPlansOverlay5yrData = chartPlansOverlayData.filter(
+    (d) => d.year !== null && (d.year as number) <= START_YEAR + 5
+  )
+  const chartPlansOverlay5yr: ChartSpec = {
+    chartType: 'line',
+    title: 'Same plans, first 5 years',
+    data: chartPlansOverlay5yrData,
+    series: chartPlansOverlay.series,
+    xKey: 'year',
+    xType: 'number',
+    yLabel: 'Elevation (ft)',
+    referenceLines: COMPACT_REF_LINES,
+    caption:
+      'Zoomed in to the first 5 years so the near-term differences between plans are easier to read. Same data as the chart above.',
+  }
+
   // CHART B: The winner with and without augmentation
   const augMaxLen = Math.max(
     ...[maxFlex, augPhase1, augRealistic, augFull].map((s) => s.dailyP50.length)
@@ -667,6 +684,10 @@ function buildArticle7(): ArticleSpec {
 <p>Here is what each plan produced.</p>
 
 [[chart:plansOverlay]]
+
+<p>Forty years is a long horizon. Here is the same chart zoomed to the first five years so the near-term choices are easier to see.</p>
+
+[[chart:plansOverlay5yr]]
 
 <h2>The full scorecard — four axes, and the winner depends on what you value</h2>
 
@@ -761,6 +782,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
     readTimeMinutes: 12,
     charts: [
       { key: 'plansOverlay', spec: chartPlansOverlay },
+      { key: 'plansOverlay5yr', spec: chartPlansOverlay5yr },
       { key: 'augmentation', spec: chartAug },
     ],
     bodyHtml,
