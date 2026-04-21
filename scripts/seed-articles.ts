@@ -93,6 +93,213 @@ const STANDARD_REF_LINES: ReferenceLineSpec[] = [
   REF_LINES.deadPool,
 ]
 
+// ─── Multi-axis scorecard grid ──────────────────────────────────
+// A single grade collapses the trade-off between plans that fill the lake
+// (SD) and plans that protect the floor (MOF). This grid breaks the score
+// into four separate axes so readers can judge each plan on the dimensions
+// that matter to them. Shared between the intro article (preview) and the
+// head-to-head article (full).
+
+type AxisGrade = 'A' | 'B' | 'C' | 'D' | 'F'
+
+interface PlanMeta {
+  label: string
+  slug?: string
+  emphasis?: boolean
+}
+
+const PLAN_META: Record<string, PlanMeta> = {
+  'federal-plan-max-operational-flexibility': {
+    label: 'Max Operational Flexibility',
+    slug: 'max-operational-flexibility-plan',
+    emphasis: true,
+  },
+  'federal-plan-supply-driven': {
+    label: 'Supply Driven',
+    slug: 'supply-driven-plan',
+    emphasis: true,
+  },
+  'federal-plan-enhanced-coordination': {
+    label: 'Enhanced Coordination',
+    slug: 'enhanced-coordination-plan',
+  },
+  'federal-plan-basic-coordination': {
+    label: 'Basic Coordination',
+    slug: 'basic-coordination-plan',
+  },
+  'current-operations-2007-guidelines': {
+    label: '2007 Guidelines (status quo)',
+  },
+  'federal-plan-no-action': {
+    label: 'No Action',
+    slug: 'no-action-plan',
+  },
+}
+
+const PLAN_ORDER = [
+  'federal-plan-max-operational-flexibility',
+  'federal-plan-supply-driven',
+  'federal-plan-enhanced-coordination',
+  'federal-plan-basic-coordination',
+  'current-operations-2007-guidelines',
+  'federal-plan-no-action',
+]
+
+// Thresholds are tied to meaningful operational milestones:
+//   3,600 ≈ comfortable pool, 3,550 ≈ healthy, 3,500 near min power,
+//   3,490 = min power pool, 3,440/3,400 = marina stress levels, 3,370 = dead pool.
+function gradeRecovery(medianEnd: number): AxisGrade {
+  if (medianEnd >= 3600) return 'A'
+  if (medianEnd >= 3550) return 'B'
+  if (medianEnd >= 3500) return 'C'
+  if (medianEnd >= 3430) return 'D'
+  return 'F'
+}
+function gradeFloor(lowestP10: number): AxisGrade {
+  if (lowestP10 >= 3490) return 'A'
+  if (lowestP10 >= 3440) return 'B'
+  if (lowestP10 >= 3400) return 'C'
+  if (lowestP10 > 3370) return 'D'
+  return 'F'
+}
+function gradeSafety(pctAboveMinPower: number): AxisGrade {
+  if (pctAboveMinPower >= 80) return 'A'
+  if (pctAboveMinPower >= 50) return 'B'
+  if (pctAboveMinPower >= 20) return 'C'
+  if (pctAboveMinPower >= 5) return 'D'
+  return 'F'
+}
+function gradeSpeed(gain10yr: number): AxisGrade {
+  if (gain10yr >= 40) return 'A'
+  if (gain10yr >= 15) return 'B'
+  if (gain10yr >= 0) return 'C'
+  if (gain10yr >= -20) return 'D'
+  return 'F'
+}
+
+const GRADE_STYLE: Record<AxisGrade, string> = {
+  A: 'background:#d1fae5; color:#065f46;',
+  B: 'background:#dbeafe; color:#1e40af;',
+  C: 'background:#fef3c7; color:#92400e;',
+  D: 'background:#f3f4f6; color:#374151;',
+  F: 'background:#fee2e2; color:#991b1b;',
+}
+
+function gradePill(g: AxisGrade): string {
+  return `<span style="display:inline-block; padding:0.15rem 0.7rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${GRADE_STYLE[g]}">${g}</span>`
+}
+
+interface PlanRow {
+  key: string
+  meta: PlanMeta
+  recovery: { grade: AxisGrade; medianEnd: number }
+  floor: { grade: AxisGrade; lowestP10: number }
+  safety: { grade: AxisGrade; stayAboveMinPower: number }
+  speed: { grade: AxisGrade; gain10yr: number }
+  overallGrade: AxisGrade
+}
+
+function buildPlanRow(scenario: any): PlanRow | null {
+  const meta = PLAN_META[scenario.key]
+  if (!meta) return null
+  const h40 = scenario.horizons.find((h: any) => h.years === 40)
+  const h10 = scenario.horizons.find((h: any) => h.years === 10)
+  if (!h40 || !h10) return null
+  return {
+    key: scenario.key,
+    meta,
+    recovery: { grade: gradeRecovery(h40.medianEnd), medianEnd: h40.medianEnd },
+    floor: { grade: gradeFloor(h40.lowestP10), lowestP10: h40.lowestP10 },
+    safety: { grade: gradeSafety(h40.stayAboveMinPower), stayAboveMinPower: h40.stayAboveMinPower },
+    speed: { grade: gradeSpeed(h10.gain), gain10yr: h10.gain },
+    overallGrade: h40.grade,
+  }
+}
+
+function planNameCell(row: PlanRow): string {
+  const weight = row.meta.emphasis ? 'font-weight:600;' : ''
+  if (row.meta.slug) {
+    return `<a href="/articles/${row.meta.slug}" style="color:#0d7377; text-decoration:none; ${weight}">${row.meta.label} →</a>`
+  }
+  return `<span style="color:#374151; ${weight}">${row.meta.label}</span>`
+}
+
+function buildScorecardGrid({
+  scenarios,
+  variant,
+}: {
+  scenarios: any[]
+  variant: 'preview' | 'full'
+}): string {
+  const rows = PLAN_ORDER
+    .map((key) => scenarios.find((s) => s.key === key))
+    .filter(Boolean)
+    .map(buildPlanRow)
+    .filter((r): r is PlanRow => r !== null)
+
+  const thStyle =
+    'padding:0.6rem 0.65rem; font-weight:500; color:#374151; font-size:0.85rem;'
+  const th = (label: string, sub?: string, align = 'center') =>
+    `<th style="${thStyle} text-align:${align};">${label}${sub ? `<div style="font-weight:400; color:#6b7280; font-size:0.7rem; margin-top:0.15rem;">${sub}</div>` : ''}</th>`
+
+  const headerHtml =
+    variant === 'full'
+      ? [
+          th('Plan', undefined, 'left'),
+          th('Recovery', 'lake fills (40yr median)'),
+          th('Floor', 'worst-case p10'),
+          th('Safety', '% above min power'),
+          th('Speed', '10yr gain'),
+          th('Overall'),
+        ].join('')
+      : [
+          th('Plan', undefined, 'left'),
+          th('Recovery', 'fills the lake'),
+          th('Floor', 'worst-case'),
+          th('Safety', 'above min power'),
+          th('Overall'),
+        ].join('')
+
+  const cell = (g: AxisGrade, detail?: string) =>
+    `<td style="padding:0.6rem 0.65rem; text-align:center; vertical-align:middle;">${gradePill(g)}${detail ? `<div style="font-size:0.7rem; color:#6b7280; margin-top:0.2rem;">${detail}</div>` : ''}</td>`
+
+  const bodyRows = rows
+    .map((r, i) => {
+      const bg = r.meta.emphasis
+        ? 'background:#f0fdf4;'
+        : i % 2 === 0
+        ? ''
+        : 'background:#fafafa;'
+      const cells =
+        variant === 'full'
+          ? `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
+            cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
+            cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
+            cell(r.safety.grade, `${Math.round(r.safety.stayAboveMinPower)}%`) +
+            cell(
+              r.speed.grade,
+              `${r.speed.gain10yr >= 0 ? '+' : ''}${r.speed.gain10yr.toFixed(0)} ft`
+            ) +
+            cell(r.overallGrade)
+          : `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
+            cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
+            cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
+            cell(r.safety.grade, `${Math.round(r.safety.stayAboveMinPower)}%`) +
+            cell(r.overallGrade)
+      return `<tr style="border-bottom:1px solid #f3f4f6; ${bg}">${cells}</tr>`
+    })
+    .join('')
+
+  return `
+<div style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
+<table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+<thead><tr style="border-bottom:2px solid #e5e7eb; background:#f9fafb;">${headerHtml}</tr></thead>
+<tbody>${bodyRows}</tbody>
+</table>
+</div>
+`
+}
+
 // ─── Article 0: The Real Problem Isn't Drought, It's Math ──────
 
 function buildArticle0(): ArticleSpec {
@@ -215,6 +422,16 @@ function buildArticle0(): ArticleSpec {
 <li>Which plans we think are worth pushing for, and why.</li>
 </ul>
 
+<h2>How the plans score</h2>
+
+<p>The chart below is a preview — how each plan does at the 40-year horizon under the driest decade on record, rated on three dimensions instead of one. <strong>Click any plan for its full breakdown.</strong></p>
+
+${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'preview' })}
+
+<p style="font-size:0.85rem; color:#6b7280; font-style:italic; margin-top:-0.5rem;">A single "overall" grade hides a real trade-off: Max Operational Flexibility wins on <strong>floor</strong> (worst-case safety); Supply Driven wins on <strong>recovery</strong> (how full the lake gets). The full head-to-head breaks this apart.</p>
+
+<p><a href="/articles/plans-head-to-head" style="color:#0d7377; font-weight:500;">Full side-by-side analysis, with all four axes and the speed-of-recovery dimension →</a></p>
+
 <p>The case in every one of those articles starts here: <strong>we have enough water. We just need to manage the system as if the water matters.</strong></p>
 
 <hr />
@@ -333,62 +550,22 @@ function buildArticle7(): ArticleSpec {
 
 [[chart:plansOverlay]]
 
-<h2>The scorecard</h2>
+<h2>The full scorecard — four axes, one winner depends on what you value</h2>
 
-<p>At the 40-year horizon, under the worst inflow regime in the record:</p>
+<p>At the 40-year horizon, under the worst inflow regime on record. The one-letter "overall" grade is useful shorthand, but it hides the real story: different plans win on different dimensions. <strong>Click any plan name for its dedicated article.</strong></p>
 
-<div style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
-<table style="width:100%; border-collapse:collapse; font-size:0.95rem;">
-<thead>
-<tr style="border-bottom:2px solid #e5e7eb; text-align:left; background:#f9fafb;">
-<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Plan</th>
-<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Median Ending</th>
-<th style="padding:0.75rem 1rem; font-weight:500; color:#374151;">Worst-Case Floor</th>
-<th style="padding:0.75rem 1rem; font-weight:500; color:#374151; text-align:center;">Grade</th>
-</tr>
-</thead>
-<tbody>
-<tr style="border-bottom:1px solid #f3f4f6; background:#f0fdf4;">
-<td style="padding:0.75rem 1rem; font-weight:500;">Max Operational Flexibility</td>
-<td style="padding:0.75rem 1rem; font-weight:600;">${winnerH40.medianEnd} ft</td>
-<td style="padding:0.75rem 1rem;">${winnerH40.lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#d1fae5; color:#065f46;">A</span></td>
-</tr>
-<tr style="border-bottom:1px solid #f3f4f6;">
-<td style="padding:0.75rem 1rem;">Supply Driven</td>
-<td style="padding:0.75rem 1rem; font-weight:500;">${supplyH40.medianEnd} ft</td>
-<td style="padding:0.75rem 1rem; color:#6b7280;">${supplyH40.lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#dbeafe; color:#1e40af;">B</span></td>
-</tr>
-<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
-<td style="padding:0.75rem 1rem;">Enhanced Coordination</td>
-<td style="padding:0.75rem 1rem; font-weight:500;">${enhancedH40.medianEnd} ft</td>
-<td style="padding:0.75rem 1rem; color:#6b7280;">${enhancedH40.lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#dbeafe; color:#1e40af;">B</span></td>
-</tr>
-<tr style="border-bottom:1px solid #f3f4f6;">
-<td style="padding:0.75rem 1rem;">Basic Coordination</td>
-<td style="padding:0.75rem 1rem; font-weight:500;">${getH(basic, 40).medianEnd} ft</td>
-<td style="padding:0.75rem 1rem; color:#6b7280;">${getH(basic, 40).lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#f3f4f6; color:#374151;">D</span></td>
-</tr>
-<tr style="border-bottom:1px solid #f3f4f6; background:#fafafa;">
-<td style="padding:0.75rem 1rem;">2007 Guidelines (status quo)</td>
-<td style="padding:0.75rem 1rem; font-weight:500;">${currentOpsH40.medianEnd} ft</td>
-<td style="padding:0.75rem 1rem; color:#6b7280;">${currentOpsH40.lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#f3f4f6; color:#374151;">D</span></td>
-</tr>
-<tr>
-<td style="padding:0.75rem 1rem;">No Action</td>
-<td style="padding:0.75rem 1rem; font-weight:500;">${noActionH40.medianEnd} ft</td>
-<td style="padding:0.75rem 1rem; color:#6b7280;">${noActionH40.lowestP10} ft</td>
-<td style="padding:0.75rem 1rem; text-align:center;"><span style="display:inline-block; padding:0.15rem 0.75rem; border-radius:9999px; font-weight:600; font-size:0.85rem; background:#fee2e2; color:#991b1b;">F</span></td>
-</tr>
-</tbody>
-</table>
-</div>
+${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
-<p>(Grades are based on ending elevation and worst-case floor; see each plan's article for the full 10/20/40 year breakdown.)</p>
+<h3>Reading the grid</h3>
+
+<ul>
+<li><strong>Recovery</strong> — median ending elevation at 40 years. How full does the lake actually get? <em>Supply Driven wins</em> at ${supplyH40.medianEnd} ft.</li>
+<li><strong>Floor</strong> — the worst 10% of simulated futures, i.e. bad luck across decades. How bad can it get? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — the only plan whose bad-luck floor stays above minimum power pool.</li>
+<li><strong>Safety</strong> — percent of time, across all 2,000 simulations and all 40 years, the lake sits above minimum power pool (3,490 ft). <em>MOF wins</em> at 100%, with SD close behind at ~82%.</li>
+<li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
+</ul>
+
+<p>If you had to pick a single winner on the composite, it is Max Operational Flexibility — the only plan that earns an A on <em>every</em> horizon in the original rubric, because its worst-case floor stays above min power. If you ranked purely on recovery, Supply Driven wins by a comfortable margin (${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher median at 40 years). Both are real; the grid lets you see both.</p>
 
 <h2>The winner: Max Operational Flexibility</h2>
 
