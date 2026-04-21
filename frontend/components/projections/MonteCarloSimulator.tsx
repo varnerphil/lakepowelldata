@@ -120,12 +120,52 @@ export default function MonteCarloSimulator({
     () => new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
   )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
+  const [bottomNavHeight, setBottomNavHeight] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
   const workerRef = useRef<Worker | null>(null)
   const mountedRef = useRef(true)
+
+  // Measure BottomNav's rendered height so the chip-footer can sit exactly on
+  // top of it. A hardcoded bottom value diverges from the nav's real height
+  // on devices with a home indicator (safe-area-inset-bottom) and even on
+  // desktop once BottomNav paddingBottom is applied — producing either a gap
+  // below the chips or an overlap behind the nav icons. ResizeObserver keeps
+  // the chip-footer in sync if the nav changes size (rotation, keyboard, etc).
+  useEffect(() => {
+    let observer: ResizeObserver | null = null
+    let rafId = 0
+
+    const attach = () => {
+      const nav = document.querySelector<HTMLElement>('nav.fixed.bottom-0')
+      if (!nav) {
+        rafId = requestAnimationFrame(attach)
+        return
+      }
+      const apply = () => {
+        // BottomNav hides at xl (≥1280). Above that, anchor at 0 so the
+        // chip-footer would sit flush to the viewport bottom — not that it
+        // should ever be visible there, since chip-footer shares the xl:hidden
+        // breakpoint, but keep the math consistent.
+        setBottomNavHeight(window.innerWidth >= 1280 ? 0 : nav.getBoundingClientRect().height)
+      }
+      apply()
+      observer = new ResizeObserver(apply)
+      observer.observe(nav)
+      window.addEventListener('resize', apply)
+      return apply
+    }
+
+    const resizeHandler = attach()
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      observer?.disconnect()
+      if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+    }
+  }, [])
 
   // Load favorite ramps from localStorage
   useEffect(() => {
@@ -343,7 +383,13 @@ export default function MonteCarloSimulator({
           pb-40 above reserves space so the footer doesn't cover content. */}
       <div
         data-testid="chip-footer"
-        className="xl:hidden fixed inset-x-0 z-30 bottom-[46px] bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2"
+        className="xl:hidden fixed inset-x-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2"
+        style={{
+          bottom:
+            bottomNavHeight > 0
+              ? `${bottomNavHeight}px`
+              : 'calc(4rem + max(env(safe-area-inset-bottom, 0px), 8px))',
+        }}
       >
         <div className="flex flex-wrap items-center justify-center gap-2 text-[14px] font-light">
           <ChipButton targetId="ctrl-policy" variant="primary">
