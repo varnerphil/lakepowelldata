@@ -574,7 +574,7 @@ function buildArticle7(): ArticleSpec {
 
 [[chart:plansOverlay]]
 
-<h2>The full scorecard — four axes, one winner depends on what you value</h2>
+<h2>The full scorecard — four axes, and the winner depends on what you value</h2>
 
 <p>At the 40-year horizon, under the worst inflow regime on record. The one-letter "overall" grade is useful shorthand, but it hides the real story: different plans win on different dimensions. <strong>Click any plan name for its dedicated article.</strong></p>
 
@@ -589,33 +589,45 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 <li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
 </ul>
 
-<p>If you had to pick a single winner on the composite, it is Max Operational Flexibility — the only plan that earns an A on <em>every</em> horizon in the original rubric, because its worst-case floor stays above min power. If you ranked purely on recovery, Supply Driven wins by a comfortable margin (${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher median at 40 years). Both are real; the grid lets you see both.</p>
+<p>No plan wins every axis. MOF and SD split the top two (MOF takes Floor and Safety; SD takes Recovery and Speed), with SD's median ${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher at 40 years and MOF's floor ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft higher. Both are real outcomes; the grid lets you weigh them against each other instead of compressing them into a single grade.</p>
 
-<h2>The winner: Max Operational Flexibility</h2>
+<h2>Which plan wins depends on what you value</h2>
 
-<p><strong>Max Operational Flexibility is the only plan that earns an A at every horizon.</strong> Under the last-decade stress test, it keeps the median lake at <strong>${winnerH40.medianEnd} ft</strong> over 40 years, and — crucially — the worst 10% of draws still floor at <strong>${winnerH40.lowestP10} ft</strong>, which is above minimum power pool (3,490 ft). In plain terms: even in the bottom 10% of bad-luck futures, Glen Canyon Dam keeps generating power, and the lake does not break critical thresholds.</p>
+<p>Three plans are in serious contention. They win on different axes of the scorecard, so picking between them is a priorities question, not a ranking question. Here is how to choose.</p>
 
-<p>No other plan keeps the p10 floor above min power. That alone is the case for Max Op Flex.</p>
+<h3>If you prioritize worst-case safety — Max Operational Flexibility</h3>
+
+<p>MOF is the only plan whose bottom-10% floor stays above minimum power pool. Even in the worst 10% of simulated futures, Glen Canyon Dam keeps generating power, the lake does not break critical thresholds, and the system retains operational flexibility. Its 40-year median of <strong>${winnerH40.medianEnd} ft</strong> is strong; its floor of <strong>${winnerH40.lowestP10} ft</strong> is what sets it apart.</p>
+
+<p><strong>Pick MOF if your top concern is:</strong> "no matter what inflows we get, the system has to hold."</p>
 
 <p><a href="/articles/max-operational-flexibility-plan">Full scorecard for Max Operational Flexibility →</a></p>
 
-<h2>Runner-up: Supply Driven</h2>
+<h3>If you prioritize filling the lake — Supply Driven</h3>
 
-<p>Supply Driven produces the <strong>highest median elevation of any plan</strong> — ${supplyH40.medianEnd} ft at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from today. That is near Hite territory. For anyone who cares about what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full."</p>
+<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from today. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff: its worst-case floor (${supplyH40.lowestP10} ft) dips ${Math.round(3490 - supplyH40.lowestP10)} feet below minimum power pool in the bottom 10% of futures, where MOF does not.</p>
 
-<p>It earns an A at the 20-year and 40-year horizons. At 10 years it scores B because the 4.7 MAF minimum release floor can bite during consecutive dry years in the short run — but over time, the supply-tracking logic produces the strongest recovery of any plan.</p>
+<p><strong>Pick SD if your top concern is:</strong> "get the lake as high as possible, and accept some worst-case exposure to get there."</p>
 
 <p><a href="/articles/supply-driven-plan">Full scorecard for Supply Driven →</a></p>
 
-<h2>Third place: Enhanced Coordination</h2>
+<h3>If you want a balanced fallback — Enhanced Coordination</h3>
 
-<p>Enhanced Coordination earns B at every horizon. Its median (${enhancedH40.medianEnd} ft) is lower than Supply Driven's, but its worst-case floor (${enhancedH40.lowestP10} ft) is better than Supply Driven's (${supplyH40.lowestP10} ft). If you value downside protection above all else and Max Op Flex is politically out of reach, Enhanced Coordination is the conservative fallback.</p>
+<p>Enhanced earns B's across the scorecard: a respectable median (${enhancedH40.medianEnd} ft), a decent floor (${enhancedH40.lowestP10} ft), and it stays within the existing Compact framework. It is not the leader on any axis, but it avoids the worst outcomes and is the conservative pick if neither MOF nor SD is politically achievable.</p>
 
 <p><a href="/articles/enhanced-coordination-plan">Full scorecard for Enhanced Coordination →</a></p>
 
-<h2>What the status quo produces</h2>
+<h2>Plans that don't meet the math</h2>
 
-<p>Sticking with the 2007 Guidelines earns a D at every horizon. The median ends at ${currentOpsH40.medianEnd} ft, and in the worst 10% of draws, the lake hits dead pool (3,370 ft). No Action is worse — an F, with the median at ${noActionH40.medianEnd} ft. Doing nothing is not "safe"; it is actively the worst option on the board.</p>
+<p>Three plans on the table don't clear the bar. Not emotionally — just by the numbers:</p>
+
+<ul>
+<li><strong>2007 Guidelines (status quo)</strong> — 40-year median of ${currentOpsH40.medianEnd} ft, below minimum power pool. Floor reaches dead pool (3,370 ft) in the worst 10% of futures. The structural deficit persists unchanged.</li>
+<li><strong>Basic Coordination</strong> — marginal improvement over status quo. 40-year median of ${getH(basic, 40).medianEnd} ft, still below min power. Floor reaches dead pool.</li>
+<li><strong>No Action</strong> — lowest median of any plan (${noActionH40.medianEnd} ft). Floor reaches dead pool. The weakest option on the table.</li>
+</ul>
+
+<p>These aren't recommendations against; they are the results the math produces. If any of these are the final choice, Powell's worst-case trajectory runs into dead pool over the 40-year stress test.</p>
 
 <p><a href="/articles/no-action-plan">More on the No Action plan →</a></p>
 
@@ -639,9 +651,9 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h2>The bottom line</h2>
 
-<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle. Two plans clearly rise above the rest, and the status quo is a failing grade.</p>
+<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle: <strong>two plans clear every bar for different reasons, and the status quo is not one of them.</strong></p>
 
-<p>If you live near the lake, launch boats on it, run a business that depends on it, or just love the place — the plans worth pushing for are <strong>Max Operational Flexibility</strong> (best overall protection) and <strong>Supply Driven</strong> (best lake recovery). Enhanced Coordination is a solid third if neither of those is politically achievable. Anything less is mathematically worse.</p>
+<p>If you prioritize worst-case safety, push for <strong>Max Operational Flexibility</strong>. If you prioritize filling the lake, push for <strong>Supply Driven</strong>. If neither is politically available, <strong>Enhanced Coordination</strong> is the conservative fallback that still avoids the worst outcomes. Anything below those three runs Powell into dead pool in the worst-10% of futures.</p>
 
 <p><em>Every number in this article comes from Monte Carlo simulations you can re-run on this site's <a href="/simulator">simulator</a>. Sources and methodology are documented on the <a href="/about">About page</a>.</em></p>
 `.trim()
@@ -649,7 +661,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
   return {
     slug: 'plans-head-to-head',
     title: 'The Head-to-Head: Which Post-2026 Plan Actually Wins?',
-    subtitle: `Max Operational Flexibility is the only plan that keeps Powell above minimum power pool in the worst 10% of futures.`,
+    subtitle: `Two plans clear every bar for different reasons — Max Operational Flexibility wins on worst-case safety, Supply Driven wins on lake recovery. The right pick depends on what you value.`,
     readTimeMinutes: 12,
     charts: [
       { key: 'plansOverlay', spec: chartPlansOverlay },
