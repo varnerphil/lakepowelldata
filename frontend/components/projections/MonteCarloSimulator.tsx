@@ -184,8 +184,12 @@ export default function MonteCarloSimulator({
     } catch {}
   }, [])
 
-  // Clean up worker on unmount
+  // Track mount/unmount so async work can bail after the component goes away.
+  // Set the ref to true on mount (not just at useRef initialisation) so the
+  // component recovers from React 18 strict-mode double-invoke and from SPA
+  // navigation that can leave the ref stuck at false after a prior cleanup.
   useEffect(() => {
+    mountedRef.current = true
     return () => {
       mountedRef.current = false
       if (workerRef.current) {
