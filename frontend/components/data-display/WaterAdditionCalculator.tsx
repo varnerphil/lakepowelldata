@@ -931,9 +931,10 @@ function Phase1Chart({
               strokeWidth={1.5}
               label={{
                 value: 'Sep 30 — Powell cuts end',
-                position: 'top',
+                position: 'insideTopLeft',
                 fill: '#6366f1',
                 fontSize: 10,
+                offset: 6,
               }}
             />
 
