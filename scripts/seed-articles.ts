@@ -96,12 +96,13 @@ const STANDARD_REF_LINES: ReferenceLineSpec[] = [
   REF_LINES.deadPool,
 ]
 
-/** Compact reference lines for multi-plan overlay charts. Three widely
- *  spaced thresholds instead of six — readable on a phone, still shows
- *  the operational milestones that matter (approaching full, losing
- *  power, losing outflow). */
+/** Compact reference lines for multi-plan overlay charts. Widely-spaced
+ *  thresholds readable on a phone — keep the popular Antelope / The Cut
+ *  ramp (common launch), drop Bullfrog (3,578) and Wahweap / Halls
+ *  (3,553) since they cluster within 7–32 ft of Antelope. */
 const COMPACT_REF_LINES: ReferenceLineSpec[] = [
   { y: 3650, label: 'Hite (3,650)', color: '#6366f1', strokeDasharray: '3 3' },
+  { y: 3585, label: 'Antelope / The Cut (3,585)', color: '#8b5cf6', strokeDasharray: '3 3' },
   REF_LINES.minPower,
   REF_LINES.deadPool,
 ]
