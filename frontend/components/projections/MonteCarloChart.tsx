@@ -259,13 +259,31 @@ export default function MonteCarloChart({ data, phase1Data, ramps = [], policyTi
 
           <Legend
             verticalAlign="top"
-            height={isMobile ? 50 : 36}
+            height={isMobile ? 70 : 44}
             wrapperStyle={{ fontSize: isMobile ? '9px' : '11px' }}
             content={() => (
               <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-gray-500 mb-1">
+                {phase1Data && (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="inline-block w-5 h-[3px] rounded" style={{ backgroundColor: '#1d4ed8' }} />
+                      With federal plan (Apr–Sep 2026)
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-5 h-[2px]"
+                        style={{
+                          backgroundImage:
+                            'repeating-linear-gradient(to right, #dc2626 0, #dc2626 4px, transparent 4px, transparent 7px)',
+                        }}
+                      />
+                      Without federal plan
+                    </span>
+                  </>
+                )}
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block w-5 h-[3px] rounded" style={{ backgroundColor: '#0d7377' }} />
-                  Median
+                  Median (post-Oct 2026)
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block w-4 h-3 rounded-sm border border-gray-200" style={{ backgroundColor: 'rgba(74, 144, 164, 0.3)' }} />
