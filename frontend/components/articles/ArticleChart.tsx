@@ -205,7 +205,11 @@ export default function ArticleChart({ spec }: { spec: ChartSpec }) {
                 strokeDasharray={ref.strokeDasharray || '5 5'}
                 label={{
                   value: ref.label,
-                  position: isMobile ? 'insideTopLeft' : 'right',
+                  // Always anchor to the right side of the chart — the margin
+                  // already reserves space for labels (80px mobile / 120px
+                  // desktop when reference lines are present). insideTopLeft
+                  // on mobile was stacking labels over the plotted data.
+                  position: 'right',
                   fill: ref.color,
                   fontSize: isMobile ? 9 : 11,
                 }}
