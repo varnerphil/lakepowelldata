@@ -255,17 +255,19 @@ function computeOverallGrade(
     points[speed] * 1
   const gpa = weighted / 5
 
+  // Tuned to conventional GPA letter bands so a 3 B's + 1 A profile lands
+  // at B+ (not A-). MOF and SD both sit at 3.6 → A; Enhanced at 3.2 → B+.
   if (gpa >= 3.85) return 'A+'
   if (gpa >= 3.5) return 'A'
-  if (gpa >= 3.15) return 'A-'
-  if (gpa >= 2.85) return 'B+'
-  if (gpa >= 2.5) return 'B'
-  if (gpa >= 2.15) return 'B-'
-  if (gpa >= 1.85) return 'C+'
-  if (gpa >= 1.5) return 'C'
-  if (gpa >= 1.15) return 'C-'
+  if (gpa >= 3.3) return 'A-'
+  if (gpa >= 3.0) return 'B+'
+  if (gpa >= 2.7) return 'B'
+  if (gpa >= 2.3) return 'B-'
+  if (gpa >= 2.0) return 'C+'
+  if (gpa >= 1.7) return 'C'
+  if (gpa >= 1.3) return 'C-'
   if (gpa >= 1.1) return 'D+'
-  if (gpa >= 0.5) return 'D'
+  if (gpa >= 0.7) return 'D'
   if (gpa > 0) return 'D-'
   return 'F'
 }
