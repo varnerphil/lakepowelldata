@@ -312,8 +312,13 @@ export default function MonteCarloSimulator({
           dryingTrendPctPerYear: STREAMFLOW_TRENDS[streamflowTrend].dryingPct,
           dryingTrendMaxReduction: STREAMFLOW_TRENDS[streamflowTrend].maxReduction,
           augmentation: getAugmentation(augmentationKey),
-          currentWaterYearInflowToDate: data.currentWaterYearInflowToDate,
-          snowpackData: data.snowpackData ?? undefined,
+          // When Phase 1 runs, it already consumes this year's snowpack runoff
+          // through April 30, 2027. The Monte Carlo picks up after that, and
+          // conditioning its first year on WY2026 snowpack (already spent)
+          // would suppress the WY2027 May–Sep runoff. Skip first-year
+          // conditioning in that case and let MC sample freely.
+          currentWaterYearInflowToDate: phase1 ? undefined : data.currentWaterYearInflowToDate,
+          snowpackData: phase1 ? undefined : (data.snowpackData ?? undefined),
         },
         historicalPatterns: data.patterns,
         storageCapacity: data.storageCapacity,
@@ -363,7 +368,9 @@ export default function MonteCarloSimulator({
           phones (<md); drops to the very bottom on tablets where BottomNav
           is hidden. */}
       <div
-        className="lg:hidden fixed inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2 md:pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+        data-testid="chip-footer"
+        data-measured-nav-height={bottomNavHeight}
+        className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2 md:pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
         style={{
           bottom:
             bottomNavHeight > 0
