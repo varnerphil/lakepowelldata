@@ -232,10 +232,12 @@ async function getWaterYearPatterns(): Promise<WaterYearPattern[]> {
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F'
 
 function grade(result: MonteCarloResult, startElevation: number): Grade {
-  // Grade on three things:
-  //   (1) median ending elevation — where we end up
-  //   (2) worst-case floor (p10 lowest reached) — how bad it gets in bad runs
-  //   (3) elevation gain — how much recovery does the plan produce?
+  // Drought-aware rubric. The simulator starts each scenario from the post
+  // federal-plan baseline; in drought years that baseline can sit below
+  // minimum power pool (3,490). Grading purely on "floor >= 3490" would
+  // make A unreachable by construction, so we reward plans that hold
+  // closest to the starting line AND produce meaningful recovery.
+  //
   // Thresholds correspond to meaningful operational milestones:
   //   3,580 ≈ 60% full, comfortable pool
   //   3,525 ≈ 40% full, healthy pool
@@ -246,13 +248,16 @@ function grade(result: MonteCarloResult, startElevation: number): Grade {
   const worst = result.summary.lowestElevationReached.p10
   const gain = median - startElevation
 
-  // A: strong recovery + floor stays above min power (best combined)
-  if (median >= 3580 && worst >= 3490) return 'A'
-  // A: exceptional recovery (100+ ft gain) even if floor dips slightly
-  if (median >= 3620 && worst >= 3430 && gain >= 100) return 'A'
-  if (median >= 3525 && worst >= 3430) return 'B'
+  // A: strong median + floor holds close to the starting line (~3470+)
+  if (median >= 3580 && worst >= 3470) return 'A'
+  // A: exceptional recovery (150+ ft gain) + modest floor above marina impact
+  if (median >= 3630 && gain >= 150 && worst >= 3400) return 'A'
+  // B: solid plan — strong median, floor above severe marina impact
+  if (median >= 3530 && worst >= 3420) return 'B'
+  // C: weak-positive — median above min power but floor dips
   if (median >= 3490 && worst >= 3400) return 'C'
-  if (median >= 3430 && worst >= 3370) return 'D'
+  // D: median survives above critical low but worst-case reaches dead pool
+  if (median >= 3430) return 'D'
   return 'F'
 }
 
