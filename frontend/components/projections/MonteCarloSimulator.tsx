@@ -120,46 +120,12 @@ export default function MonteCarloSimulator({
     () => new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
   )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
-  const [bottomNavHeight, setBottomNavHeight] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [favoriteRamps, setFavoriteRamps] = useState<Array<{ name: string; elevation: number }>>([])
   const workerRef = useRef<Worker | null>(null)
   const mountedRef = useRef(true)
-
-  // Measure BottomNav height so the fixed chip footer can sit exactly on top
-  // of it. CSS calc with env(safe-area-inset-bottom) diverges from BottomNav's
-  // real rendered height on some devices, producing an ugly gap.
-  useEffect(() => {
-    let observer: ResizeObserver | null = null
-    let rafId = 0
-    let resizeHandler: (() => void) | null = null
-
-    const attach = () => {
-      const nav = document.querySelector<HTMLElement>('nav.fixed.bottom-0')
-      if (!nav) {
-        rafId = requestAnimationFrame(attach)
-        return
-      }
-      const apply = () => {
-        setBottomNavHeight(window.innerWidth >= 768 ? 0 : nav.getBoundingClientRect().height)
-      }
-      apply()
-      observer = new ResizeObserver(apply)
-      observer.observe(nav)
-      resizeHandler = apply
-      window.addEventListener('resize', apply)
-    }
-
-    attach()
-
-    return () => {
-      cancelAnimationFrame(rafId)
-      observer?.disconnect()
-      if (resizeHandler) window.removeEventListener('resize', resizeHandler)
-    }
-  }, [])
 
   // Load favorite ramps from localStorage
   useEffect(() => {
@@ -369,23 +335,15 @@ export default function MonteCarloSimulator({
   const summary = result?.summary
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-40 lg:pb-0">
-      {/* Mobile-only fixed config footer — stays pinned at the bottom of the
-          viewport as the user scrolls. Each chip scrolls to the control that
-          sets it. The wrapper's pb-40 above reserves space at page bottom so
-          the footer never covers the last content. Sits above BottomNav on
-          phones (<md); drops to the very bottom on tablets where BottomNav
-          is hidden. */}
+    <div className="space-y-6 sm:space-y-8 pb-40 xl:pb-0">
+      {/* Fixed config footer — visible on phones and tablets (including
+          horizontal tablets), hidden at xl+ where the sidebar controls are
+          visible directly. BottomNav is also visible in this same range, so
+          the footer always sits above it at bottom-[46px]. The wrapper's
+          pb-40 above reserves space so the footer doesn't cover content. */}
       <div
         data-testid="chip-footer"
-        data-measured-nav-height={bottomNavHeight}
-        className="lg:hidden fixed inset-x-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2 md:pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
-        style={{
-          bottom:
-            bottomNavHeight > 0
-              ? `${bottomNavHeight}px`
-              : 'calc(4rem + max(env(safe-area-inset-bottom, 0px), 8px))',
-        }}
+        className="xl:hidden fixed inset-x-0 z-30 bottom-[46px] bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2"
       >
         <div className="flex flex-wrap items-center justify-center gap-2 text-[14px] font-light">
           <ChipButton targetId="ctrl-policy" variant="primary">

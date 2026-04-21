@@ -47,7 +47,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <MobileNav oswaldFont={oswald.className} />
-        <main className="bg-[#faf9f6] overflow-auto pb-[calc(4rem+max(env(safe-area-inset-bottom,0px),8px))] md:pb-0" style={{ height: 'calc(100vh - 5rem)' }}>{children}</main>
+        <main className="bg-[#faf9f6] overflow-auto pb-[calc(4rem+max(env(safe-area-inset-bottom,0px),8px))] xl:pb-0" style={{ height: 'calc(100vh - 5rem)' }}>{children}</main>
         <BottomNav />
         <Analytics />
       </body>
