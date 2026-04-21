@@ -515,7 +515,14 @@ function buildArticle0(): ArticleSpec {
 
 <h2>How the plans score</h2>
 
-<p>The chart below is a preview. It shows how each plan does over 40 years, starting <strong>October 1, 2026</strong>. That is when the short-term cuts end and the new long-term rule kicks in — whatever the states and feds pick. <strong>Click any plan for the full breakdown.</strong></p>
+<p>Here is the timeline you need to keep straight:</p>
+
+<ul>
+<li><strong>Now through Sep 30, 2026:</strong> the short-term federal plan is running. Powell releases are cut. A little water is moved in from Flaming Gorge. This is a bridge, not the fix.</li>
+<li><strong>Oct 1, 2026 and on:</strong> a new long-term rule takes over. The states and feds are picking that rule right now. Every plan on this site is a candidate for that long-term slot.</li>
+</ul>
+
+<p>The chart below shows how each candidate long-term plan does over the 40 years that follow. The starting point is Oct 1, 2026 — Lake Powell at the level the short-term plan leaves it. <strong>Click any plan for the full breakdown.</strong></p>
 
 ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'preview' })}
 
