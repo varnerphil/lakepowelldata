@@ -173,8 +173,12 @@ function gradeRecovery(medianEnd: number): AxisGrade {
   return 'F'
 }
 function gradeFloor(lowestP10: number): AxisGrade {
-  if (lowestP10 >= 3490) return 'A'
-  if (lowestP10 >= 3440) return 'B'
+  // A threshold lowered to 3470 — within ~10 ft of the post-plan baseline
+  // (3479.6) counts as "holds the line" in a drought year. Previously this
+  // was 3490 (min power pool), which was unreachable by construction once
+  // the federal plan had dropped Powell below min power.
+  if (lowestP10 >= 3470) return 'A'
+  if (lowestP10 >= 3430) return 'B'
   if (lowestP10 >= 3400) return 'C'
   if (lowestP10 > 3370) return 'D'
   return 'F'
@@ -213,8 +217,57 @@ const GRADE_STYLE: Record<AxisGrade, string> = {
   F: 'background:#fee2e2; color:#991b1b;',
 }
 
-function gradePill(g: AxisGrade): string {
-  return `<span style="display:inline-block; padding:0.15rem 0.7rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${GRADE_STYLE[g]}">${g}</span>`
+// Overall grade supports +/- modifiers so the profile differences between
+// plans that would otherwise tie on letter grade can be surfaced (e.g.,
+// MOF = A, SD = A- — same letter, different floor profile).
+type OverallGrade =
+  | 'A+' | 'A' | 'A-'
+  | 'B+' | 'B' | 'B-'
+  | 'C+' | 'C' | 'C-'
+  | 'D+' | 'D' | 'D-'
+  | 'F'
+
+function gradeBaseLetter(g: AxisGrade | OverallGrade): AxisGrade {
+  return g.charAt(0) as AxisGrade
+}
+
+function gradePill(g: AxisGrade | OverallGrade): string {
+  const style = GRADE_STYLE[gradeBaseLetter(g)]
+  return `<span style="display:inline-block; padding:0.15rem 0.7rem; border-radius:9999px; font-weight:600; font-size:0.85rem; ${style}">${g}</span>`
+}
+
+// Weighted GPA across the four visible axes. Floor is weighted 2× because
+// worst-case safety has asymmetric consequences (dead pool, lost power,
+// marinas closed) that recovery can't undo. Speed / Recovery / Bad-case
+// End are each weighted 1×. Produces a +/- letter so plans whose profiles
+// differ can be distinguished even when they round to the same base.
+function computeOverallGrade(
+  recovery: AxisGrade,
+  floor: AxisGrade,
+  badCaseEnd: AxisGrade,
+  speed: AxisGrade
+): OverallGrade {
+  const points: Record<AxisGrade, number> = { A: 4, B: 3, C: 2, D: 1, F: 0 }
+  const weighted =
+    points[recovery] * 1 +
+    points[floor] * 2 +
+    points[badCaseEnd] * 1 +
+    points[speed] * 1
+  const gpa = weighted / 5
+
+  if (gpa >= 3.85) return 'A+'
+  if (gpa >= 3.5) return 'A'
+  if (gpa >= 3.15) return 'A-'
+  if (gpa >= 2.85) return 'B+'
+  if (gpa >= 2.5) return 'B'
+  if (gpa >= 2.15) return 'B-'
+  if (gpa >= 1.85) return 'C+'
+  if (gpa >= 1.5) return 'C'
+  if (gpa >= 1.15) return 'C-'
+  if (gpa >= 1.1) return 'D+'
+  if (gpa >= 0.5) return 'D'
+  if (gpa > 0) return 'D-'
+  return 'F'
 }
 
 interface PlanRow {
@@ -225,7 +278,7 @@ interface PlanRow {
   badCaseEnd: { grade: AxisGrade; p10End: number }
   safety: { grade: AxisGrade; stayAboveMinPower: number }
   speed: { grade: AxisGrade; gain10yr: number }
-  overallGrade: AxisGrade
+  overallGrade: OverallGrade
 }
 
 function buildPlanRow(scenario: any): PlanRow | null {
@@ -234,15 +287,19 @@ function buildPlanRow(scenario: any): PlanRow | null {
   const h40 = scenario.horizons.find((h: any) => h.years === 40)
   const h10 = scenario.horizons.find((h: any) => h.years === 10)
   if (!h40 || !h10) return null
+  const recoveryGrade = gradeRecovery(h40.medianEnd)
+  const floorGrade = gradeFloor(h40.lowestP10)
+  const badCaseEndGrade = gradeBadCaseEnd(h40.p10End)
+  const speedGrade = gradeSpeed(h10.gain)
   return {
     key: scenario.key,
     meta,
-    recovery: { grade: gradeRecovery(h40.medianEnd), medianEnd: h40.medianEnd },
-    floor: { grade: gradeFloor(h40.lowestP10), lowestP10: h40.lowestP10 },
-    badCaseEnd: { grade: gradeBadCaseEnd(h40.p10End), p10End: h40.p10End },
+    recovery: { grade: recoveryGrade, medianEnd: h40.medianEnd },
+    floor: { grade: floorGrade, lowestP10: h40.lowestP10 },
+    badCaseEnd: { grade: badCaseEndGrade, p10End: h40.p10End },
     safety: { grade: gradeSafety(h40.stayAboveMinPower), stayAboveMinPower: h40.stayAboveMinPower },
-    speed: { grade: gradeSpeed(h10.gain), gain10yr: h10.gain },
-    overallGrade: h40.grade,
+    speed: { grade: speedGrade, gain10yr: h10.gain },
+    overallGrade: computeOverallGrade(recoveryGrade, floorGrade, badCaseEndGrade, speedGrade),
   }
 }
 
@@ -601,7 +658,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <p>No plan wins every axis. MOF and SD split the top two (MOF takes Floor; SD takes Recovery and Speed), with SD's median ${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher at 40 years and MOF's floor ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft higher. Both are real outcomes; the grid lets you weigh them against each other instead of compressing them into a single grade.</p>
 
-<p style="font-size:0.9rem; color:#6b7280; font-style:italic;">Note on grades: with the current WY2026 snowpack at ~23% of median, the federal plan finishes with Powell at roughly ${SCORECARDS.startElevation.toFixed(0)} ft — below minimum power pool (3,490 ft). This drags every grade down compared to a non-drought baseline. The absolute thresholds (min power, dead pool) stay put; what changes is that fewer plans clear them.</p>
+<p style="font-size:0.9rem; color:#6b7280; font-style:italic;">Note on grades: with the current WY2026 snowpack at ~23% of median, the federal plan finishes with Powell at roughly ${SCORECARDS.startElevation.toFixed(0)} ft — below minimum power pool (3,490 ft). The Overall grade is a weighted GPA of the four axes with <strong>Floor weighted 2×</strong> — worst-case outcomes (dead pool, lost power, closed marinas) have asymmetric consequences that recovery can't undo, so they count more. That is why MOF (2 A's + 2 B's with an A on Floor) earns an A and Supply Driven (3 A's + 1 C, with the C being Floor) earns an A−.</p>
 
 <h2>Which plan wins depends on what you value</h2>
 
