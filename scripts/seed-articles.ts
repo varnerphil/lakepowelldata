@@ -106,6 +106,11 @@ interface PlanMeta {
   label: string
   slug?: string
   emphasis?: boolean
+  // Short, plain-language summary shown under the plan name. For strong plans,
+  // the axis they win on. For weak plans, a matter-of-fact statement of the
+  // problem (no editorializing). Kept short enough to fit in a grid cell.
+  note: string
+  noteTone: 'good' | 'neutral' | 'bad'
 }
 
 const PLAN_META: Record<string, PlanMeta> = {
@@ -113,26 +118,38 @@ const PLAN_META: Record<string, PlanMeta> = {
     label: 'Max Operational Flexibility',
     slug: 'max-operational-flexibility-plan',
     emphasis: true,
+    note: 'Best for worst-case safety — only plan whose floor stays above min power',
+    noteTone: 'good',
   },
   'federal-plan-supply-driven': {
     label: 'Supply Driven',
     slug: 'supply-driven-plan',
     emphasis: true,
+    note: 'Best for filling the lake — highest median elevation at every long horizon',
+    noteTone: 'good',
   },
   'federal-plan-enhanced-coordination': {
     label: 'Enhanced Coordination',
     slug: 'enhanced-coordination-plan',
+    note: 'Best balanced fallback if MOF or SD is politically out of reach',
+    noteTone: 'neutral',
   },
   'federal-plan-basic-coordination': {
     label: 'Basic Coordination',
     slug: 'basic-coordination-plan',
+    note: 'Not recommended — median below min power; floor reaches dead pool',
+    noteTone: 'bad',
   },
   'current-operations-2007-guidelines': {
     label: '2007 Guidelines (status quo)',
+    note: 'Not recommended — structural deficit persists; floor reaches dead pool',
+    noteTone: 'bad',
   },
   'federal-plan-no-action': {
     label: 'No Action',
     slug: 'no-action-plan',
+    note: 'Not recommended — lowest median of any plan; floor reaches dead pool',
+    noteTone: 'bad',
   },
 }
 
@@ -218,10 +235,17 @@ function buildPlanRow(scenario: any): PlanRow | null {
 
 function planNameCell(row: PlanRow): string {
   const weight = row.meta.emphasis ? 'font-weight:600;' : ''
-  if (row.meta.slug) {
-    return `<a href="/articles/${row.meta.slug}" style="color:#0d7377; text-decoration:none; ${weight}">${row.meta.label} →</a>`
-  }
-  return `<span style="color:#374151; ${weight}">${row.meta.label}</span>`
+  const nameHtml = row.meta.slug
+    ? `<a href="/articles/${row.meta.slug}" style="color:#0d7377; text-decoration:none; ${weight}">${row.meta.label} →</a>`
+    : `<span style="color:#374151; ${weight}">${row.meta.label}</span>`
+  const noteColor =
+    row.meta.noteTone === 'good'
+      ? '#065f46'
+      : row.meta.noteTone === 'bad'
+      ? '#991b1b'
+      : '#6b7280'
+  const noteHtml = `<div style="font-size:0.72rem; color:${noteColor}; margin-top:0.25rem; line-height:1.3; font-weight:400;">${row.meta.note}</div>`
+  return `${nameHtml}${noteHtml}`
 }
 
 function buildScorecardGrid({
