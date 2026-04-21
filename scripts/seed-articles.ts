@@ -118,26 +118,26 @@ const PLAN_META: Record<string, PlanMeta> = {
     label: 'Max Operational Flexibility',
     slug: 'max-operational-flexibility-plan',
     emphasis: true,
-    note: 'Best for worst-case safety — only plan whose floor stays above min power',
+    note: 'Strongest worst-case protection — floor holds closest to the post-plan baseline',
     noteTone: 'good',
   },
   'federal-plan-supply-driven': {
     label: 'Supply Driven',
     slug: 'supply-driven-plan',
     emphasis: true,
-    note: 'Best for filling the lake — highest median elevation at every long horizon',
+    note: 'Best recovery — highest median elevation at every long horizon',
     noteTone: 'good',
   },
   'federal-plan-enhanced-coordination': {
     label: 'Enhanced Coordination',
     slug: 'enhanced-coordination-plan',
-    note: 'Best balanced fallback if MOF or SD is politically out of reach',
+    note: 'Balanced fallback — middling on every axis, no major weakness',
     noteTone: 'neutral',
   },
   'federal-plan-basic-coordination': {
     label: 'Basic Coordination',
     slug: 'basic-coordination-plan',
-    note: 'Not recommended — median below min power; floor reaches dead pool',
+    note: 'Not recommended — median stays below min power; floor reaches dead pool',
     noteTone: 'bad',
   },
   'current-operations-2007-guidelines': {
@@ -272,7 +272,6 @@ function buildScorecardGrid({
           th('Plan', undefined, 'left'),
           th('Recovery', 'lake fills (40yr median)'),
           th('Floor', 'worst-case p10'),
-          th('Safety', '% above min power'),
           th('Speed', '10yr gain'),
           th('Overall'),
         ].join('')
@@ -280,7 +279,6 @@ function buildScorecardGrid({
           th('Plan', undefined, 'left'),
           th('Recovery', 'fills the lake'),
           th('Floor', 'worst-case'),
-          th('Safety', 'above min power'),
           th('Overall'),
         ].join('')
 
@@ -299,7 +297,6 @@ function buildScorecardGrid({
           ? `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
             cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
             cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
-            cell(r.safety.grade, `${Math.round(r.safety.stayAboveMinPower)}%`) +
             cell(
               r.speed.grade,
               `${r.speed.gain10yr >= 0 ? '+' : ''}${r.speed.gain10yr.toFixed(0)} ft`
@@ -308,7 +305,6 @@ function buildScorecardGrid({
           : `<td style="padding:0.6rem 0.75rem; text-align:left;">${planNameCell(r)}</td>` +
             cell(r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`) +
             cell(r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`) +
-            cell(r.safety.grade, `${Math.round(r.safety.stayAboveMinPower)}%`) +
             cell(r.overallGrade)
       return `<tr style="border-bottom:1px solid #f3f4f6; ${bg}">${cells}</tr>`
     })
@@ -448,7 +444,7 @@ function buildArticle0(): ArticleSpec {
 
 <h2>How the plans score</h2>
 
-<p>The chart below is a preview — how each plan does at the 40-year horizon under the driest decade on record, rated on three dimensions instead of one. <strong>Click any plan for its full breakdown.</strong></p>
+<p>The chart below is a preview — how each plan does at the 40-year horizon, starting from the state Powell will be in after the April 2026 federal plan finishes playing out (reduced releases through Sep 2026, Flaming Gorge transfers through April 2027). <strong>Click any plan for its full breakdown.</strong></p>
 
 ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'preview' })}
 
@@ -584,12 +580,13 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <ul>
 <li><strong>Recovery</strong> — median ending elevation at 40 years. How full does the lake actually get? <em>Supply Driven wins</em> at ${supplyH40.medianEnd} ft.</li>
-<li><strong>Floor</strong> — the worst 10% of simulated futures, i.e. bad luck across decades. How bad can it get? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — the only plan whose bad-luck floor stays above minimum power pool.</li>
-<li><strong>Safety</strong> — percent of time, across all 2,000 simulations and all 40 years, the lake sits above minimum power pool (3,490 ft). <em>MOF wins</em> at 100%, with SD close behind at ~82%.</li>
-<li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
+<li><strong>Floor</strong> — the worst 10% of simulated futures, i.e. bad luck across decades. How bad can it get? <em>Max Operational Flexibility wins</em> at ${winnerH40.lowestP10} ft — only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below the post-plan baseline. Every other plan's worst-case drops ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ ft further.</li>
+<li><strong>Speed</strong> — median elevation gain in the first 10 years. Near-term recovery from the post-plan baseline. <em>SD wins</em> at +${getH(supply, 10).gain} ft, narrowly ahead of MOF (+${getH(maxFlex, 10).gain} ft).</li>
 </ul>
 
-<p>No plan wins every axis. MOF and SD split the top two (MOF takes Floor and Safety; SD takes Recovery and Speed), with SD's median ${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher at 40 years and MOF's floor ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft higher. Both are real outcomes; the grid lets you weigh them against each other instead of compressing them into a single grade.</p>
+<p>No plan wins every axis. MOF and SD split the top two (MOF takes Floor; SD takes Recovery and Speed), with SD's median ${Math.round(supplyH40.medianEnd - winnerH40.medianEnd)} ft higher at 40 years and MOF's floor ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft higher. Both are real outcomes; the grid lets you weigh them against each other instead of compressing them into a single grade.</p>
+
+<p style="font-size:0.9rem; color:#6b7280; font-style:italic;">Note on grades: with the current WY2026 snowpack at ~23% of median, the federal plan finishes with Powell at roughly ${SCORECARDS.startElevation.toFixed(0)} ft — below minimum power pool (3,490 ft). This drags every grade down compared to a non-drought baseline. The absolute thresholds (min power, dead pool) stay put; what changes is that fewer plans clear them.</p>
 
 <h2>Which plan wins depends on what you value</h2>
 
@@ -597,23 +594,23 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h3>If you prioritize worst-case safety — Max Operational Flexibility</h3>
 
-<p>MOF is the only plan whose bottom-10% floor stays above minimum power pool. Even in the worst 10% of simulated futures, Glen Canyon Dam keeps generating power, the lake does not break critical thresholds, and the system retains operational flexibility. Its 40-year median of <strong>${winnerH40.medianEnd} ft</strong> is strong; its floor of <strong>${winnerH40.lowestP10} ft</strong> is what sets it apart.</p>
+<p>Starting from the post-federal-plan baseline of ${SCORECARDS.startElevation.toFixed(0)} ft, MOF is the plan whose worst-case floor <strong>holds closest to the starting line</strong>: ${winnerH40.lowestP10} ft, only ${Math.round(SCORECARDS.startElevation - winnerH40.lowestP10)} ft below where the federal plan leaves us. Every other plan's bottom-10% dips ${Math.round(SCORECARDS.startElevation - supplyH40.lowestP10)}+ feet further — Supply Driven's worst-case reaches ${supplyH40.lowestP10} ft, Enhanced Coordination's ${enhancedH40.lowestP10} ft. In practical terms: in a bad-luck decade, MOF is the plan least likely to make the drought situation dramatically worse.</p>
 
-<p><strong>Pick MOF if your top concern is:</strong> "no matter what inflows we get, the system has to hold."</p>
+<p><strong>Pick MOF if your top concern is:</strong> "don't let the lake drop further than it already has."</p>
 
 <p><a href="/articles/max-operational-flexibility-plan">Full scorecard for Max Operational Flexibility →</a></p>
 
 <h3>If you prioritize filling the lake — Supply Driven</h3>
 
-<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from the post-federal-plan baseline. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff: its worst-case floor (${supplyH40.lowestP10} ft) dips ${Math.round(3490 - supplyH40.lowestP10)} feet below minimum power pool in the bottom 10% of futures, where MOF does not.</p>
+<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from the post-federal-plan baseline. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff is visible in the grid: its worst-case floor (${supplyH40.lowestP10} ft) is ${Math.round(winnerH40.lowestP10 - supplyH40.lowestP10)} ft lower than MOF's. SD trades more downside exposure for more upside.</p>
 
-<p><strong>Pick SD if your top concern is:</strong> "get the lake as high as possible, and accept some worst-case exposure to get there."</p>
+<p><strong>Pick SD if your top concern is:</strong> "get the lake as high as possible over the long run, and accept more worst-case exposure to get there."</p>
 
 <p><a href="/articles/supply-driven-plan">Full scorecard for Supply Driven →</a></p>
 
 <h3>If you want a balanced fallback — Enhanced Coordination</h3>
 
-<p>Enhanced earns B's across the scorecard: a respectable median (${enhancedH40.medianEnd} ft), a decent floor (${enhancedH40.lowestP10} ft), and it stays within the existing Compact framework. It is not the leader on any axis, but it avoids the worst outcomes and is the conservative pick if neither MOF nor SD is politically achievable.</p>
+<p>Enhanced lands in the middle of the scorecard — a reasonable median (${enhancedH40.medianEnd} ft) and a moderate floor (${enhancedH40.lowestP10} ft), without being the leader on either axis. It stays within the existing Compact framework and avoids the worst outcomes. If neither MOF nor SD is politically achievable, Enhanced is the conservative pick.</p>
 
 <p><a href="/articles/enhanced-coordination-plan">Full scorecard for Enhanced Coordination →</a></p>
 
@@ -651,7 +648,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h2>The bottom line</h2>
 
-<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle: <strong>two plans clear every bar for different reasons, and the status quo is not one of them.</strong></p>
+<p>We built this site to make the post-2026 decisions legible to the people who actually use Lake Powell. The math is not subtle: <strong>two plans stand out for different reasons, and the status quo is not one of them.</strong></p>
 
 <p>If you prioritize worst-case safety, push for <strong>Max Operational Flexibility</strong>. If you prioritize filling the lake, push for <strong>Supply Driven</strong>. If neither is politically available, <strong>Enhanced Coordination</strong> is the conservative fallback that still avoids the worst outcomes. Anything below those three runs Powell into dead pool in the worst-10% of futures.</p>
 
@@ -661,7 +658,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
   return {
     slug: 'plans-head-to-head',
     title: 'The Head-to-Head: Which Post-2026 Plan Actually Wins?',
-    subtitle: `Two plans clear every bar for different reasons — Max Operational Flexibility wins on worst-case safety, Supply Driven wins on lake recovery. The right pick depends on what you value.`,
+    subtitle: `Two plans stand out for different reasons — Max Operational Flexibility for worst-case protection, Supply Driven for lake recovery. Which to pick depends on what you value.`,
     readTimeMinutes: 12,
     charts: [
       { key: 'plansOverlay', spec: chartPlansOverlay },
