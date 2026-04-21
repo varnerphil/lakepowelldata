@@ -568,7 +568,7 @@ function buildArticle7(): ArticleSpec {
 
 <p><strong>That is what's possible. This article is about which of the plans actually on the table for post-2026 operations gets us closest.</strong></p>
 
-<p>We ran the five federal-plan alternatives plus the current 2007 Guidelines through the same stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 iterations, 40 years of projection, starting from today's lake level. Same everything, except the operating rule changes.</p>
+<p>We ran the five federal-plan alternatives plus the current 2007 Guidelines through the same stress test: sampled inflows from the <em>last ten years</em> (the driest decade on record), 2,000 iterations, 40 years of projection. The starting point is the state of Lake Powell after the April 2026 federal plan finishes playing out (reduced releases through Sep 30, 2026, plus Flaming Gorge transfers through Apr 30, 2027) — i.e., every plan is evaluated on what it does <em>on top of</em> the current emergency measures. Same everything, except the long-term operating rule changes.</p>
 
 <p>Here is what each plan produced:</p>
 
@@ -605,7 +605,7 @@ ${buildScorecardGrid({ scenarios: SCORECARDS.scenarios, variant: 'full' })}
 
 <h3>If you prioritize filling the lake — Supply Driven</h3>
 
-<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from today. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff: its worst-case floor (${supplyH40.lowestP10} ft) dips ${Math.round(3490 - supplyH40.lowestP10)} feet below minimum power pool in the bottom 10% of futures, where MOF does not.</p>
+<p>SD produces the highest median elevation at every long horizon — <strong>${supplyH40.medianEnd} ft</strong> at 40 years, a gain of roughly ${Math.round(supplyH40.medianEnd - SCORECARDS.startElevation)} feet from the post-federal-plan baseline. That is near Hite territory. For anyone who cares what the lake actually looks like on a summer weekend, this is the plan that most closely resembles "full." The tradeoff: its worst-case floor (${supplyH40.lowestP10} ft) dips ${Math.round(3490 - supplyH40.lowestP10)} feet below minimum power pool in the bottom 10% of futures, where MOF does not.</p>
 
 <p><strong>Pick SD if your top concern is:</strong> "get the lake as high as possible, and accept some worst-case exposure to get there."</p>
 

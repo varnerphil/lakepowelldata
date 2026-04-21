@@ -33,6 +33,12 @@ import {
   type AugmentationConfig,
   type MonteCarloResult,
 } from '../frontend/lib/monte-carlo'
+import {
+  projectFromSnowpack,
+  computePhase1Projection,
+  type Phase1Result,
+} from '../frontend/lib/calculations'
+import { CURRENT_ANNOUNCEMENT } from '../frontend/lib/federal-announcement'
 
 const HORIZONS = [10, 20, 40]
 const ITERATIONS = 2000
@@ -77,14 +83,99 @@ async function getLatestMeasurement() {
   }
 }
 
-async function getStorageCapacity(): Promise<StorageCapacityEntry[]> {
+// Richer storage-capacity row than StorageCapacityEntry — includes the
+// storage_per_foot field that projectFromSnowpack and computePhase1Projection
+// need. Monte Carlo only reads elevation + storage_at_elevation so it
+// structurally accepts this wider shape.
+interface FullStorageCapacityRow {
+  elevation: number
+  storage_at_elevation: number
+  storage_per_foot: number | null
+}
+
+async function getStorageCapacity(): Promise<FullStorageCapacityRow[]> {
   const result = await query(
-    'SELECT elevation, storage_at_elevation FROM elevation_storage_capacity ORDER BY elevation'
+    'SELECT elevation, storage_at_elevation, storage_per_foot FROM elevation_storage_capacity ORDER BY elevation'
   )
   return result.rows.map((r: any) => ({
     elevation: parseInt(r.elevation),
     storage_at_elevation: parseInt(r.storage_at_elevation),
+    storage_per_foot: r.storage_per_foot !== null ? parseFloat(r.storage_per_foot) : null,
   }))
+}
+
+// ─── Federal-plan Phase 1 inputs ──────────────────────────────────
+
+async function getCurrentSnowpackPercent(referenceDate: Date): Promise<number | null> {
+  const month = referenceDate.getMonth()
+  const currentWaterYear =
+    month >= 9 ? referenceDate.getFullYear() + 1 : referenceDate.getFullYear()
+  const dateStr = `${String(referenceDate.getMonth() + 1).padStart(2, '0')}-${String(
+    referenceDate.getDate()
+  ).padStart(2, '0')}`
+
+  const result = await query(
+    `
+    WITH current_swe AS (
+      SELECT swe_value
+      FROM basin_plots_data
+      WHERE year = $1 AND date_str = $2 AND swe_value IS NOT NULL
+      LIMIT 1
+    ),
+    historical_median AS (
+      SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY swe_value) as median_swe
+      FROM basin_plots_data
+      WHERE date_str = $2 AND year != $1 AND swe_value IS NOT NULL
+    )
+    SELECT c.swe_value, h.median_swe
+    FROM current_swe c, historical_median h
+    `,
+    [currentWaterYear, dateStr]
+  )
+  if (result.rows.length === 0) return null
+  const { swe_value, median_swe } = result.rows[0]
+  if (!swe_value || !median_swe) return null
+  return (parseFloat(swe_value) / parseFloat(median_swe)) * 100
+}
+
+async function getSimilarSnowpackYears(
+  targetPercent: number,
+  tolerance = 15,
+  limit = 10
+): Promise<any[]> {
+  const fields = `
+    water_year,
+    peak_swe, peak_swe_date, peak_swe_percent_of_median,
+    april_1_swe, april_1_percent_of_median,
+    pre_runoff_low_elevation, pre_runoff_low_date,
+    runoff_start_date, runoff_start_elevation,
+    peak_elevation, peak_date, end_of_year_elevation,
+    runoff_gain_ft, had_runoff_rise, days_of_rise,
+    runoff_inflow_af, runoff_outflow_af, runoff_net_af,
+    total_inflow_af, total_outflow_af, net_flow_af,
+    inflow_per_inch_swe, ft_gained_per_inch_swe
+  `
+  let result = await query(
+    `SELECT ${fields}, ABS(peak_swe_percent_of_median - $1) as diff
+     FROM water_year_analysis
+     WHERE peak_swe_percent_of_median IS NOT NULL
+       AND ABS(peak_swe_percent_of_median - $1) <= $2
+     ORDER BY diff ASC
+     LIMIT $3`,
+    [targetPercent, tolerance, limit]
+  )
+  if (result.rows.length === 0) {
+    // Fall back to the two lowest-snowpack years on record for unprecedented conditions
+    result = await query(
+      `SELECT ${fields}, ABS(peak_swe_percent_of_median - $1) as diff
+       FROM water_year_analysis
+       WHERE peak_swe_percent_of_median IS NOT NULL
+       ORDER BY peak_swe_percent_of_median ASC
+       LIMIT 2`,
+      [targetPercent]
+    )
+  }
+  return result.rows
 }
 
 async function getWaterYearPatterns(): Promise<WaterYearPattern[]> {
@@ -334,6 +425,59 @@ async function main() {
   )
   console.log(`Storage capacity: ${storageCapacity.length} entries\n`)
 
+  // ─── Phase 1: apply federal plan deterministically ────────────────
+  // If we're still inside the federal-plan window (through Apr 30, 2027),
+  // walk today's lake state forward through the reduced-release + Flaming
+  // Gorge transfer period. Monte Carlo then starts from Phase 1's p50
+  // ending state instead of today — matching how the simulator UI behaves.
+  let phase1Start = {
+    date: latest.date,
+    elevation: latest.elevation,
+    content: latest.content,
+  }
+  let phase1: Phase1Result | null = null
+  const referenceDate = new Date(latest.date + 'T00:00:00')
+  const planEnd = new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
+  if (referenceDate < planEnd) {
+    const snowpackPct = await getCurrentSnowpackPercent(referenceDate)
+    if (snowpackPct !== null) {
+      const similarYears = await getSimilarSnowpackYears(snowpackPct)
+      const snowproj = projectFromSnowpack(
+        snowpackPct,
+        latest.elevation,
+        similarYears as any,
+        storageCapacity
+      )
+      if (snowproj.projectedRunoffInflow > 0) {
+        phase1 = computePhase1Projection({
+          startDate: latest.date,
+          startElevation: latest.elevation,
+          startContent: latest.content,
+          projectedRunoffInflowAf: snowproj.projectedRunoffInflow,
+          announcement: CURRENT_ANNOUNCEMENT,
+          storageCapacity: storageCapacity as any,
+        })
+        phase1Start = {
+          date: phase1.endDate,
+          elevation: phase1.ending.p50Elevation,
+          content: phase1.ending.p50Content,
+        }
+        console.log(
+          `Federal Phase 1 applied: ${latest.elevation.toFixed(1)} ft → ${phase1.ending.p50Elevation.toFixed(1)} ft by ${phase1.endDate}`
+        )
+        console.log(
+          `  snowpack: ${snowpackPct.toFixed(0)}% of median · projected WY2026 runoff: ${(snowproj.projectedRunoffInflow / 1_000_000).toFixed(2)} MAF\n`
+        )
+      } else {
+        console.log('Phase 1 skipped — no snowpack-based runoff projection\n')
+      }
+    } else {
+      console.log('Phase 1 skipped — no snowpack data available\n')
+    }
+  } else {
+    console.log('Phase 1 skipped — federal plan window has ended\n')
+  }
+
   // ─── Build the scenario list ───────────────────────────────────────
   const allPolicies = [...POLICY_PRESETS, ...DEIS_PRESETS]
   const scenarios: Array<Omit<Parameters<typeof runScenario>[0], 'latest' | 'patterns' | 'storageCapacity'>> = []
@@ -367,7 +511,12 @@ async function main() {
   for (const s of scenarios) {
     i++
     const t0 = Date.now()
-    const r = await runScenario({ ...s, latest, patterns, storageCapacity })
+    const r = await runScenario({
+      ...s,
+      latest: phase1Start,
+      patterns,
+      storageCapacity,
+    })
     const t = Date.now() - t0
     results.push(r)
     const h40 = r.horizons.find((h) => h.years === 40)!
@@ -387,9 +536,23 @@ async function main() {
   const outPath = join(outDir, 'scorecards.json')
   const payload = {
     generatedAt: new Date().toISOString(),
-    startDate: latest.date,
-    startElevation: latest.elevation,
-    startContent: latest.content,
+    // Today's lake state before the federal plan was applied (for context/audit)
+    actualDate: latest.date,
+    actualElevation: latest.elevation,
+    actualContent: latest.content,
+    // The actual Monte Carlo starting point — after Phase 1 federal plan if applied
+    startDate: phase1Start.date,
+    startElevation: phase1Start.elevation,
+    startContent: phase1Start.content,
+    federalPhase1: phase1
+      ? {
+          announcement: CURRENT_ANNOUNCEMENT,
+          endDate: phase1.endDate,
+          startElevation: latest.elevation,
+          endElevationP50: phase1.ending.p50Elevation,
+          endContentP50: phase1.ending.p50Content,
+        }
+      : null,
     stressTest: {
       inflowScenario: INFLOW_SCENARIO,
       streamflowTrend: 'historical',
