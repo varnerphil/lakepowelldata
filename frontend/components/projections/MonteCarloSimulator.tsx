@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   POLICY_PRESETS,
   AUGMENTATION_PRESETS,
@@ -120,7 +121,7 @@ export default function MonteCarloSimulator({
     () => new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00')
   )
   const [snowpackInfo, setSnowpackInfo] = useState<{ percent: number; years: number[] } | null>(null)
-  const [bottomNavHeight, setBottomNavHeight] = useState<number>(0)
+  const [chipSlot, setChipSlot] = useState<HTMLElement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -128,43 +129,17 @@ export default function MonteCarloSimulator({
   const workerRef = useRef<Worker | null>(null)
   const mountedRef = useRef(true)
 
-  // Measure BottomNav's rendered height so the chip-footer can sit exactly on
-  // top of it. A hardcoded bottom value diverges from the nav's real height
-  // on devices with a home indicator (safe-area-inset-bottom) and even on
-  // desktop once BottomNav paddingBottom is applied — producing either a gap
-  // below the chips or an overlap behind the nav icons. ResizeObserver keeps
-  // the chip-footer in sync if the nav changes size (rotation, keyboard, etc).
+  // Grab the BottomNav's portal slot on mount so the chip-footer can render
+  // directly inside the nav container. No separate fixed element = no
+  // possibility of a gap or overlap between the chips and the nav buttons.
   useEffect(() => {
-    let observer: ResizeObserver | null = null
-    let rafId = 0
-
-    const attach = () => {
-      const nav = document.querySelector<HTMLElement>('nav.fixed.bottom-0')
-      if (!nav) {
-        rafId = requestAnimationFrame(attach)
-        return
-      }
-      const apply = () => {
-        // BottomNav hides at xl (≥1280). Above that, anchor at 0 so the
-        // chip-footer would sit flush to the viewport bottom — not that it
-        // should ever be visible there, since chip-footer shares the xl:hidden
-        // breakpoint, but keep the math consistent.
-        setBottomNavHeight(window.innerWidth >= 1280 ? 0 : nav.getBoundingClientRect().height)
-      }
-      apply()
-      observer = new ResizeObserver(apply)
-      observer.observe(nav)
-      window.addEventListener('resize', apply)
-      return apply
+    const poll = () => {
+      const slot = document.getElementById('bottom-nav-slot')
+      if (slot) setChipSlot(slot)
+      else rafId = requestAnimationFrame(poll)
     }
-
-    const resizeHandler = attach()
-
-    return () => {
-      cancelAnimationFrame(rafId)
-      observer?.disconnect()
-      if (resizeHandler) window.removeEventListener('resize', resizeHandler)
-    }
+    let rafId = requestAnimationFrame(poll)
+    return () => cancelAnimationFrame(rafId)
   }, [])
 
   // Load favorite ramps from localStorage
@@ -376,57 +351,55 @@ export default function MonteCarloSimulator({
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-40 xl:pb-0">
-      {/* Fixed config footer — visible on phones and tablets (including
-          horizontal tablets), hidden at xl+ where the sidebar controls are
-          visible directly. BottomNav is also visible in this same range, so
-          the footer always sits above it at bottom-[46px]. The wrapper's
-          pb-40 above reserves space so the footer doesn't cover content. */}
-      <div
-        data-testid="chip-footer"
-        className="xl:hidden fixed inset-x-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] px-3 pt-2 pb-2"
-        style={{
-          bottom:
-            bottomNavHeight > 0
-              ? `${bottomNavHeight}px`
-              : 'calc(4rem + max(env(safe-area-inset-bottom, 0px), 8px))',
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-center gap-2 text-[14px] font-light">
-          <ChipButton targetId="ctrl-policy" variant="primary">
-            Plan: {policy.name.replace(/^Federal Plan: /, 'Fed: ').replace(/ \([^)]+\)/, '')}
-          </ChipButton>
-          <ChipButton targetId="ctrl-horizon">
-            Sim for {yearsToProject} yr
-          </ChipButton>
-          <ChipButton targetId="ctrl-horizon">
-            {inflowScenario === 'full'
-              ? 'Inflow like all history (recent 2×)'
-              : inflowScenario === 'full_unweighted'
-                ? 'Inflow like all history'
-                : `Inflow like last ${inflowScenario.replace('last', '')} yr`}
-          </ChipButton>
-          <ChipButton targetId="ctrl-start">
-            {startMode === 'custom'
-              ? `Starting from ${customElevation.toFixed(0)} ft`
-              : `Starting from today (${currentElevation.toFixed(0)} ft)`}
-          </ChipButton>
-          {streamflowTrend !== 'historical' && (
-            <ChipButton targetId="ctrl-horizon" variant="amber">
-              {STREAMFLOW_TRENDS[streamflowTrend].label}
-            </ChipButton>
-          )}
-          {augmentationKey !== 'none' && (
-            <ChipButton targetId="ctrl-horizon" variant="emerald">
-              +{AUGMENTATION_PRESETS.find((p) => p.key === augmentationKey)?.label ?? augmentationKey}
-            </ChipButton>
-          )}
-          {includeFederalRelease && new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00') && (
-            <ChipButton targetId="ctrl-start" variant="blue">
-              +Apr 2026 plan
-            </ChipButton>
-          )}
-        </div>
-      </div>
+      {/* Chip-footer — rendered via portal directly inside BottomNav's
+          #bottom-nav-slot, so it sits tight above the nav buttons as a single
+          contiguous footer (with a divider line between). No fixed-position
+          math, no possibility of a gap. Hidden automatically at xl+ because
+          its host (BottomNav) is xl:hidden. */}
+      {chipSlot &&
+        createPortal(
+          <div
+            data-testid="chip-footer"
+            className="border-b border-gray-200 px-3 pt-2 pb-2"
+          >
+            <div className="flex flex-wrap items-center justify-center gap-2 text-[14px] font-light">
+              <ChipButton targetId="ctrl-policy" variant="primary">
+                Plan: {policy.name.replace(/^Federal Plan: /, 'Fed: ').replace(/ \([^)]+\)/, '')}
+              </ChipButton>
+              <ChipButton targetId="ctrl-horizon">
+                Sim for {yearsToProject} yr
+              </ChipButton>
+              <ChipButton targetId="ctrl-horizon">
+                {inflowScenario === 'full'
+                  ? 'Inflow like all history (recent 2×)'
+                  : inflowScenario === 'full_unweighted'
+                    ? 'Inflow like all history'
+                    : `Inflow like last ${inflowScenario.replace('last', '')} yr`}
+              </ChipButton>
+              <ChipButton targetId="ctrl-start">
+                {startMode === 'custom'
+                  ? `Starting from ${customElevation.toFixed(0)} ft`
+                  : `Starting from today (${currentElevation.toFixed(0)} ft)`}
+              </ChipButton>
+              {streamflowTrend !== 'historical' && (
+                <ChipButton targetId="ctrl-horizon" variant="amber">
+                  {STREAMFLOW_TRENDS[streamflowTrend].label}
+                </ChipButton>
+              )}
+              {augmentationKey !== 'none' && (
+                <ChipButton targetId="ctrl-horizon" variant="emerald">
+                  +{AUGMENTATION_PRESETS.find((p) => p.key === augmentationKey)?.label ?? augmentationKey}
+                </ChipButton>
+              )}
+              {includeFederalRelease && new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00') && (
+                <ChipButton targetId="ctrl-start" variant="blue">
+                  +Apr 2026 plan
+                </ChipButton>
+              )}
+            </div>
+          </div>,
+          chipSlot
+        )}
 
       {/* Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
