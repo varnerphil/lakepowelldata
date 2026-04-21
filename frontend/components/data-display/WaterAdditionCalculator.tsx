@@ -590,6 +590,24 @@ function Phase1Chart({
     return null
   }
 
+  // Explicit monthly tick positions — prevents Recharts from auto-picking
+  // multiple ticks inside the same month, which produced duplicate "May / May / May"
+  // labels on the x-axis.
+  const monthlyTicks = useMemo(() => {
+    if (!phase1.intervention.daily.length) return []
+    const firstDate = parseLocalDate(phase1.intervention.daily[0].date)
+    const lastDate = parseLocalDate(
+      phase1.intervention.daily[phase1.intervention.daily.length - 1].date
+    )
+    const ticks: number[] = []
+    const cursor = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1)
+    while (cursor.getTime() <= lastDate.getTime()) {
+      if (cursor.getTime() >= firstDate.getTime()) ticks.push(cursor.getTime())
+      cursor.setMonth(cursor.getMonth() + 1)
+    }
+    return ticks
+  }, [phase1])
+
   const chartData = useMemo(() => {
     const baselineByDate = new Map(phase1.baseline.daily.map((d) => [d.date, d.p50]))
     return phase1.intervention.daily
@@ -796,6 +814,7 @@ function Phase1Chart({
               type="number"
               scale="time"
               domain={['dataMin', 'dataMax']}
+              ticks={monthlyTicks}
               tickFormatter={(ts) => {
                 const d = new Date(ts)
                 const month = d.toLocaleDateString('en-US', { month: 'short' })
