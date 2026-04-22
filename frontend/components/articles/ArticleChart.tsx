@@ -147,8 +147,19 @@ export default function ArticleChart({ spec }: { spec: ChartSpec }) {
             {spec.series.length > 1 && (
               <Legend
                 verticalAlign="top"
-                height={36}
-                wrapperStyle={{ fontSize: isMobile ? '10px' : '12px' }}
+                // Scale the reserved legend height to the number of series so
+                // wrap-induced rows don't spill into the plot area and collide
+                // with the y-axis top label. Roughly: 2 series per row on
+                // mobile, 3 per row on desktop.
+                height={
+                  isMobile
+                    ? Math.max(36, Math.ceil(spec.series.length / 2) * 18 + 12)
+                    : Math.max(36, Math.ceil(spec.series.length / 3) * 20 + 8)
+                }
+                wrapperStyle={{
+                  fontSize: isMobile ? '10px' : '12px',
+                  paddingBottom: isMobile ? 8 : 4,
+                }}
               />
             )}
 

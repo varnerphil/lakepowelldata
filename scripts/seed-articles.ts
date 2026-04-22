@@ -602,12 +602,14 @@ function buildArticle7(): ArticleSpec {
     chartType: 'line',
     title: 'Median elevation by plan, 40-year stress test (last-10-years inflow)',
     data: chartPlansOverlayData,
+    // Five series — dropped 2007 Guidelines because its trajectory is
+    // essentially indistinguishable from No Action on the overlay chart.
+    // The full six-plan breakdown still lives in the scorecard grid below.
     series: [
       { dataKey: 'maxFlex', color: '#16a34a', name: 'Max Operational Flexibility' },
       { dataKey: 'supply', color: '#0d7377', name: 'Supply Driven' },
       { dataKey: 'enhanced', color: '#0284c7', name: 'Enhanced Coordination' },
       { dataKey: 'basic', color: '#7c3aed', name: 'Basic Coordination' },
-      { dataKey: 'currentOps', color: '#ca8a04', name: '2007 Guidelines (status quo)' },
       { dataKey: 'noAction', color: '#dc2626', name: 'No Action' },
     ],
     xKey: 'year',
