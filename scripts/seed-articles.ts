@@ -576,7 +576,7 @@ function buildArticle0(): ArticleSpec {
 <p>Here is the timeline you need to keep straight:</p>
 
 <ul>
-<li><strong>Now through Sep 30, 2026:</strong> the short-term federal plan is running. Powell releases are cut. A little water is moved in from Flaming Gorge. This is a bridge, not the fix.</li>
+<li><strong>Now through Sep 30, 2026:</strong> the short-term federal plan is running. Powell releases are cut. A little water is moved in from Flaming Gorge. The plan commits to keeping Powell above <strong>3,500 ft by April 2027</strong> — 10 ft above the minimum power pool. This is a bridge, not the fix.</li>
 <li><strong>Oct 1, 2026 and on:</strong> a new long-term rule takes over. The states and feds are picking that rule right now. Every plan on this site is a candidate for that long-term slot.</li>
 </ul>
 
@@ -722,6 +722,8 @@ function buildArticle7(): ArticleSpec {
 <p><em>Imagine if, starting in 1996, we had released just 5% less water each year. Lake Powell would be about 97 feet higher today. (<a href="/articles/real-problem-isnt-drought-its-math">Read the math →</a>)</em></p>
 
 <p><strong>That is what's possible. This article asks which post-2026 plan on the table gets us closest.</strong></p>
+
+<p>A quick note on the baseline. The April 2026 federal plan — release cuts plus a Flaming Gorge transfer — commits to keeping Powell <strong>above 3,500 ft by April 2027</strong>. That is 10 ft above minimum power pool. It is the short-term floor the plan defends. The long-term plans below pick up after Sep 30, 2026, starting from wherever that short-term floor leaves the lake.</p>
 
 <p>We ran the five federal plans and the current 2007 Guidelines through the same stress test. We sampled inflows from the <em>last ten years</em> — the driest decade on record. Each plan ran 2,000 times over 40 years. The starting point is Lake Powell on <strong>October 1, 2026</strong>. That is the end of the reduced-release window. By then, the states and feds will have picked a long-term operating rule, and the new plan takes over. The April 2026 federal plan may keep sending Flaming Gorge water past Sep 30, but that is not certain. So the long-run test starts from the Sep 30 mark. Everything stays the same except the operating rule.</p>
 

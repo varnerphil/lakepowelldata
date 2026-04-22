@@ -27,6 +27,11 @@ export interface FederalReleaseAnnouncement {
   alreadyReleasedMaf: number
   /** Total Flaming Gorge program (MAF) delivered from effectiveDate through planEndDate */
   flamingGorgeTotalMaf: number
+  /** Protective elevation floor (ft) the plan commits to defending by planEndDate.
+   *  USBR News Release 5326 (4/18/2026) states the plan's actions "are expected
+   *  to increase Lake Powell's elevation by approximately 54 ft to at least
+   *  elevation 3500 feet by April 2027." This is 10 ft above minimum power pool. */
+  protectiveElevationFt?: number
 }
 
 /**
@@ -80,4 +85,5 @@ export const CURRENT_ANNOUNCEMENT: FederalReleaseAnnouncement = {
   wy2027AnnualReleaseMaf: 7.48,
   alreadyReleasedMaf: 4.05,
   flamingGorgeTotalMaf: 1.0,
+  protectiveElevationFt: 3500,
 }

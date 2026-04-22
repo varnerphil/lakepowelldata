@@ -806,6 +806,15 @@ function Phase1Chart({
             ? ' The extended federal plan saves '
             : ' The April 2026 federal plan saves '}
           <strong>{interventionGain.toFixed(0)} ft</strong>.
+          {announcement.protectiveElevationFt !== undefined && (() => {
+            const floor = announcement.protectiveElevationFt
+            const endElev = phase1.intervention.ending.p50Elevation
+            const delta = Math.round(endElev - floor)
+            if (delta >= 0) {
+              return ` That lands ${delta} ft above the plan's ${floor} ft floor.`
+            }
+            return ` That is ${Math.abs(delta)} ft below the plan's ${floor} ft floor.`
+          })()}
         </p>
         <MobileDisclosure label="See the math">
           {narrative}
@@ -920,18 +929,23 @@ function Phase1Chart({
               label={{ value: 'Elevation (ft)', angle: -90, position: 'insideLeft', offset: -25, style: { fill: '#888', fontSize: 12 } }}
             />
             <Tooltip
+              // Keep the tooltip narrow enough to sit inside a phone viewport
+              // without covering the whole chart. Compact labels below do the
+              // heavy lifting; the legend above has the full descriptions.
+              wrapperStyle={{ fontSize: 12, maxWidth: 200 }}
+              contentStyle={{ padding: '6px 8px', lineHeight: 1.3 }}
               labelFormatter={(ts: number) => {
                 const d = new Date(ts)
-                return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
               }}
               formatter={(value: number, name: string, entry: { dataKey?: string | number }) => {
                 const key = entry?.dataKey
                 if (key === 'p10') return [null, null]
                 const label =
-                  key === 'p50' ? 'With federal plan' :
-                  key === 'baseline' ? 'Without plan (7.48 MAF releases, no Flaming Gorge)' :
-                  key === 'p90' ? 'With plan — high estimate' :
-                  key === 'hist2022' ? '2022 actual (during DROA release)' : String(name)
+                  key === 'p50' ? 'With plan' :
+                  key === 'baseline' ? 'Without plan' :
+                  key === 'p90' ? 'Best case' :
+                  key === 'hist2022' ? '2022 actual' : String(name)
                 return [`${value.toFixed(1)} ft`, label]
               }}
             />
@@ -998,6 +1012,24 @@ function Phase1Chart({
                 label={{ value: r.name, position: 'right', fill: '#8b5cf6', fontSize: 10 }}
               />
             ))}
+
+            {/* Federal plan's 3,500 ft protective elevation — the floor the
+                plan commits to defending by April 2027. Only drawn if the
+                active announcement includes the field. */}
+            {announcement.protectiveElevationFt !== undefined && (
+              <ReferenceLine
+                y={announcement.protectiveElevationFt}
+                stroke="#0d7377"
+                strokeDasharray="2 3"
+                strokeWidth={1.5}
+                label={{
+                  value: `Plan floor (${announcement.protectiveElevationFt})`,
+                  position: 'right',
+                  fill: '#0d7377',
+                  fontSize: 10,
+                }}
+              />
+            )}
 
             {/* Min power pool */}
             <ReferenceLine
