@@ -796,10 +796,12 @@ function Phase1Chart({
            disclosure that expands the full breakdown. Desktop shows it all inline. */}
       <div className="bg-amber-50/60 border border-amber-100 rounded-lg px-4 py-3 mb-4 text-sm text-amber-900 font-light leading-relaxed">
         <p className="sm:hidden font-normal mb-1">
+          By April 2027, Powell drops to <strong>{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</strong>.
+          Without the plan it would have been <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
+          {' '}— a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft drop</strong>.
+          Instead it only drops <strong>{Math.abs(endRise).toFixed(0)} ft</strong>.
           The {preset.id === 'federal-plan' ? 'April 2026 federal plan' : preset.id === 'extended' ? 'extended federal plan' : 'release cuts'} save{' '}
-          <strong>{interventionGain.toFixed(0)} ft</strong> by April 2027 — without it,
-          Powell drops to <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
-          {' '}(a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft {baselineEndRise < 0 ? 'drop' : 'rise'}</strong> from today).
+          <strong>{interventionGain.toFixed(0)} ft</strong>.
         </p>
         <MobileDisclosure label="See the math">
           {narrative}
