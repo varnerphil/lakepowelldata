@@ -800,7 +800,11 @@ function Phase1Chart({
           Without the plan it would have been <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
           {' '}— a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft drop</strong>.
           Instead it only drops <strong>{Math.abs(endRise).toFixed(0)} ft</strong>.
-          The {preset.id === 'federal-plan' ? 'April 2026 federal plan' : preset.id === 'extended' ? 'extended federal plan' : 'release cuts'} save{' '}
+          {preset.id === 'cuts-only'
+            ? ' The release cuts save '
+            : preset.id === 'extended'
+            ? ' The extended federal plan saves '
+            : ' The April 2026 federal plan saves '}
           <strong>{interventionGain.toFixed(0)} ft</strong>.
         </p>
         <MobileDisclosure label="See the math">
