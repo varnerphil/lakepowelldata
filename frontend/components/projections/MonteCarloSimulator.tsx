@@ -393,7 +393,7 @@ export default function MonteCarloSimulator({
               )}
               {includeFederalRelease && new Date() < new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00') && (
                 <ChipButton targetId="ctrl-start" variant="blue">
-                  +Apr 2026 plan
+                  +Feds stepping in: release cuts + Flaming Gorge water
                 </ChipButton>
               )}
             </div>
@@ -969,27 +969,77 @@ export default function MonteCarloSimulator({
                   })()
                 : null
 
+              // If the lake starts below a threshold, the "stays above"
+              // metric collapses to near-zero and unfairly penalises every
+              // plan for a drought baseline that isn't their fault. Swap to
+              // a recovery framing for those rows: does the plan climb back?
+              // How quickly?
+              const healthyRow = startElev < 3525
+                ? buildRecoveryRow({
+                    threshold: 3525,
+                    label: 'Climbs back to full-power elevation',
+                    detail: 'Lake recovers above 3,525 ft — turbines return to full head and efficiency',
+                    dp,
+                  })
+                : null
+              const minPowerRow = startElev < 3490
+                ? buildRecoveryRow({
+                    threshold: 3490,
+                    label: 'Climbs back above minimum power pool',
+                    detail: 'Lake recovers above 3,490 ft — turbines can run again at reduced output',
+                    dp,
+                  })
+                : null
               return (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Can the lake sustain this policy?</h4>
+                  {startElev < 3525 && (
+                    <p className="text-[11px] text-gray-500 italic mb-2 px-1">
+                      Starting below 3,525 ft, so the lake begins this projection already short of healthy pool.
+                      Plans are graded on how quickly they climb back above — bonus for plans that clear the
+                      threshold inside the first year.
+                    </p>
+                  )}
                   <div className="space-y-2">
                     {/* Hydropower */}
                     <div className="space-y-1">
                       <p className="text-[10px] uppercase tracking-wide font-medium text-gray-400 px-1">Hydropower</p>
-                      <OutcomeRow
-                        label="Sustains full power generation"
-                        detail="Lake stays above 3,525 ft — turbines operate at full head and efficiency"
-                        probability={thresholds.stayAbove3525}
-                        timeline={healthyTimeline}
-                        percentLabel="Above 3,525 ft"
-                      />
-                      <OutcomeRow
-                        label="Sustains partial power generation"
-                        detail="Lake stays above 3,490 ft — turbines can run at reduced output above this level"
-                        probability={thresholds.stayAboveMinPower}
-                        timeline={minPowerTimeline}
-                        percentLabel="Power stays on"
-                      />
+                      {healthyRow ? (
+                        <OutcomeRow
+                          label={healthyRow.label}
+                          detail={healthyRow.detail}
+                          probability={healthyRow.probability}
+                          timeline={healthyRow.timeline}
+                          percentLabel={healthyRow.percentLabel}
+                          kudos={healthyRow.kudos}
+                        />
+                      ) : (
+                        <OutcomeRow
+                          label="Sustains full power generation"
+                          detail="Lake stays above 3,525 ft — turbines operate at full head and efficiency"
+                          probability={thresholds.stayAbove3525}
+                          timeline={healthyTimeline}
+                          percentLabel="Above 3,525 ft"
+                        />
+                      )}
+                      {minPowerRow ? (
+                        <OutcomeRow
+                          label={minPowerRow.label}
+                          detail={minPowerRow.detail}
+                          probability={minPowerRow.probability}
+                          timeline={minPowerRow.timeline}
+                          percentLabel={minPowerRow.percentLabel}
+                          kudos={minPowerRow.kudos}
+                        />
+                      ) : (
+                        <OutcomeRow
+                          label="Sustains partial power generation"
+                          detail="Lake stays above 3,490 ft — turbines can run at reduced output above this level"
+                          probability={thresholds.stayAboveMinPower}
+                          timeline={minPowerTimeline}
+                          percentLabel="Power stays on"
+                        />
+                      )}
                     </div>
 
                     {/* Recreation */}
@@ -1682,6 +1732,7 @@ function OutcomeRow({
   invertColor = false,
   timeline,
   percentLabel,
+  kudos = false,
 }: {
   label: string
   detail: string
@@ -1689,6 +1740,10 @@ function OutcomeRow({
   invertColor?: boolean
   timeline?: string | null
   percentLabel?: string
+  /** Highlights plans that clear the bar quickly (e.g., lake climbs back
+   *  above a threshold within the first year). Intentionally visual-only
+   *  — the underlying probability still drives the color. */
+  kudos?: boolean
 }) {
   const effective = invertColor ? probability : probability
 
@@ -1717,7 +1772,14 @@ function OutcomeRow({
     <div className={`flex items-center gap-3 rounded-lg px-3 py-2.5 ${bgClass}`}>
       <Icon className={`w-5 h-5 flex-shrink-0 ${colorClass}`} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-900 font-medium leading-tight">{label}</p>
+        <p className="text-sm text-gray-900 font-medium leading-tight">
+          {label}
+          {kudos && (
+            <span className="ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold uppercase tracking-wide align-middle">
+              ⚡ Fast recovery
+            </span>
+          )}
+        </p>
         <p className="text-[11px] text-gray-500 leading-tight">{detail}</p>
         {timeline && (
           <p className="text-[11px] text-amber-700 font-medium leading-tight mt-0.5">{timeline}</p>
@@ -1735,4 +1797,66 @@ function OutcomeRow({
       </div>
     </div>
   )
+}
+
+/** When the simulation starts BELOW a threshold the "% of futures it stayed
+ *  above" metric collapses to ~0 for every plan — not because the plans are
+ *  bad but because the lake was already below when the sim began. Reframe
+ *  those rows as a recovery question: how long before the median climbs
+ *  back above the line? Give a visible nod (fast-recovery badge) to plans
+ *  that clear the threshold inside year 1. */
+function buildRecoveryRow({
+  threshold,
+  label,
+  detail,
+  dp,
+}: {
+  threshold: number
+  label: string
+  detail: string
+  dp: Array<{ date: string; p50: number }>
+}): {
+  label: string
+  detail: string
+  probability: number
+  timeline: string
+  kudos: boolean
+  percentLabel: string
+} {
+  const timelineText = findMedianCrossingTimeline(dp, threshold, 'above')
+  if (!timelineText) {
+    return {
+      label,
+      detail,
+      probability: 5,
+      timeline: `Median doesn't climb back above ${threshold} ft during this projection`,
+      kudos: false,
+      percentLabel: 'Recovers',
+    }
+  }
+  const months = parseTimelineMonths(timelineText)
+  // Heavily penalise plans that take >36 months; reward year-1 recoveries.
+  const probability =
+    months <= 12 ? 95 :
+    months <= 24 ? 80 :
+    months <= 36 ? 60 :
+    months <= 120 ? 35 :
+    20
+  return {
+    label,
+    detail,
+    probability,
+    timeline: `Median climbs back ${timelineText}`,
+    kudos: months <= 12,
+    percentLabel: 'Recovery confidence',
+  }
+}
+
+function parseTimelineMonths(t: string): number {
+  if (/weeks/.test(t)) return 1
+  const m = t.match(/~?(\d+) months?/)
+  if (m) return parseInt(m[1], 10)
+  const y = t.match(/~?(\d+(?:\.\d+)?) years/)
+  if (y) return Math.round(parseFloat(y[1]) * 12)
+  return 999
 }
