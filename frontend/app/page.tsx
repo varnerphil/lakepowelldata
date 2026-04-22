@@ -157,24 +157,10 @@ const FEATURED_ARTICLES_PRIMARY: FeaturedArticle[] = [
 ]
 
 const FEATURED_ARTICLES_SECONDARY: FeaturedArticle[] = [
-  {
-    slug: 'no-action-plan',
-    title: 'No Action — the post-2026 default if nothing changes',
-    subtitle: 'Full 8.23 MAF out the door every year, drought or not. Why it fails fast.',
-    gradient: 'from-red-400 via-orange-400 to-amber-400',
-    imageUrl: '/lp-pictures/bathtub-rings-aerial.jpg',
-    imageAlt: 'Aerial view of deeply drawn-down Lake Powell side canyons',
-    readMinutes: 4,
-  },
-  {
-    slug: 'basic-coordination-plan',
-    title: 'Basic Coordination — elevation-based cuts',
-    subtitle: 'Better than No Action, but still not enough to recover from a deep drawdown.',
-    gradient: 'from-amber-400 via-orange-300 to-yellow-300',
-    imageUrl: '/lp-pictures/sandstone-shore.jpg',
-    imageAlt: 'Sandstone shoreline meeting clear Lake Powell water',
-    readMinutes: 4,
-  },
+  // Ordered: the worth-considering plans first (Enhanced as the fallback
+  // behind SD and MOF, the Abundance Act as the long-run complement), then
+  // the not-recommended plans (Basic, No Action) toward the end so readers
+  // don't hit the "fails fast" copy before the credible options.
   {
     slug: 'enhanced-coordination-plan',
     title: 'Enhanced Coordination — balancing Powell and Mead',
@@ -192,6 +178,24 @@ const FEATURED_ARTICLES_SECONDARY: FeaturedArticle[] = [
     imageUrl: '/lp-pictures/reflection-canyon-sunrise.webp',
     imageAlt: 'Sunrise over Reflection Canyon',
     readMinutes: 7,
+  },
+  {
+    slug: 'basic-coordination-plan',
+    title: 'Basic Coordination — elevation-based cuts',
+    subtitle: 'Better than No Action, but still not enough to recover from a deep drawdown.',
+    gradient: 'from-amber-400 via-orange-300 to-yellow-300',
+    imageUrl: '/lp-pictures/sandstone-shore.jpg',
+    imageAlt: 'Sandstone shoreline meeting clear Lake Powell water',
+    readMinutes: 4,
+  },
+  {
+    slug: 'no-action-plan',
+    title: 'No Action — the post-2026 default if nothing changes',
+    subtitle: 'Full 8.23 MAF out the door every year, drought or not. Why it fails fast.',
+    gradient: 'from-red-400 via-orange-400 to-amber-400',
+    imageUrl: '/lp-pictures/bathtub-rings-aerial.jpg',
+    imageAlt: 'Aerial view of deeply drawn-down Lake Powell side canyons',
+    readMinutes: 4,
   },
 ]
 import QuickJumpHeader from '@/components/layout/QuickJumpHeader'
