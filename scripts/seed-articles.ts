@@ -347,29 +347,21 @@ function buildScorecardGrid({
     .map(buildPlanRow)
     .filter((r): r is PlanRow => r !== null)
 
+  // ─── Desktop table ──────────────────────────────────────────────
+
   const thStyle =
     'padding:0.6rem 0.65rem; font-weight:500; color:#374151; font-size:0.85rem;'
   const th = (label: string, sub?: string, align = 'center') =>
     `<th style="${thStyle} text-align:${align};">${label}${sub ? `<div style="font-weight:400; color:#6b7280; font-size:0.7rem; margin-top:0.15rem;">${sub}</div>` : ''}</th>`
 
-  const headerHtml =
-    variant === 'full'
-      ? [
-          th('Plan', undefined, 'left'),
-          th('Recovery', 'lake fills (40yr median)'),
-          th('Floor', 'worst-case low point'),
-          th('Bad-case End', '40yr p10 ending'),
-          th('Speed', '10yr gain'),
-          th('Overall'),
-        ].join('')
-      : [
-          th('Plan', undefined, 'left'),
-          th('Recovery', 'fills the lake'),
-          th('Floor', 'worst-case low'),
-          th('Bad-case End', 'bad-luck ending'),
-          th('Speed', '10yr gain'),
-          th('Overall'),
-        ].join('')
+  const headerHtml = [
+    th('Plan', undefined, 'left'),
+    th('Recovery', 'lake fills (40yr median)'),
+    th('Floor', 'worst-case low point'),
+    th('Bad-case End', '40yr p10 ending'),
+    th('Speed', '10yr gain'),
+    th('Overall'),
+  ].join('')
 
   const cell = (g: AxisGrade, detail?: string) =>
     `<td style="padding:0.6rem 0.65rem; text-align:center; vertical-align:middle;">${gradePill(g)}${detail ? `<div style="font-size:0.7rem; color:#6b7280; margin-top:0.2rem;">${detail}</div>` : ''}</td>`
@@ -395,14 +387,64 @@ function buildScorecardGrid({
     })
     .join('')
 
-  return `
-<div style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
+  const desktopTable = `
+<div class="hidden sm:block" style="overflow-x:auto; margin: 1.5rem 0; border-radius:0.75rem; border:1px solid #e5e7eb;">
 <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
 <thead><tr style="border-bottom:2px solid #e5e7eb; background:#f9fafb;">${headerHtml}</tr></thead>
 <tbody>${bodyRows}</tbody>
 </table>
-</div>
-`
+</div>`
+
+  // ─── Mobile card stack (<sm) ────────────────────────────────────
+  // The table's horizontal-scroll layout was unreadable on phones. On
+  // mobile, render each plan as a card: name + note at top, Overall pill
+  // at top-right, then a 2×2 grid of axis grades with raw values.
+
+  const axisCell = (
+    label: string,
+    g: AxisGrade,
+    detail: string
+  ) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.4rem 0.55rem; background:white; border:1px solid #e5e7eb; border-radius:0.5rem;">
+      <div style="display:flex; flex-direction:column;">
+        <span style="font-size:0.7rem; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em;">${label}</span>
+        <span style="font-size:0.75rem; color:#9ca3af; margin-top:0.1rem;">${detail}</span>
+      </div>
+      ${gradePill(g)}
+    </div>`
+
+  const mobileCards = rows
+    .map((r) => {
+      const bg = r.meta.emphasis ? '#f0fdf4' : '#ffffff'
+      return `
+<div style="background:${bg}; border:1px solid #e5e7eb; border-radius:0.75rem; padding:0.9rem 0.85rem; margin-bottom:0.6rem;">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.65rem; margin-bottom:0.7rem;">
+    <div style="min-width:0; flex:1;">
+      ${planNameCell(r)}
+    </div>
+    <div style="flex-shrink:0;">
+      ${gradePill(r.overallGrade)}
+      <div style="font-size:0.65rem; color:#9ca3af; text-align:center; margin-top:0.15rem; text-transform:uppercase; letter-spacing:0.04em;">overall</div>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.4rem;">
+    ${axisCell('Recovery', r.recovery.grade, `${r.recovery.medianEnd.toFixed(0)} ft`)}
+    ${axisCell('Floor', r.floor.grade, `${r.floor.lowestP10.toFixed(0)} ft`)}
+    ${axisCell('Bad-case End', r.badCaseEnd.grade, `${r.badCaseEnd.p10End.toFixed(0)} ft`)}
+    ${axisCell('Speed (10yr)', r.speed.grade, `${r.speed.gain10yr >= 0 ? '+' : ''}${r.speed.gain10yr.toFixed(0)} ft`)}
+  </div>
+</div>`
+    })
+    .join('')
+
+  const mobileStack = `
+<div class="sm:hidden" style="margin: 1.25rem 0;">
+${mobileCards}
+</div>`
+
+  return variant === 'full'
+    ? desktopTable + mobileStack
+    : desktopTable + mobileStack
 }
 
 // ─── Article 0: The Real Problem Isn't Drought, It's Math ──────
