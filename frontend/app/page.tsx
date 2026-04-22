@@ -157,10 +157,20 @@ const FEATURED_ARTICLES_PRIMARY: FeaturedArticle[] = [
 ]
 
 const FEATURED_ARTICLES_SECONDARY: FeaturedArticle[] = [
-  // Ordered: the worth-considering plans first (Enhanced as the fallback
-  // behind SD and MOF, the Abundance Act as the long-run complement), then
-  // the not-recommended plans (Basic, No Action) toward the end so readers
-  // don't hit the "fails fast" copy before the credible options.
+  // Lead with the head-to-head so readers can jump straight to the verdict
+  // across all five plans. Then the worth-considering plans (Enhanced as the
+  // fallback behind SD and MOF, the Abundance Act as the long-run
+  // complement). Not-recommended plans (Basic, No Action) go at the end so
+  // readers don't hit the "fails fast" copy before the credible options.
+  {
+    slug: 'plans-head-to-head',
+    title: 'Head-to-head — every plan on the same chart',
+    subtitle: 'Side-by-side grades across recovery, floor, bad-case ending, and speed. The full verdict.',
+    gradient: 'from-indigo-500 via-sky-500 to-teal-400',
+    imageUrl: '/lp-pictures/lake-aerial-panorama.jpg',
+    imageAlt: 'Aerial panorama of Lake Powell',
+    readMinutes: 8,
+  },
   {
     slug: 'enhanced-coordination-plan',
     title: 'Enhanced Coordination — balancing Powell and Mead',
