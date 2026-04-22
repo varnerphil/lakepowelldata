@@ -798,7 +798,8 @@ function Phase1Chart({
         <p className="sm:hidden font-normal mb-1">
           The {preset.id === 'federal-plan' ? 'April 2026 federal plan' : preset.id === 'extended' ? 'extended federal plan' : 'release cuts'} save{' '}
           <strong>{interventionGain.toFixed(0)} ft</strong> by April 2027 — without it,
-          Powell drops to <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>.
+          Powell drops to <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
+          {' '}(a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft {baselineEndRise < 0 ? 'drop' : 'rise'}</strong> from today).
         </p>
         <MobileDisclosure label="See the math">
           {narrative}
