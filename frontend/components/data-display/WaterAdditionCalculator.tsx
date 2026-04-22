@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { ElevationStorageCapacity, type Ramp } from '@/lib/db'
 import { computePhase1Projection, type Phase1Result } from '@/lib/calculations'
 import { CURRENT_ANNOUNCEMENT, type FederalReleaseAnnouncement } from '@/lib/federal-announcement'
@@ -16,6 +17,39 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { parseLocalDate, formatDateString } from '@/lib/date-utils'
+
+/**
+ * Mobile-only disclosure. On screens < sm, renders a compact "label + chevron"
+ * button that toggles the child content. On sm+ it renders the content inline
+ * and hides the trigger — so the desktop layout is unchanged.
+ */
+function MobileDisclosure({
+  label,
+  children,
+  className = '',
+}: {
+  label: string
+  children: React.ReactNode
+  className?: string
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={className}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="sm:hidden w-full flex items-center justify-between gap-2 text-xs font-medium text-teal-700 py-1.5 px-2 -mx-2 rounded hover:bg-teal-50/60 transition-colors"
+        aria-expanded={open}
+      >
+        <span>{label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div className={`${open ? 'block mt-2' : 'hidden'} sm:block sm:mt-0`}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 interface WaterAdditionCalculatorProps {
   elevationStorageData: ElevationStorageCapacity[]
@@ -121,7 +155,17 @@ function PresetPills({
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
-          {useShortLabel ? p.shortLabel : p.label}
+          {useShortLabel ? (
+            p.shortLabel
+          ) : (
+            <>
+              {/* Short label on phones, full label on tablet+ — keeps the
+                  preset row on one line on mobile so it doesn't wrap into a
+                  tall stack. The summary box below gives the full detail. */}
+              <span className="sm:hidden">{p.shortLabel}</span>
+              <span className="hidden sm:inline">{p.label}</span>
+            </>
+          )}
         </button>
       ))}
     </div>
@@ -421,13 +465,15 @@ export default function WaterAdditionCalculator({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
-        What the federal plan actually does to Lake Powell
+        The federal plan, now through September: what it actually does to Lake Powell
       </h3>
-      <p className="text-xs sm:text-sm text-gray-500 font-light mb-5">
-        The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 → 6.0 MAF
-        through Sep 30, 2026, and transfers up to 1 MAF from Flaming Gorge through April 2027.
-        Pick a scenario below.
-      </p>
+      <MobileDisclosure label="What the plan covers" className="mb-4 sm:mb-5">
+        <p className="text-xs sm:text-sm text-gray-500 font-light">
+          The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 → 6.0 MAF
+          through Sep 30, 2026, and transfers up to 1 MAF from Flaming Gorge through April 2027.
+          Pick a scenario below.
+        </p>
+      </MobileDisclosure>
 
       {/* Preset selector */}
       <div className="mb-5">
@@ -466,10 +512,12 @@ export default function WaterAdditionCalculator({
             </div>
           </div>
         </div>
-        <p className="text-xs text-teal-700/80 mt-3 font-light italic">
-          But water keeps flowing out — releases to the Lower Basin, evaporation off
-          the surface — the whole time it&apos;s being added. The real outcome is in Step 2, below.
-        </p>
+        <MobileDisclosure label="Why it doesn't stay" className="mt-3">
+          <p className="text-xs text-teal-700/80 font-light italic">
+            But water keeps flowing out — releases to the Lower Basin, evaporation off
+            the surface — the whole time it&apos;s being added. The real outcome is in Step 2, below.
+          </p>
+        </MobileDisclosure>
       </div>
 
       {/* Canyon-shaped visual */}
@@ -648,7 +696,22 @@ function Phase1Chart({
   const yMin = Math.floor(Math.min(...allElevations) / 10) * 10 - 10
   const yMax = Math.ceil(Math.max(...allElevations) / 10) * 10 + 10
 
-  const rampLines = rampMarkers.filter((r) => r.elevation >= yMin && r.elevation <= yMax)
+  // Thin ramp labels so they don't stack when multiple ramps sit within a few
+  // feet of each other (Antelope/Bullfrog/Stateline are within ~15 ft). Keep
+  // the highest-elevation ramp in each cluster, scaled to chart y-range.
+  const rampLines = useMemo(() => {
+    const inRange = rampMarkers.filter((r) => r.elevation >= yMin && r.elevation <= yMax)
+    const sorted = [...inRange].sort((a, b) => b.elevation - a.elevation)
+    const minGap = (yMax - yMin) * 0.045
+    const kept: typeof sorted = []
+    for (const r of sorted) {
+      const lastElev = kept[kept.length - 1]?.elevation
+      if (lastElev === undefined || Math.abs(lastElev - r.elevation) >= minGap) {
+        kept.push(r)
+      }
+    }
+    return kept
+  }, [rampMarkers, yMin, yMax])
 
   const totalInputMaf = phase1.intervention.totalInflowAf / 1_000_000
   const totalOutputMaf = phase1.intervention.totalOutflowAf / 1_000_000
@@ -700,6 +763,16 @@ function Phase1Chart({
           Without it, Powell drops to {baselineEndElev.toFixed(0)} ft
           ({baselineEndRise.toFixed(0)} ft). Not a rise — a rescue.
         </p>
+        <p className="pt-1">
+          This is just the patch through April 2027.{' '}
+          <a
+            href="/simulator"
+            className="inline-flex items-center gap-0.5 text-teal-700 hover:text-teal-800 font-medium underline decoration-teal-300/60 underline-offset-2 hover:decoration-teal-500"
+          >
+            Run the long-term simulator &rarr;
+          </a>{' '}
+          to see which post-2026 plan actually holds Powell up.
+        </p>
       </div>
     )
   })()
@@ -719,9 +792,17 @@ function Phase1Chart({
         <PresetPills presetId={presetId} setPresetId={setPresetId} useShortLabel />
       </div>
 
-      {/* Narrative summary */}
+      {/* Narrative summary — on mobile, show the bottom line + a "See the math"
+           disclosure that expands the full breakdown. Desktop shows it all inline. */}
       <div className="bg-amber-50/60 border border-amber-100 rounded-lg px-4 py-3 mb-4 text-sm text-amber-900 font-light leading-relaxed">
-        {narrative}
+        <p className="sm:hidden font-normal mb-1">
+          The {preset.id === 'federal-plan' ? 'April 2026 federal plan' : preset.id === 'extended' ? 'extended federal plan' : 'release cuts'} save{' '}
+          <strong>{interventionGain.toFixed(0)} ft</strong> by April 2027 — without it,
+          Powell drops to <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>.
+        </p>
+        <MobileDisclosure label="See the math">
+          {narrative}
+        </MobileDisclosure>
       </div>
 
       {/* Milestone callouts: intervention vs baseline at April 2027 */}
@@ -923,14 +1004,15 @@ function Phase1Chart({
               label={{ value: 'Dead Pool', position: 'right', fill: '#dc2626', fontSize: 10 }}
             />
 
-            {/* Sep 30, 2026 — Powell release cuts end (WY2026 boundary) */}
+            {/* Sep 30, 2026 — Powell release cuts end (WY2026 boundary).
+                 Label at TOP so it doesn't collide with the Apr 2027 marker. */}
             <ReferenceLine
               x={phase1EndTs}
               stroke="#6366f1"
               strokeDasharray="4 4"
               strokeWidth={1.5}
               label={{
-                value: 'Sep 30 — Powell cuts end',
+                value: 'Powell cuts end',
                 position: 'insideTopLeft',
                 fill: '#6366f1',
                 fontSize: 10,
@@ -938,18 +1020,14 @@ function Phase1Chart({
               }}
             />
 
-            {/* Apr 30, 2027 — Flaming Gorge transfers end (plan window end) */}
+            {/* Apr 30, 2027 — Flaming Gorge transfers end (plan window end).
+                 No label: the x-axis already shows "Apr" at the right edge,
+                 and a second top-label would collide with "Powell cuts end". */}
             <ReferenceLine
               x={planEndTs}
               stroke="#0d7377"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={{
-                value: 'Apr 2027 — FG ends',
-                position: 'insideTopRight',
-                fill: '#0d7377',
-                fontSize: 10,
-              }}
             />
           </ComposedChart>
         </ResponsiveContainer>
