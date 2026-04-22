@@ -1014,6 +1014,12 @@ export default async function HomePage({
         ]}
       />
 
+      {/* Simulator CTA — placed up high so readers can jump to the long-term
+          outcomes right after seeing today's lake level. */}
+      <div className="mt-6 lg:mt-8">
+        <SimulatorPromoCard />
+      </div>
+
       {/* 2. Historical Chart + 3. Elevation Projection + 4. Snowpack Projection - with favorite ramps */}
       <HomeChartsWithFavorites
         measurements={measurements}
@@ -1057,11 +1063,6 @@ export default async function HomePage({
           allRamps={allRamps}
           historical2022Measurements={historical2022Measurements}
         />
-      </div>
-
-      {/* Simulator CTA — push readers to see the long-term outcomes */}
-      <div className="mt-8 lg:mt-12">
-        <SimulatorPromoCard />
       </div>
 
       {/* More articles — the specific plan breakdowns */}
