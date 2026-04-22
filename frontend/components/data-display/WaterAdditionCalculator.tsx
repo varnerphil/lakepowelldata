@@ -805,49 +805,53 @@ function Phase1Chart({
         </MobileDisclosure>
       </div>
 
-      {/* Milestone callouts: intervention vs baseline at April 2027 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <div className="bg-blue-50/60 rounded-lg px-4 py-3">
-          <div className="text-xs uppercase tracking-wider text-blue-700/70 mb-1">
-            Sep 30, 2026 (with plan)
+      {/* Milestone callouts: intervention vs baseline at April 2027.
+          On mobile, collapse behind a "See the milestones" disclosure so
+          the chart below stays above the fold. */}
+      <MobileDisclosure label="See the milestones" className="mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-blue-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-blue-700/70 mb-1">
+              Sep 30, 2026 (with plan)
+            </div>
+            <div className="text-sm text-blue-900 font-light">
+              <span className="font-semibold text-lg">{phase1.intervention.phase1End.p50Elevation.toFixed(0)} ft</span>
+              <span className="text-blue-700 ml-2">
+                ({phase1Rise >= 0 ? '+' : ''}{phase1Rise.toFixed(0)} ft)
+              </span>
+            </div>
+            <div className="text-xs text-blue-600 mt-1">
+              vs. {phase1.baseline.phase1End.p50Elevation.toFixed(0)} ft without plan
+            </div>
           </div>
-          <div className="text-sm text-blue-900 font-light">
-            <span className="font-semibold text-lg">{phase1.intervention.phase1End.p50Elevation.toFixed(0)} ft</span>
-            <span className="text-blue-700 ml-2">
-              ({phase1Rise >= 0 ? '+' : ''}{phase1Rise.toFixed(0)} ft)
-            </span>
+          <div className="bg-teal-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
+              April 2027 (with plan)
+            </div>
+            <div className="text-sm text-teal-900 font-light">
+              <span className="font-semibold text-lg">{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</span>
+              <span className="text-teal-700 ml-2">
+                ({endRise >= 0 ? '+' : ''}{endRise.toFixed(0)} ft)
+              </span>
+            </div>
+            <div className="text-xs text-teal-600 mt-1">
+              vs. {phase1.baseline.ending.p50Elevation.toFixed(0)} ft without plan
+            </div>
           </div>
-          <div className="text-xs text-blue-600 mt-1">
-            vs. {phase1.baseline.phase1End.p50Elevation.toFixed(0)} ft without plan
+          <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
+              Federal plan benefit
+            </div>
+            <div className="text-sm text-emerald-900 font-light">
+              <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
+              <span className="text-emerald-700 ml-2 text-xs">at Apr 2027</span>
+            </div>
+            <div className="text-xs text-emerald-600 mt-1">
+              Prevents a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
+            </div>
           </div>
         </div>
-        <div className="bg-teal-50/60 rounded-lg px-4 py-3">
-          <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
-            April 2027 (with plan)
-          </div>
-          <div className="text-sm text-teal-900 font-light">
-            <span className="font-semibold text-lg">{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</span>
-            <span className="text-teal-700 ml-2">
-              ({endRise >= 0 ? '+' : ''}{endRise.toFixed(0)} ft)
-            </span>
-          </div>
-          <div className="text-xs text-teal-600 mt-1">
-            vs. {phase1.baseline.ending.p50Elevation.toFixed(0)} ft without plan
-          </div>
-        </div>
-        <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
-          <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
-            Federal plan benefit
-          </div>
-          <div className="text-sm text-emerald-900 font-light">
-            <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
-            <span className="text-emerald-700 ml-2 text-xs">at Apr 2027</span>
-          </div>
-          <div className="text-xs text-emerald-600 mt-1">
-            Prevents a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
-          </div>
-        </div>
-      </div>
+      </MobileDisclosure>
 
       {/* Legend — make the two scenarios crystal clear before the chart */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 mb-2 text-[11px] sm:text-xs font-light">
@@ -1039,14 +1043,32 @@ function Phase1Chart({
 
       {hist2022Values.length >= 2 && (
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
+          {/* Mobile: collapse the long paragraph behind a disclosure; show
+              just the lede on its own. Desktop: show everything inline. */}
           <span className="font-medium text-gray-800">Context — the 2022 release:</span>{' '}
-          The last Flaming Gorge emergency release (~500 KAF under the 2022 DROA)
-          ran roughly May 2022 → April 2023. Over that same 12-month window, Powell
-          went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft
-          — a net <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
-          {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
-          Emergency releases from Flaming Gorge slow Powell&apos;s decline; they don&apos;t reverse it on their own.
-          The 2022 window had different snowpack and smaller cuts, so this is a historical reference — not a forecast.
+          <span className="sm:hidden">
+            Powell went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft over the last Flaming Gorge emergency release window — a net{' '}
+            <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
+            {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
+          </span>
+          <span className="hidden sm:inline">
+            The last Flaming Gorge emergency release (~500 KAF under the 2022 DROA)
+            ran roughly May 2022 → April 2023. Over that same 12-month window, Powell
+            went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft
+            — a net <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
+            {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
+            Emergency releases from Flaming Gorge slow Powell&apos;s decline; they don&apos;t reverse it on their own.
+            The 2022 window had different snowpack and smaller cuts, so this is a historical reference — not a forecast.
+          </span>
+          <MobileDisclosure label="What this means">
+            <p className="text-xs text-gray-600 font-light leading-relaxed">
+              The 2022 release (~500 KAF under the DROA) ran May 2022 → April 2023.
+              Emergency releases from Flaming Gorge slow Powell&apos;s decline; they
+              don&apos;t reverse it on their own. The 2022 window had different
+              snowpack and smaller cuts, so this is a historical reference — not a
+              forecast.
+            </p>
+          </MobileDisclosure>
         </div>
       )}
     </div>
