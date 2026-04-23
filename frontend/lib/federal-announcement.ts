@@ -27,11 +27,23 @@ export interface FederalReleaseAnnouncement {
   alreadyReleasedMaf: number
   /** Total Flaming Gorge program (MAF) delivered from effectiveDate through planEndDate */
   flamingGorgeTotalMaf: number
-  /** Protective elevation floor (ft) the plan commits to defending by planEndDate.
-   *  USBR News Release 5326 (4/18/2026) states the plan's actions "are expected
-   *  to increase Lake Powell's elevation by approximately 54 ft to at least
-   *  elevation 3500 feet by April 2027." This is 10 ft above minimum power pool. */
+  /**
+   * Operational floor (ft) BOR actively defends — the "run-of-river" threshold
+   * where release switches to match inflow (no further storage depletion).
+   * Sits above the plan's written minimum (`planMinimumElevationFt`) as a
+   * 10-ft buffer that protects the written commitment under operational
+   * uncertainty. Used by the Phase 1 floor defender.
+   */
   protectiveElevationFt?: number
+  /**
+   * Plan's written minimum elevation commitment (ft) by planEndDate.
+   * USBR News Release 5326 (4/18/2026): the plan's actions "are expected
+   * to increase Lake Powell's elevation by approximately 54 ft to at least
+   * elevation 3500 feet by April 2027." This is 10 ft above minimum power
+   * pool and is the hard floor the plan promises. BOR operates ~10 ft above
+   * it (see protectiveElevationFt) to protect the commitment.
+   */
+  planMinimumElevationFt?: number
 }
 
 /**
@@ -85,5 +97,8 @@ export const CURRENT_ANNOUNCEMENT: FederalReleaseAnnouncement = {
   wy2027AnnualReleaseMaf: 7.48,
   alreadyReleasedMaf: 4.05,
   flamingGorgeTotalMaf: 1.0,
-  protectiveElevationFt: 3500,
+  // BOR's run-of-river threshold — matches `runOfRiverBelowElev: 3510` used in
+  // the Federal EIS Max Operational Flexibility policy preset (monte-carlo.ts).
+  protectiveElevationFt: 3510,
+  planMinimumElevationFt: 3500,
 }

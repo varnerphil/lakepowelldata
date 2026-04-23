@@ -626,22 +626,46 @@ export default function MonteCarloSimulator({
             {phase1Result &&
               CURRENT_ANNOUNCEMENT.protectiveElevationFt !== undefined &&
               phase1Result.intervention.floorDefenderShaveAf > 0 && (
-                <div className="mt-3 inline-flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-2xl">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
-                  <span className="text-amber-900">
-                    <span className="font-medium">Plan gap:</span>{' '}
-                    Holding the plan&rsquo;s {CURRENT_ANNOUNCEMENT.protectiveElevationFt.toLocaleString()} ft floor through{' '}
-                    {new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00').toLocaleDateString(undefined, {
-                      month: 'long',
-                      year: 'numeric',
-                    })}{' '}
-                    requires roughly{' '}
-                    <span className="font-semibold">
-                      {(phase1Result.intervention.floorDefenderShaveAf / 1_000_000).toFixed(2)} MAF
-                    </span>{' '}
-                    of additional release cuts beyond what BOR has already announced.
-                  </span>
-                </div>
+                <details className="group mt-3 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 text-xs">
+                  <summary className="flex cursor-pointer items-start gap-2 px-3 py-2 text-amber-900 [&::-webkit-details-marker]:hidden">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                    <span>
+                      <span className="font-medium">Plan gap:</span>{' '}
+                      Holding BOR&rsquo;s {CURRENT_ANNOUNCEMENT.protectiveElevationFt.toLocaleString()} ft operational floor through{' '}
+                      {new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00').toLocaleDateString(undefined, {
+                        month: 'long',
+                        year: 'numeric',
+                      })}{' '}
+                      requires roughly{' '}
+                      <span className="font-semibold">
+                        {(phase1Result.intervention.floorDefenderShaveAf / 1_000_000).toFixed(2)} MAF
+                      </span>{' '}
+                      of additional release cuts beyond what BOR has already announced.{' '}
+                      <span className="underline decoration-dotted underline-offset-2 group-open:hidden">
+                        Why 3,510 and not 3,500?
+                      </span>
+                    </span>
+                  </summary>
+                  <div className="border-t border-amber-200 px-3 py-2 text-amber-900/90">
+                    <p>
+                      The April 2026 federal plan (USBR News Release 5326) commits to{' '}
+                      <span className="font-medium">
+                        {CURRENT_ANNOUNCEMENT.planMinimumElevationFt?.toLocaleString() ?? '3,500'} ft
+                      </span>{' '}
+                      as its written minimum by April 2027 &mdash; 10 ft above minimum power pool
+                      (3,490 ft).
+                    </p>
+                    <p className="mt-2">
+                      BOR operates with a 10-ft buffer above that commitment.
+                      At {CURRENT_ANNOUNCEMENT.protectiveElevationFt.toLocaleString()} ft the
+                      Federal EIS operating policy switches to {' '}
+                      <span className="font-medium">run-of-river</span> &mdash; releases match
+                      inflow so the lake stops depleting storage &mdash; which is what actually
+                      protects the 3,500 ft commitment. That&rsquo;s why this projection defends{' '}
+                      {CURRENT_ANNOUNCEMENT.protectiveElevationFt.toLocaleString()}, not 3,500.
+                    </p>
+                  </div>
+                </details>
               )}
           </div>
           <MonteCarloChart

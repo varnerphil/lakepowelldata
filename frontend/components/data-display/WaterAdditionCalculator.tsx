@@ -794,8 +794,8 @@ function Phase1Chart({
             ? ' The extended federal plan saves '
             : ' The April 2026 federal plan saves '}
           <strong>{interventionGain.toFixed(0)} ft</strong>.
-          {announcement.protectiveElevationFt !== undefined && (() => {
-            const floor = announcement.protectiveElevationFt
+          {announcement.planMinimumElevationFt !== undefined && (() => {
+            const floor = announcement.planMinimumElevationFt
             const endElev = phase1.intervention.ending.p50Elevation
             const delta = Math.round(endElev - floor)
             if (delta >= 0) {
@@ -804,9 +804,15 @@ function Phase1Chart({
             return ` That is ${Math.abs(delta)} ft below the plan's ${floor} ft floor.`
           })()}
         </p>
-        <MobileDisclosure label="See the math">
-          {narrative}
-        </MobileDisclosure>
+        <details className="group mt-2">
+          <summary className="cursor-pointer list-none flex items-center gap-1.5 text-xs font-medium text-amber-800 hover:text-amber-900 py-1 select-none [&::-webkit-details-marker]:hidden">
+            <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+            <span className="underline decoration-dotted underline-offset-2 group-open:no-underline">
+              See the math
+            </span>
+          </summary>
+          <div className="mt-2">{narrative}</div>
+        </details>
       </div>
 
       {/* Milestone callouts: intervention vs baseline at April 2027.
