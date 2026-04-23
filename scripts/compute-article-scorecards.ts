@@ -565,6 +565,13 @@ async function main() {
           startElevation: latest.elevation,
           fullPlanEndDate: phase1.endDate,
           fullPlanEndElevationP50: phase1.ending.p50Elevation,
+          // Additional release cut (MAF) the floor defender had to shave to
+          // keep the p50 curve at or above the plan's 3,500 ft April 2027
+          // commitment. Non-zero = the plan-as-announced is insufficient by
+          // this amount.
+          floorDefenderShaveMaf:
+            Math.round((phase1.intervention.floorDefenderShaveAf / 1_000_000) * 100) / 100,
+          protectiveElevationFt: CURRENT_ANNOUNCEMENT.protectiveElevationFt ?? null,
         }
       : null,
     stressTest: {

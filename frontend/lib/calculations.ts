@@ -1,5 +1,5 @@
 import { WaterMeasurement, ElevationStorageCapacity } from './db'
-import { type OutflowPolicy, applyPolicy, getDailyEvaporationAf } from './monte-carlo'
+import { type OutflowPolicy, applyPolicy, getDailyEvaporationAf, elevationToContent } from './monte-carlo'
 import { type FederalReleaseAnnouncement, getAnnouncementDerived } from './federal-announcement'
 
 // ─── Phase 1: Federal Release Projection ──────────────────────────
@@ -16,6 +16,27 @@ const RUNOFF_MONTHLY_FRACTIONS: Record<number, number> = {
   6: 0.20,  // Jul — declining melt
   7: 0.05,  // Aug — monsoon + tail
   8: 0.05,  // Sep — base flow recovery
+}
+
+/**
+ * Monthly distribution of Glen Canyon Dam releases as fractions of annual total.
+ * Reflects BOR's seasonal operating pattern: lower in winter (reduced hydropower
+ * demand, storage preservation) and higher in mid-to-late summer (peak power
+ * demand downstream, lower-basin delivery obligations). Sums to 1.0.
+ */
+const RELEASE_MONTHLY_FRACTIONS: Record<number, number> = {
+  0:  0.065, // Jan
+  1:  0.060, // Feb
+  2:  0.070, // Mar
+  3:  0.075, // Apr
+  4:  0.085, // May
+  5:  0.095, // Jun
+  6:  0.115, // Jul
+  7:  0.115, // Aug
+  8:  0.095, // Sep
+  9:  0.080, // Oct
+  10: 0.075, // Nov
+  11: 0.070, // Dec
 }
 
 /** Base inflow from tributaries, return flows, etc. (cfs) */
@@ -53,6 +74,13 @@ export interface Phase1Scenario {
   totalInflowAf: number
   totalOutflowAf: number
   totalEvaporationAf: number
+  /**
+   * Cumulative AF of release the floor defender had to shave to keep the
+   * simulated p50 elevation at or above announcement.protectiveElevationFt.
+   * Non-zero value means the plan-as-announced does not hold the floor and
+   * represents the size of the additional cut BOR would need to make.
+   */
+  floorDefenderShaveAf: number
 }
 
 /**
@@ -143,14 +171,23 @@ export function computePhase1Projection(params: {
     monthDayCounts.set(key, (monthDayCounts.get(key) || 0) + 1)
   }
 
-  // Normal (no-intervention) baseline: full 7.48 MAF/yr outflow throughout, no FG
-  const normalOutflowAfPerDay = (announcement.baselineAnnualReleaseMaf * 1_000_000) / 365
+  // Baseline (no-intervention) uses full baseline annual release, seasonally shaped.
+  const baselineAnnualReleaseAf = announcement.baselineAnnualReleaseMaf * 1_000_000
+  const wy2027AnnualReleaseAf = announcement.wy2027AnnualReleaseMaf * 1_000_000
+
+  /**
+   * Daily release (AF) for a given month under a seasonal shape,
+   * given an annual-release target (AF) and the day-count of that month.
+   */
+  const seasonalDailyRelease = (annualAf: number, month: number, daysInMonth: number) =>
+    (annualAf * (RELEASE_MONTHLY_FRACTIONS[month] ?? (1 / 12))) / daysInMonth
 
   function runScenario(opts: { intervention: boolean }): Phase1Scenario {
     const curvesByScenario: Array<{ elevations: number[]; contents: number[] }> = []
     let centralTotalInflow = 0
     let centralTotalOutflow = 0
     let centralTotalEvap = 0
+    let centralFloorShave = 0
 
     for (const scenario of scenarios) {
       const wy2026Runoff = projectedRunoffInflowAf * scenario.runoffScale
@@ -162,6 +199,7 @@ export function computePhase1Projection(params: {
       let totalInflow = 0
       let totalOutflow = 0
       let totalEvap = 0
+      let floorShaveAf = 0
 
       for (let i = 0; i < dates.length; i++) {
         const dt = new Date(dates[i] + 'T00:00:00')
@@ -183,17 +221,44 @@ export function computePhase1Projection(params: {
         const fgAf = opts.intervention ? derived.flamingGorgeAfPerDay : 0
         const inflowAf = runoffAfToday + baseFlowAf + fgAf
 
+        // Outflow: Phase 1a keeps its flat reduced rate (the announced plan specifies
+        // an aggregate cap without monthly detail). Phase 1b and baseline use a
+        // seasonal shape against their respective annual targets.
         let outflowAf: number
         if (opts.intervention) {
-          outflowAf = ms < phase1EndMs
-            ? derived.reducedReleaseAfPerDay
-            : derived.normalReleaseAfPerDay
+          if (ms < phase1EndMs) {
+            outflowAf = derived.reducedReleaseAfPerDay
+          } else {
+            outflowAf = seasonalDailyRelease(wy2027AnnualReleaseAf, month, daysInMonth)
+          }
         } else {
-          outflowAf = normalOutflowAfPerDay
+          outflowAf = seasonalDailyRelease(baselineAnnualReleaseAf, month, daysInMonth)
         }
 
         const elevation = contentToElevation(content, sortedStorage)
         const evapAf = getDailyEvaporationAf(month, elevation)
+
+        // Floor defender: under intervention in Phase 1b, if today's flows would
+        // drop the reservoir below the plan's protective-elevation commitment,
+        // clamp the release to hold the floor. Shaved water is tracked as the
+        // "additional cut needed" headline metric — it does not disappear, it
+        // stays in the lake.
+        if (
+          opts.intervention &&
+          announcement.protectiveElevationFt !== undefined &&
+          ms >= phase1EndMs
+        ) {
+          const floorContent = elevationToContent(announcement.protectiveElevationFt, sortedStorage)
+          const projectedContent = content + inflowAf - outflowAf - evapAf
+          if (projectedContent < floorContent) {
+            const neededOutflow = Math.max(0, content + inflowAf - evapAf - floorContent)
+            const shave = outflowAf - neededOutflow
+            if (shave > 0) {
+              floorShaveAf += shave
+              outflowAf = neededOutflow
+            }
+          }
+        }
 
         content = content + inflowAf - outflowAf - evapAf
         if (content < 0) content = 0
@@ -212,6 +277,7 @@ export function computePhase1Projection(params: {
         centralTotalInflow = totalInflow
         centralTotalOutflow = totalOutflow
         centralTotalEvap = totalEvap
+        centralFloorShave = floorShaveAf
       }
     }
 
@@ -237,6 +303,7 @@ export function computePhase1Projection(params: {
       totalInflowAf: Math.round(centralTotalInflow),
       totalOutflowAf: Math.round(centralTotalOutflow),
       totalEvaporationAf: Math.round(centralTotalEvap),
+      floorDefenderShaveAf: Math.round(centralFloorShave),
     }
   }
 

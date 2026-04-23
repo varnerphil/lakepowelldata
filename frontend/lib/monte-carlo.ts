@@ -627,7 +627,7 @@ export function contentToElevation(
 /**
  * Convert elevation to content using linear interpolation (reverse lookup).
  */
-function elevationToContent(
+export function elevationToContent(
   elevation: number,
   storageCapacity: StorageCapacityEntry[]
 ): number {
