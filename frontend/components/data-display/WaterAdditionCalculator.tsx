@@ -137,11 +137,9 @@ function buildAnnouncementForPreset(preset: PlanPreset): FederalReleaseAnnouncem
 function PresetPills({
   presetId,
   setPresetId,
-  useShortLabel = false,
 }: {
   presetId: string
   setPresetId: (id: string) => void
-  useShortLabel?: boolean
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -155,17 +153,7 @@ function PresetPills({
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
-          {useShortLabel ? (
-            p.shortLabel
-          ) : (
-            <>
-              {/* Short label on phones, full label on tablet+ — keeps the
-                  preset row on one line on mobile so it doesn't wrap into a
-                  tall stack. The summary box below gives the full detail. */}
-              <span className="sm:hidden">{p.shortLabel}</span>
-              <span className="hidden sm:inline">{p.label}</span>
-            </>
-          )}
+          {p.shortLabel}
         </button>
       ))}
     </div>
@@ -789,13 +777,13 @@ function Phase1Chart({
       {/* In-sync scenario selector, duplicated here so mobile users don't lose
           track of which scenario is active by the time they reach the chart */}
       <div className="mb-4">
-        <PresetPills presetId={presetId} setPresetId={setPresetId} useShortLabel />
+        <PresetPills presetId={presetId} setPresetId={setPresetId} />
       </div>
 
-      {/* Narrative summary — on mobile, show the bottom line + a "See the math"
-           disclosure that expands the full breakdown. Desktop shows it all inline. */}
+      {/* Bottom-line summary always shown as a lede; the full math sits below
+           (collapsed behind a disclosure on mobile, inline on desktop). */}
       <div className="bg-amber-50/60 border border-amber-100 rounded-lg px-4 py-3 mb-4 text-sm text-amber-900 font-light leading-relaxed">
-        <p className="sm:hidden font-normal mb-1">
+        <p className="font-normal mb-1">
           By April 2027, Powell drops to <strong>{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</strong>.
           Without the plan it would have been <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
           {' '}— a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft drop</strong>.
@@ -1082,23 +1070,10 @@ function Phase1Chart({
 
       {hist2022Values.length >= 2 && (
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-          {/* Mobile: collapse the long paragraph behind a disclosure; show
-              just the lede on its own. Desktop: show everything inline. */}
           <span className="font-medium text-gray-800">Context — the 2022 release:</span>{' '}
-          <span className="sm:hidden">
-            Powell went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft over the last Flaming Gorge emergency release window — a net{' '}
-            <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
-            {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
-          </span>
-          <span className="hidden sm:inline">
-            The last Flaming Gorge emergency release (~500 KAF under the 2022 DROA)
-            ran roughly May 2022 → April 2023. Over that same 12-month window, Powell
-            went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft
-            — a net <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
-            {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
-            Emergency releases from Flaming Gorge slow Powell&apos;s decline; they don&apos;t reverse it on their own.
-            The 2022 window had different snowpack and smaller cuts, so this is a historical reference — not a forecast.
-          </span>
+          Powell went from {hist2022Values[0].toFixed(0)} ft to {hist2022Values[hist2022Values.length - 1].toFixed(0)} ft over the last Flaming Gorge emergency release window — a net{' '}
+          <strong>{(hist2022Values[hist2022Values.length - 1] - hist2022Values[0] >= 0 ? '+' : '')}
+          {(hist2022Values[hist2022Values.length - 1] - hist2022Values[0]).toFixed(0)} ft</strong>.
           <MobileDisclosure label="What this means">
             <p className="text-xs text-gray-600 font-light leading-relaxed">
               The 2022 release (~500 KAF under the DROA) ran May 2022 → April 2023.

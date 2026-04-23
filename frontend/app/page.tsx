@@ -1114,12 +1114,7 @@ export default async function HomePage({
             <div id="snowpack" className="scroll-mt-24" />
             <div className="card p-4 lg:p-8">
               <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
-              <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light hidden lg:block">
-                This chart shows historical snow water equivalent trends for the Upper Colorado River Region from 1986 to present. 
-                The shaded bands represent percentile ranges (10th, 30th, 70th, 90th) based on period of record data. 
-                The current year is highlighted in black, while historical years are shown in lighter colors.
-              </p>
-              <p className="text-xs text-gray-500 mb-4 font-light lg:hidden">
+              <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light">
                 Historical SWE trends for Upper Colorado. Current year shown in black.
               </p>
               <BasinPlotsChart
