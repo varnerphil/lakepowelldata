@@ -623,6 +623,26 @@ export default function MonteCarloSimulator({
             <p className="text-xs text-gray-400 mt-0.5">
               Shaded bands show 25th-75th and 10th-90th percentile ranges across {result.iterations.toLocaleString()} scenarios
             </p>
+            {phase1Result &&
+              CURRENT_ANNOUNCEMENT.protectiveElevationFt !== undefined &&
+              phase1Result.intervention.floorDefenderShaveAf > 0 && (
+                <div className="mt-3 inline-flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-2xl">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
+                  <span className="text-amber-900">
+                    <span className="font-medium">Plan gap:</span>{' '}
+                    Holding the plan&rsquo;s {CURRENT_ANNOUNCEMENT.protectiveElevationFt.toLocaleString()} ft floor through{' '}
+                    {new Date(CURRENT_ANNOUNCEMENT.planEndDate + 'T00:00:00').toLocaleDateString(undefined, {
+                      month: 'long',
+                      year: 'numeric',
+                    })}{' '}
+                    requires roughly{' '}
+                    <span className="font-semibold">
+                      {(phase1Result.intervention.floorDefenderShaveAf / 1_000_000).toFixed(2)} MAF
+                    </span>{' '}
+                    of additional release cuts beyond what BOR has already announced.
+                  </span>
+                </div>
+              )}
           </div>
           <MonteCarloChart
             data={result.dailyPercentiles}
