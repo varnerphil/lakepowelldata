@@ -707,6 +707,37 @@ function Phase1Chart({
   const netChangeMaf = totalInputMaf - totalOutputMaf - totalEvapMaf
   const runoffMaf = (projectedRunoffInflowAf ?? 0) / 1_000_000
   const addedMAF = preset.releaseCutsMaf + preset.flamingGorgeMaf
+
+  // End-of-month p50 checkpoints from the first full month after "today" through
+  // the plan window. Anchors a compact table under the milestones disclosure so
+  // visitors can scan the month-by-month trajectory without reading the chart.
+  const monthlyCheckpoints = useMemo(() => {
+    const daily = phase1.intervention.daily
+    if (daily.length === 0) return [] as Array<{ key: string; label: string; p50: number; delta: number }>
+
+    const lastByMonth = new Map<string, { date: string; p50: number }>()
+    for (const d of daily) {
+      const key = d.date.slice(0, 7) // YYYY-MM
+      lastByMonth.set(key, { date: d.date, p50: d.p50 })
+    }
+
+    const start = new Date(daily[0].date + 'T00:00:00')
+    // Skip the partial first month — today's row is implicit in "change from today".
+    const firstMonthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`
+    const rows: Array<{ key: string; label: string; p50: number; delta: number }> = []
+    const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
+    for (const [key, entry] of lastByMonth) {
+      if (key === firstMonthKey) continue
+      const label = fmt.format(parseLocalDate(entry.date))
+      rows.push({
+        key,
+        label,
+        p50: entry.p50,
+        delta: entry.p50 - currentElevation,
+      })
+    }
+    return rows
+  }, [phase1.intervention.daily, currentElevation])
   const outflowMultiple = (totalOutputMaf / addedMAF).toFixed(1)
 
   const narrative = (() => {
@@ -861,6 +892,48 @@ function Phase1Chart({
             </div>
           </div>
         </div>
+
+        {monthlyCheckpoints.length > 0 && (
+          <div className="mt-3 rounded-lg border border-gray-100 bg-white/70 overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
+              Start of each month (with plan)
+            </div>
+            <table className="w-full text-[12px] sm:text-[13px]">
+              <thead>
+                <tr className="text-left text-gray-500 font-light">
+                  <th className="px-3 py-1.5 font-normal">Month</th>
+                  <th className="px-3 py-1.5 font-normal text-right">Elevation</th>
+                  <th className="px-3 py-1.5 font-normal text-right">
+                    Change from today ({currentElevation.toFixed(0)} ft)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyCheckpoints.map((row) => {
+                  const sign = row.delta > 0 ? '+' : ''
+                  const color =
+                    row.delta > 0
+                      ? 'text-emerald-700'
+                      : row.delta < 0
+                      ? 'text-amber-700'
+                      : 'text-gray-600'
+                  return (
+                    <tr key={row.key} className="border-t border-gray-50">
+                      <td className="px-3 py-1.5 text-gray-700">{row.label}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-gray-900">
+                        {row.p50.toFixed(0)} ft
+                      </td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums ${color}`}>
+                        {sign}
+                        {row.delta.toFixed(0)} ft
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </MobileDisclosure>
 
       {/* Legend — make the two scenarios crystal clear before the chart */}
