@@ -1028,10 +1028,14 @@ export default async function HomePage({
         ]}
       />
 
-      {/* Simulator CTA — placed up high so readers can jump to the long-term
-          outcomes right after seeing today's lake level. */}
+      {/* Featured articles first — the federal-plan framing sets context
+          before readers hit the elevation trend and projection charts. */}
       <div className="mt-6 lg:mt-8">
-        <SimulatorPromoCard />
+        <FeaturedArticlesStrip
+          kicker="The bigger picture"
+          heading="What would each long-term federal plan actually do?"
+          articles={FEATURED_ARTICLES_PRIMARY}
+        />
       </div>
 
       {/* 2. Historical Chart + 3. Elevation Projection + 4. Snowpack Projection - with favorite ramps */}
@@ -1073,12 +1077,11 @@ export default async function HomePage({
         />
       </div>
 
-      {/* Featured articles — frame the federal plan and point to the deep dives */}
-      <FeaturedArticlesStrip
-        kicker="The bigger picture"
-        heading="What would each long-term federal plan actually do?"
-        articles={FEATURED_ARTICLES_PRIMARY}
-      />
+      {/* Simulator CTA — after the Phase 1 projection, so readers who want
+          to go past April 2027 can jump straight into the long-term tool. */}
+      <div className="mt-8 lg:mt-12">
+        <SimulatorPromoCard />
+      </div>
 
       {/* Storage profile — how big is the lake at each elevation. */}
       <Suspense fallback={
