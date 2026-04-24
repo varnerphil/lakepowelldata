@@ -102,7 +102,7 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
-import WaterAdditionCalculator from '@/components/data-display/WaterAdditionCalculator'
+import Phase1ProjectionSection, { VolumeImpactCard } from '@/components/data-display/WaterAdditionCalculator'
 import FeaturedArticlesStrip, { type FeaturedArticle } from '@/components/articles/FeaturedArticlesStrip'
 import SimulatorPromoCard from '@/components/articles/SimulatorPromoCard'
 
@@ -1058,17 +1058,11 @@ export default async function HomePage({
         currentSnowpackPercent={currentSnowpackPercent}
       />
 
-      {/* Featured articles — frame the federal plan and point to the deep dives */}
-      <FeaturedArticlesStrip
-        kicker="The bigger picture"
-        heading="What each federal long-term plan would look like"
-        articles={FEATURED_ARTICLES_PRIMARY}
-      />
-
-      {/* 5. Water Addition Calculator — what does X MAF mean for the lake? */}
+      {/* Projection — sits right under the elevation trend so readers see
+          "what actually happens next" before anything else. */}
       <div className="mt-8 lg:mt-12">
         <div id="calculator" className="scroll-mt-24" />
-        <WaterAdditionCalculator
+        <Phase1ProjectionSection
           elevationStorageData={elevationStorageData}
           currentElevation={current.elevation}
           currentContent={current.content}
@@ -1079,27 +1073,40 @@ export default async function HomePage({
         />
       </div>
 
+      {/* Featured articles — frame the federal plan and point to the deep dives */}
+      <FeaturedArticlesStrip
+        kicker="The bigger picture"
+        heading="What each federal long-term plan would look like"
+        articles={FEATURED_ARTICLES_PRIMARY}
+      />
+
+      {/* Storage profile + volume-impact pair — the "how big is the lake,
+          and what does the plan's water look like at that scale" block. */}
+      <Suspense fallback={
+        <div className="mt-12 h-[400px] flex items-center justify-center">
+          <div className="text-gray-400">Loading storage visualization...</div>
+        </div>
+      }>
+        <div className="mt-12 space-y-6 lg:space-y-8">
+          <div id="storage" className="scroll-mt-24" />
+          <StorageVisualization
+            elevationStorageData={elevationStorageData}
+            currentElevation={current.elevation}
+          />
+          <VolumeImpactCard
+            elevationStorageData={elevationStorageData}
+            currentElevation={current.elevation}
+            allRamps={allRamps}
+          />
+        </div>
+      </Suspense>
+
       {/* More articles — the specific plan breakdowns */}
       <FeaturedArticlesStrip
         kicker="Compare the plans"
         heading="Which plan actually holds the lake up?"
         articles={FEATURED_ARTICLES_SECONDARY}
       />
-
-      {/* 6. Storage Profile - Below the fold, can load after initial render */}
-      <Suspense fallback={
-        <div className="mt-12 h-[400px] flex items-center justify-center">
-          <div className="text-gray-400">Loading storage visualization...</div>
-        </div>
-      }>
-        <div className="mt-12">
-          <div id="storage" className="scroll-mt-24" />
-          <StorageVisualization
-            elevationStorageData={elevationStorageData}
-            currentElevation={current.elevation}
-          />
-        </div>
-      </Suspense>
 
       {/* 6. Snowpack Chart - Lazy loaded */}
       {basinPlotsData && (

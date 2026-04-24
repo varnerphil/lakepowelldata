@@ -51,7 +51,7 @@ function MobileDisclosure({
   )
 }
 
-interface WaterAdditionCalculatorProps {
+interface Phase1ProjectionSectionProps {
   elevationStorageData: ElevationStorageCapacity[]
   currentElevation: number
   currentContent?: number
@@ -62,6 +62,12 @@ interface WaterAdditionCalculatorProps {
   // Overlaid on the Phase 1 projection chart, shifted forward 4 years so calendar
   // months align — shows how the last Flaming Gorge emergency release actually played out.
   historical2022Measurements?: Array<{ date: string; elevation: number }>
+}
+
+interface VolumeImpactCardProps {
+  elevationStorageData: ElevationStorageCapacity[]
+  currentElevation: number
+  allRamps?: Ramp[]
 }
 
 const DEFAULT_RAMPS: Array<{ name: string; elevation: number }> = [
@@ -337,7 +343,14 @@ function CanyonProfile({
   )
 }
 
-export default function WaterAdditionCalculator({
+/**
+ * The projection section — "What the plan will do to Lake Powell."
+ * Shows the federal plan's real, day-by-day effect on lake level through
+ * April 2027 (the plan window), with the uncertainty band and baseline
+ * (no-plan) comparison. Volume-impact visual lives separately in
+ * `VolumeImpactCard` below the lake diagram.
+ */
+export default function Phase1ProjectionSection({
   elevationStorageData,
   currentElevation,
   currentContent,
@@ -345,16 +358,108 @@ export default function WaterAdditionCalculator({
   projectedRunoffInflowAf,
   allRamps,
   historical2022Measurements,
-}: WaterAdditionCalculatorProps) {
+}: Phase1ProjectionSectionProps) {
+  const [presetId, setPresetId] = useState<string>('federal-plan')
+  const preset = useMemo(
+    () => PLAN_PRESETS.find((p) => p.id === presetId) ?? PLAN_PRESETS[1],
+    [presetId]
+  )
+  const announcement = useMemo(() => buildAnnouncementForPreset(preset), [preset])
+
+  const [favoriteIds, setFavoriteIds] = useState<number[] | null>(null)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('favoriteRamps')
+      if (stored) setFavoriteIds(JSON.parse(stored))
+      else setFavoriteIds([])
+    } catch {
+      setFavoriteIds([])
+    }
+  }, [])
+  const rampMarkers = useMemo(() => {
+    if (allRamps && favoriteIds && favoriteIds.length > 0) {
+      const favs = allRamps.filter((r) => favoriteIds.includes(r.id))
+      if (favs.length > 0) {
+        return favs.map((r) => ({
+          name: r.name.replace(/ (Ramp|Launch|Business Ramp|North Ramp|South Ramp)$/, ''),
+          elevation: r.min_safe_elevation || r.min_usable_elevation,
+        }))
+      }
+    }
+    return DEFAULT_RAMPS
+  }, [allRamps, favoriteIds])
+
+  // afPerFoot at the current elevation — used by Phase1Chart's footer math.
+  const afPerFoot = useMemo(() => {
+    const sorted = [...elevationStorageData].sort((a, b) => a.elevation - b.elevation)
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].elevation >= currentElevation) {
+        return sorted[i].storage_at_elevation - sorted[i - 1].storage_at_elevation
+      }
+    }
+    return 0
+  }, [elevationStorageData, currentElevation])
+
+  return (
+    <div className="card p-4 sm:p-6 lg:p-8">
+      <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
+        What the plan will do to Lake Powell
+      </h3>
+      <MobileDisclosure label="What the plan covers" className="mb-4 sm:mb-5">
+        <p className="text-xs sm:text-sm text-gray-500 font-light">
+          The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 MAF/yr
+          down to 6.0 MAF/yr through September 30, 2026. It also moves up to 1 MAF of water
+          from Flaming Gorge into Powell between now and April 2027. Pick a scenario below to
+          see how each option plays out.
+        </p>
+      </MobileDisclosure>
+
+      <div className="mb-5">
+        <PresetPills presetId={presetId} setPresetId={setPresetId} />
+      </div>
+
+      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
+        {preset.summary}
+      </div>
+
+      {currentContent && currentDate && projectedRunoffInflowAf !== undefined && (
+        <Phase1Chart
+          preset={preset}
+          presetId={presetId}
+          setPresetId={setPresetId}
+          announcement={announcement}
+          currentElevation={currentElevation}
+          currentContent={currentContent}
+          currentDate={currentDate}
+          projectedRunoffInflowAf={projectedRunoffInflowAf}
+          storageCapacity={elevationStorageData}
+          afPerFoot={afPerFoot}
+          rampMarkers={rampMarkers}
+          historical2022Measurements={historical2022Measurements}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Volume-impact card — "If all that water dropped in at once, what would it look like?"
+ * Purely a magnitude sense-maker. Has a prominent caveat up top so readers
+ * don't mistake it for a forecast. Renders below the lake-diagram so it visually
+ * extends the "lake has this much water at each foot" story.
+ */
+export function VolumeImpactCard({
+  elevationStorageData,
+  currentElevation,
+  allRamps,
+}: VolumeImpactCardProps) {
   const [presetId, setPresetId] = useState<string>('federal-plan')
   const preset = useMemo(
     () => PLAN_PRESETS.find((p) => p.id === presetId) ?? PLAN_PRESETS[1],
     [presetId]
   )
   const addedMAF = preset.releaseCutsMaf + preset.flamingGorgeMaf
-  const announcement = useMemo(() => buildAnnouncementForPreset(preset), [preset])
 
-  // Load user's favorite ramps from localStorage — fall back to DEFAULT_RAMPS
   const [favoriteIds, setFavoriteIds] = useState<number[] | null>(null)
   useEffect(() => {
     try {
@@ -384,7 +489,6 @@ export default function WaterAdditionCalculator({
   )
 
   const result = useMemo(() => {
-    // Find storage at current elevation via interpolation
     let currentStorage = 0
     for (let i = 1; i < sorted.length; i++) {
       if (sorted[i].elevation >= currentElevation) {
@@ -399,8 +503,6 @@ export default function WaterAdditionCalculator({
     }
 
     const targetStorage = currentStorage + addedMAF * 1_000_000
-
-    // Find new elevation
     let newElevation = currentElevation
     for (let i = 1; i < sorted.length; i++) {
       if (sorted[i].storage_at_elevation >= targetStorage) {
@@ -412,39 +514,15 @@ export default function WaterAdditionCalculator({
         break
       }
     }
-
-    // Cap at full pool
     if (newElevation > 3700) newElevation = 3700
 
-    const rise = newElevation - currentElevation
-
-    // AF per foot at current level
-    let afPerFoot = 0
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].elevation >= currentElevation) {
-        afPerFoot =
-          sorted[i].storage_at_elevation - sorted[i - 1].storage_at_elevation
-        break
-      }
-    }
-
-    // Which ramps are gained
-    const currentlyAccessible = rampMarkers.filter(
-      (r) => currentElevation >= r.elevation
-    )
     const newlyAccessible = rampMarkers.filter(
       (r) => currentElevation < r.elevation && newElevation >= r.elevation
     )
-    const stillBelow = rampMarkers.filter(
-      (r) => newElevation < r.elevation
-    )
-
+    const stillBelow = rampMarkers.filter((r) => newElevation < r.elevation)
     return {
-      currentStorage,
       newElevation,
-      rise,
-      afPerFoot,
-      currentlyAccessible,
+      rise: newElevation - currentElevation,
       newlyAccessible,
       stillBelow,
     }
@@ -453,62 +531,53 @@ export default function WaterAdditionCalculator({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
-        The federal plan, now through September: what it actually does to Lake Powell
+        What would that much water look like in the canyon?
       </h3>
-      <MobileDisclosure label="What the plan covers" className="mb-4 sm:mb-5">
-        <p className="text-xs sm:text-sm text-gray-500 font-light">
-          The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 → 6.0 MAF
-          through Sep 30, 2026, and transfers up to 1 MAF from Flaming Gorge through April 2027.
-          Pick a scenario below.
-        </p>
-      </MobileDisclosure>
 
-      {/* Preset selector */}
+      {/* Strong caveat — this is not a forecast */}
+      <div className="mt-3 mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="font-medium mb-1">This is not a prediction.</p>
+        <p className="font-light leading-relaxed">
+          The lake will <em>not</em> actually rise by this much. Water flows out every day,
+          and the plan&apos;s water arrives slowly over many months. This chart only shows
+          how much water the plan adds — if you could somehow drop it all in at once. For
+          what really happens, see the projection up top.
+        </p>
+      </div>
+
       <div className="mb-5">
         <PresetPills presetId={presetId} setPresetId={setPresetId} />
       </div>
 
-      {/* Preset summary */}
-      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-        {preset.summary}
-      </div>
-
-      {/* Result headline — canyon scale */}
       <div className="bg-teal-50/60 rounded-xl p-4 sm:p-6 mb-6">
-        <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-2">
-          Step 1 — if all the water stayed
-        </div>
         <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
           <div>
             <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
-              {addedMAF.toFixed(2)} MAF dropped in today
+              If {addedMAF.toFixed(2)} MAF landed at once
             </div>
             <div className="text-3xl sm:text-4xl font-light text-teal-800">
               +{result.rise.toFixed(1)} ft
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">Lake reaches</div>
+            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
+              Lake would reach
+            </div>
             <div className="text-3xl sm:text-4xl font-light text-teal-800">
               {result.newElevation.toFixed(0)} ft
             </div>
           </div>
           <div className="sm:ml-auto text-right">
-            <div className="text-xs uppercase tracking-wider text-gray-400 mb-1">From today</div>
+            <div className="text-xs uppercase tracking-wider text-gray-400 mb-1">
+              Today&rsquo;s level
+            </div>
             <div className="text-lg font-light text-gray-600">
               {currentElevation.toFixed(1)} ft
             </div>
           </div>
         </div>
-        <MobileDisclosure label="Why it doesn't stay" className="mt-3">
-          <p className="text-xs text-teal-700/80 font-light italic">
-            But water keeps flowing out — releases to the Lower Basin, evaporation off
-            the surface — the whole time it&apos;s being added. The real outcome is in Step 2, below.
-          </p>
-        </MobileDisclosure>
       </div>
 
-      {/* Canyon-shaped visual */}
       <CanyonProfile
         elevationStorageData={sorted}
         currentElevation={currentElevation}
@@ -518,11 +587,10 @@ export default function WaterAdditionCalculator({
         newlyAccessible={result.newlyAccessible}
       />
 
-      {/* Ramps gained/lost summary */}
       {result.newlyAccessible.length > 0 && (
         <div className="bg-emerald-50/60 rounded-lg px-4 py-3 mb-4">
           <p className="text-sm text-emerald-800 font-light">
-            <span className="font-medium">Ramps reached at that elevation:</span>{' '}
+            <span className="font-medium">Ramps that would open at that level:</span>{' '}
             {result.newlyAccessible.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
           </p>
         </div>
@@ -531,24 +599,6 @@ export default function WaterAdditionCalculator({
         <p className="text-xs text-gray-400 font-light">
           Still below: {result.stillBelow.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
         </p>
-      )}
-
-      {/* Phase 1 Projection Chart — step 2, realistic outcome */}
-      {currentContent && currentDate && projectedRunoffInflowAf !== undefined && (
-        <Phase1Chart
-          preset={preset}
-          presetId={presetId}
-          setPresetId={setPresetId}
-          announcement={announcement}
-          currentElevation={currentElevation}
-          currentContent={currentContent}
-          currentDate={currentDate}
-          projectedRunoffInflowAf={projectedRunoffInflowAf}
-          storageCapacity={elevationStorageData}
-          afPerFoot={result.afPerFoot}
-          rampMarkers={rampMarkers}
-          historical2022Measurements={historical2022Measurements}
-        />
       )}
     </div>
   )
@@ -583,6 +633,16 @@ function Phase1Chart({
   rampMarkers: Array<{ name: string; elevation: number }>
   historical2022Measurements?: Array<{ date: string; elevation: number }>
 }) {
+  // Match the width/padding of the main elevation-trend chart above (see
+  // WaterLevelChart) so both charts align visually. Default to mobile to avoid
+  // a hydration mismatch.
+  const [isMobile, setIsMobile] = useState(true)
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   const phase1 = useMemo(
     () =>
       computePhase1Projection({
@@ -797,19 +857,11 @@ function Phase1Chart({
   })()
 
   return (
-    <div className="mt-8 pt-6 border-t border-gray-100">
-      <h3 className="text-base sm:text-lg font-light text-gray-900 mb-1">
-        Step 2 — what actually happens by April 2027
-      </h3>
+    <div className="mt-2">
       <p className="text-xs sm:text-sm text-gray-500 font-light mb-3">
-        Daily water-balance: releases, evaporation, this year&apos;s snowpack (±20%).
+        How much water flows in and out each day — including this year&rsquo;s snowmelt
+        (give or take 20%) and evaporation.
       </p>
-
-      {/* In-sync scenario selector, duplicated here so mobile users don't lose
-          track of which scenario is active by the time they reach the chart */}
-      <div className="mb-4">
-        <PresetPills presetId={presetId} setPresetId={setPresetId} />
-      </div>
 
       {/* Bottom-line summary always shown as a lede; the full math sits below
            (collapsed behind a disclosure on mobile, inline on desktop). */}
@@ -975,7 +1027,15 @@ function Phase1Chart({
       {/* Chart */}
       <div className="h-[280px] sm:h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 5, right: 80, left: 40, bottom: 20 }}>
+          <ComposedChart
+            data={chartData}
+            margin={{
+              top: 5,
+              right: isMobile ? 60 : 80,
+              left: isMobile ? 0 : 30,
+              bottom: 20,
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" strokeOpacity={0.8} />
             <XAxis
               dataKey="timestamp"
@@ -992,8 +1052,19 @@ function Phase1Chart({
             />
             <YAxis
               domain={[yMin, yMax]}
+              width={isMobile ? 45 : 70}
               tick={{ fontSize: 11, fill: '#888' }}
-              label={{ value: 'Elevation (ft)', angle: -90, position: 'insideLeft', offset: -25, style: { fill: '#888', fontSize: 12 } }}
+              label={
+                isMobile
+                  ? undefined
+                  : {
+                      value: 'Elevation (ft)',
+                      angle: -90,
+                      position: 'insideLeft',
+                      offset: -15,
+                      style: { fill: '#888', fontSize: 12 },
+                    }
+              }
             />
             <Tooltip
               // Keep the tooltip narrow enough to sit inside a phone viewport
