@@ -197,14 +197,20 @@ export default function Phase1ProjectionSection({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
-        What the plan will do to Lake Powell
+        What the April 2026 federal plan will do to Lake Powell
       </h3>
-      <MobileDisclosure label="What the plan does" className="mb-4 sm:mb-5">
+      <p className="text-xs sm:text-sm text-gray-500 font-light mb-3 leading-relaxed">
+        In April 2026, the Bureau of Reclamation cut how much water Powell sends downstream
+        and started moving water in from Flaming Gorge. The chart below shows where the
+        lake lands with the plan compared to without it, from today through April 2027.
+      </p>
+      <MobileDisclosure label="More about the plan" className="mb-4 sm:mb-5">
         <p className="text-xs sm:text-sm text-gray-500 font-light">
-          Through September 30, 2026, the Bureau of Reclamation is cutting Powell releases
-          from 7.48 MAF a year down to 6.0 MAF. They&rsquo;re also moving up to 1 MAF of water
-          from Flaming Gorge into Powell between now and April 2027. The chart below shows
-          what that actually does to the lake.
+          Through September 30, 2026, releases are cut from 7.48 MAF a year down to 6.0 MAF.
+          Up to 1 MAF of water gets moved from Flaming Gorge into Powell between now and
+          April 2027. The plan commits to keeping Powell at or above 3,500 ft — the
+          &ldquo;safety line&rdquo; 10 ft above the point where the dam can&rsquo;t make
+          power anymore.
         </p>
       </MobileDisclosure>
 
