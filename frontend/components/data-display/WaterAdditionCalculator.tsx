@@ -512,96 +512,6 @@ function Phase1Chart({
         </details>
       </div>
 
-      {/* Milestone callouts: intervention vs baseline at April 2027.
-          On mobile, collapse behind a "See the milestones" disclosure so
-          the chart below stays above the fold. */}
-      <MobileDisclosure label="See the milestones" className="mb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-blue-50/60 rounded-lg px-4 py-3">
-            <div className="text-xs uppercase tracking-wider text-blue-700/70 mb-1">
-              Sep 30, 2026 (with plan)
-            </div>
-            <div className="text-sm text-blue-900 font-light">
-              <span className="font-semibold text-lg">{phase1.intervention.phase1End.p50Elevation.toFixed(0)} ft</span>
-              <span className="text-blue-700 ml-2">
-                ({phase1Rise >= 0 ? '+' : ''}{phase1Rise.toFixed(0)} ft)
-              </span>
-            </div>
-            <div className="text-xs text-blue-600 mt-1">
-              vs. {phase1.baseline.phase1End.p50Elevation.toFixed(0)} ft without plan
-            </div>
-          </div>
-          <div className="bg-teal-50/60 rounded-lg px-4 py-3">
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
-              April 2027 (with plan)
-            </div>
-            <div className="text-sm text-teal-900 font-light">
-              <span className="font-semibold text-lg">{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</span>
-              <span className="text-teal-700 ml-2">
-                ({endRise >= 0 ? '+' : ''}{endRise.toFixed(0)} ft)
-              </span>
-            </div>
-            <div className="text-xs text-teal-600 mt-1">
-              vs. {phase1.baseline.ending.p50Elevation.toFixed(0)} ft without plan
-            </div>
-          </div>
-          <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
-            <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
-              What the plan saves
-            </div>
-            <div className="text-sm text-emerald-900 font-light">
-              <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
-              <span className="text-emerald-700 ml-2 text-xs">by April 2027</span>
-            </div>
-            <div className="text-xs text-emerald-600 mt-1">
-              Stops a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
-            </div>
-          </div>
-        </div>
-
-        {monthlyCheckpoints.length > 0 && (
-          <div className="mt-3 rounded-lg border border-gray-100 bg-white/70 overflow-hidden">
-            <div className="px-3 py-2 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
-              Start of each month (with plan)
-            </div>
-            <table className="w-full text-[12px] sm:text-[13px]">
-              <thead>
-                <tr className="text-left text-gray-500 font-light">
-                  <th className="px-3 py-1.5 font-normal">Month</th>
-                  <th className="px-3 py-1.5 font-normal text-right">Elevation</th>
-                  <th className="px-3 py-1.5 font-normal text-right">
-                    Change from today ({currentElevation.toFixed(0)} ft)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyCheckpoints.map((row) => {
-                  const sign = row.delta > 0 ? '+' : ''
-                  const color =
-                    row.delta > 0
-                      ? 'text-emerald-700'
-                      : row.delta < 0
-                      ? 'text-amber-700'
-                      : 'text-gray-600'
-                  return (
-                    <tr key={row.key} className="border-t border-gray-50">
-                      <td className="px-3 py-1.5 text-gray-700">{row.label}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-gray-900">
-                        {row.p50.toFixed(0)} ft
-                      </td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums ${color}`}>
-                        {sign}
-                        {row.delta.toFixed(0)} ft
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </MobileDisclosure>
-
       {/* Legend — make the two scenarios crystal clear before the chart */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 mb-2 text-[11px] sm:text-xs font-light">
         <div className="flex items-center gap-2">
@@ -644,8 +554,10 @@ function Phase1Chart({
           <ComposedChart
             data={chartData}
             margin={{
+              // Right margin has to clear the longest reference-line label
+              // ("Plan floor (3,510)" at ~110px) — mobile was getting clipped.
               top: 5,
-              right: isMobile ? 60 : 80,
+              right: isMobile ? 110 : 130,
               left: isMobile ? 0 : 30,
               bottom: 20,
             }}
@@ -831,6 +743,95 @@ function Phase1Chart({
       <p className="text-[10px] text-gray-400 font-light text-center mt-2 italic">
         The gap between the two lines is what the plan buys.
       </p>
+
+      {/* Milestone callouts + monthly table — sit right under the chart so
+          the reader can match what they just saw to specific numbers. */}
+      <MobileDisclosure label="See the milestones" className="mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-blue-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-blue-700/70 mb-1">
+              Sep 30, 2026 (with plan)
+            </div>
+            <div className="text-sm text-blue-900 font-light">
+              <span className="font-semibold text-lg">{phase1.intervention.phase1End.p50Elevation.toFixed(0)} ft</span>
+              <span className="text-blue-700 ml-2">
+                ({phase1Rise >= 0 ? '+' : ''}{phase1Rise.toFixed(0)} ft)
+              </span>
+            </div>
+            <div className="text-xs text-blue-600 mt-1">
+              vs. {phase1.baseline.phase1End.p50Elevation.toFixed(0)} ft without plan
+            </div>
+          </div>
+          <div className="bg-teal-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
+              April 2027 (with plan)
+            </div>
+            <div className="text-sm text-teal-900 font-light">
+              <span className="font-semibold text-lg">{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</span>
+              <span className="text-teal-700 ml-2">
+                ({endRise >= 0 ? '+' : ''}{endRise.toFixed(0)} ft)
+              </span>
+            </div>
+            <div className="text-xs text-teal-600 mt-1">
+              vs. {phase1.baseline.ending.p50Elevation.toFixed(0)} ft without plan
+            </div>
+          </div>
+          <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
+              What the plan saves
+            </div>
+            <div className="text-sm text-emerald-900 font-light">
+              <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
+              <span className="text-emerald-700 ml-2 text-xs">by April 2027</span>
+            </div>
+            <div className="text-xs text-emerald-600 mt-1">
+              Stops a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
+            </div>
+          </div>
+        </div>
+
+        {monthlyCheckpoints.length > 0 && (
+          <div className="mt-3 rounded-lg border border-gray-100 bg-white/70 overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-500">
+              Start of each month (with plan)
+            </div>
+            <table className="w-full text-[12px] sm:text-[13px]">
+              <thead>
+                <tr className="text-left text-gray-500 font-light">
+                  <th className="px-3 py-1.5 font-normal">Month</th>
+                  <th className="px-3 py-1.5 font-normal text-right">Elevation</th>
+                  <th className="px-3 py-1.5 font-normal text-right">
+                    Change from today ({currentElevation.toFixed(0)} ft)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyCheckpoints.map((row) => {
+                  const sign = row.delta > 0 ? '+' : ''
+                  const color =
+                    row.delta > 0
+                      ? 'text-emerald-700'
+                      : row.delta < 0
+                      ? 'text-amber-700'
+                      : 'text-gray-600'
+                  return (
+                    <tr key={row.key} className="border-t border-gray-50">
+                      <td className="px-3 py-1.5 text-gray-700">{row.label}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-gray-900">
+                        {row.p50.toFixed(0)} ft
+                      </td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums ${color}`}>
+                        {sign}
+                        {row.delta.toFixed(0)} ft
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </MobileDisclosure>
 
       {hist2022Values.length >= 2 && (
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
