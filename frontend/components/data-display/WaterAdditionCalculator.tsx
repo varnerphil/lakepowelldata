@@ -64,11 +64,6 @@ interface Phase1ProjectionSectionProps {
   historical2022Measurements?: Array<{ date: string; elevation: number }>
 }
 
-interface VolumeImpactCardProps {
-  elevationStorageData: ElevationStorageCapacity[]
-  currentElevation: number
-  allRamps?: Ramp[]
-}
 
 const DEFAULT_RAMPS: Array<{ name: string; elevation: number }> = [
   { name: 'Hite', elevation: 3650 },
@@ -140,208 +135,6 @@ function buildAnnouncementForPreset(preset: PlanPreset): FederalReleaseAnnouncem
   }
 }
 
-function PresetPills({
-  presetId,
-  setPresetId,
-}: {
-  presetId: string
-  setPresetId: (id: string) => void
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {PLAN_PRESETS.map((p) => (
-        <button
-          key={p.id}
-          onClick={() => setPresetId(p.id)}
-          className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-light transition-colors ${
-            presetId === p.id
-              ? 'bg-teal-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {p.shortLabel}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-/**
- * Canyon profile that exactly matches the StorageVisualization 1ft view,
- * but with three colors: water (blue), added water (teal), and empty (tan).
- * Uses the same smoothing logic (monotonic enforcement, sorted ascending).
- */
-function CanyonProfile({
-  elevationStorageData,
-  currentElevation,
-  newElevation,
-  addedMAF,
-  rampMarkers,
-  newlyAccessible,
-}: {
-  elevationStorageData: ElevationStorageCapacity[]
-  currentElevation: number
-  newElevation: number
-  addedMAF: number
-  rampMarkers: Array<{ name: string; elevation: number }>
-  newlyAccessible: Array<{ name: string; elevation: number }>
-}) {
-  const bandHeight = 2
-
-  // Exact same smoothing as StorageVisualization 1ft view
-  const validData = elevationStorageData
-    .filter((d) => d.storage_per_foot && d.storage_per_foot > 0)
-    .sort((a, b) => a.elevation - b.elevation)
-
-  const smoothed: typeof validData = []
-  for (let i = 0; i < validData.length; i++) {
-    const d = validData[i]
-    if (i === 0) {
-      smoothed.push({ ...d })
-    } else {
-      const prev = smoothed[i - 1].storage_per_foot || 0
-      const curr = d.storage_per_foot || 0
-      smoothed.push({ ...d, storage_per_foot: Math.max(curr, prev) })
-    }
-  }
-
-  const maxSpf = Math.max(...smoothed.map((d) => d.storage_per_foot || 0))
-  const reversed = [...smoothed].reverse()
-
-  // Line positions: use the index in the reversed array for pixel-perfect alignment
-  const currentIdx = reversed.findIndex((d) => d.elevation <= Math.floor(currentElevation))
-  const newIdx = reversed.findIndex((d) => d.elevation <= Math.floor(newElevation))
-  const totalHeight = reversed.length * bandHeight
-
-  return (
-    <div className="mb-6">
-      <div className="flex items-start w-full gap-2 sm:gap-4">
-        {/* Left elevation labels */}
-        <div
-          className="w-14 sm:w-20 flex flex-col justify-between text-right text-[10px] sm:text-xs text-gray-500 font-light flex-shrink-0"
-          style={{ height: `${totalHeight}px` }}
-        >
-          <span>{reversed[0]?.elevation} ft</span>
-          <span>{reversed[Math.floor(reversed.length / 2)]?.elevation} ft</span>
-          <span>{reversed[reversed.length - 1]?.elevation} ft</span>
-        </div>
-
-        {/* Canyon bands — identical structure to StorageVisualization 1ft */}
-        <div className="flex-1 flex flex-col items-center relative">
-          {reversed.map((data) => {
-            const widthPercent = ((data.storage_per_foot || 0) / maxSpf) * 100
-            const isFull = currentElevation >= data.elevation + 1
-            const isCurrentBand =
-              currentElevation >= data.elevation && currentElevation < data.elevation + 1
-            const isAdded =
-              data.elevation >= Math.floor(currentElevation) &&
-              data.elevation < Math.floor(newElevation)
-            const isEmpty = data.elevation >= Math.floor(newElevation)
-
-            let color: string
-            if (isFull || isCurrentBand) {
-              color = '#6b8a9a' // water
-            } else if (isAdded) {
-              color = '#5eead4' // added water
-            } else {
-              color = '#d4a574' // empty
-            }
-
-            return (
-              <div
-                key={data.elevation}
-                style={{
-                  width: `${widthPercent}%`,
-                  height: `${bandHeight}px`,
-                  backgroundColor: color,
-                }}
-              />
-            )
-          })}
-
-          {/* Current elevation line — label sits below the line inside the water */}
-          {currentIdx >= 0 && (
-            <div
-              className="absolute left-0 right-0"
-              style={{ top: `${currentIdx * bandHeight}px` }}
-            >
-              <div className="w-full border-t-2 border-[#8b9a6b]" />
-              <div className="flex justify-center mt-0.5">
-                <span className="bg-white/80 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-[#8b9a6b] whitespace-nowrap rounded">
-                  Current: {currentElevation.toFixed(1)} ft
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* New elevation line — label sits below the line inside the teal */}
-          {addedMAF > 0 && newIdx >= 0 && newIdx < currentIdx && (
-            <div
-              className="absolute left-0 right-0"
-              style={{ top: `${newIdx * bandHeight}px` }}
-            >
-              <div className="w-full border-t-2 border-teal-600" />
-              <div className="flex justify-center mt-0.5">
-                <span className="bg-white/80 px-1.5 py-0.5 text-[10px] sm:text-xs font-medium text-teal-700 whitespace-nowrap rounded">
-                  +{addedMAF} MAF: {newElevation.toFixed(1)} ft (+{(newElevation - currentElevation).toFixed(1)} ft)
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Ramp markers on right side */}
-          {rampMarkers.map((r) => {
-            const idx = reversed.findIndex((d) => d.elevation <= r.elevation)
-            if (idx < 0) return null
-            const isGained = newlyAccessible.some((n) => n.name === r.name)
-            const isAccessible = currentElevation >= r.elevation
-            return (
-              <div
-                key={r.name}
-                className="absolute right-0 flex items-center"
-                style={{ top: `${idx * bandHeight}px` }}
-              >
-                <span
-                  className={`text-[8px] sm:text-[10px] font-light pr-1 whitespace-nowrap ${
-                    isGained
-                      ? 'text-teal-700 font-medium'
-                      : isAccessible
-                        ? 'text-[#8b9a6b]/70'
-                        : 'text-gray-400'
-                  }`}
-                >
-                  {r.name}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Right side: AF/ft scale + legend */}
-        <div className="w-16 sm:w-24 flex flex-col justify-between text-left text-[10px] sm:text-xs text-gray-500 font-light flex-shrink-0" style={{ height: `${totalHeight}px` }}>
-          <div>
-            <span>{Math.round(maxSpf / 1000)}K af/ft</span>
-            <div className="flex flex-col gap-2 mt-4">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#5eead4' }} />
-                <span>+{addedMAF} MAF</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#6b8a9a' }} />
-                <span>Current</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#d4a574' }} />
-                <span>Empty</span>
-              </div>
-            </div>
-          </div>
-          <span>{Math.round((smoothed[0]?.storage_per_foot || 0) / 1000)}K af/ft</span>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /**
  * The projection section — "What the plan will do to Lake Powell."
@@ -350,6 +143,11 @@ function CanyonProfile({
  * (no-plan) comparison. Volume-impact visual lives separately in
  * `VolumeImpactCard` below the lake diagram.
  */
+// The one plan that is actually in effect. The site used to offer
+// "release cuts only" and an "extended" what-if, but readers kept toggling
+// between scenarios that aren't real — so we hardcode the actual plan.
+const ACTIVE_PRESET: PlanPreset = PLAN_PRESETS.find((p) => p.id === 'federal-plan')!
+
 export default function Phase1ProjectionSection({
   elevationStorageData,
   currentElevation,
@@ -359,11 +157,7 @@ export default function Phase1ProjectionSection({
   allRamps,
   historical2022Measurements,
 }: Phase1ProjectionSectionProps) {
-  const [presetId, setPresetId] = useState<string>('federal-plan')
-  const preset = useMemo(
-    () => PLAN_PRESETS.find((p) => p.id === presetId) ?? PLAN_PRESETS[1],
-    [presetId]
-  )
+  const preset = ACTIVE_PRESET
   const announcement = useMemo(() => buildAnnouncementForPreset(preset), [preset])
 
   const [favoriteIds, setFavoriteIds] = useState<number[] | null>(null)
@@ -405,28 +199,18 @@ export default function Phase1ProjectionSection({
       <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
         What the plan will do to Lake Powell
       </h3>
-      <MobileDisclosure label="What the plan covers" className="mb-4 sm:mb-5">
+      <MobileDisclosure label="What the plan does" className="mb-4 sm:mb-5">
         <p className="text-xs sm:text-sm text-gray-500 font-light">
-          The Bureau of Reclamation&apos;s April 2026 plan cuts Powell releases from 7.48 MAF/yr
-          down to 6.0 MAF/yr through September 30, 2026. It also moves up to 1 MAF of water
-          from Flaming Gorge into Powell between now and April 2027. Pick a scenario below to
-          see how each option plays out.
+          Through September 30, 2026, the Bureau of Reclamation is cutting Powell releases
+          from 7.48 MAF a year down to 6.0 MAF. They&rsquo;re also moving up to 1 MAF of water
+          from Flaming Gorge into Powell between now and April 2027. The chart below shows
+          what that actually does to the lake.
         </p>
       </MobileDisclosure>
-
-      <div className="mb-5">
-        <PresetPills presetId={presetId} setPresetId={setPresetId} />
-      </div>
-
-      <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-        {preset.summary}
-      </div>
 
       {currentContent && currentDate && projectedRunoffInflowAf !== undefined && (
         <Phase1Chart
           preset={preset}
-          presetId={presetId}
-          setPresetId={setPresetId}
           announcement={announcement}
           currentElevation={currentElevation}
           currentContent={currentContent}
@@ -442,174 +226,10 @@ export default function Phase1ProjectionSection({
   )
 }
 
-/**
- * Volume-impact card — "If all that water dropped in at once, what would it look like?"
- * Purely a magnitude sense-maker. Has a prominent caveat up top so readers
- * don't mistake it for a forecast. Renders below the lake-diagram so it visually
- * extends the "lake has this much water at each foot" story.
- */
-export function VolumeImpactCard({
-  elevationStorageData,
-  currentElevation,
-  allRamps,
-}: VolumeImpactCardProps) {
-  const [presetId, setPresetId] = useState<string>('federal-plan')
-  const preset = useMemo(
-    () => PLAN_PRESETS.find((p) => p.id === presetId) ?? PLAN_PRESETS[1],
-    [presetId]
-  )
-  const addedMAF = preset.releaseCutsMaf + preset.flamingGorgeMaf
-
-  const [favoriteIds, setFavoriteIds] = useState<number[] | null>(null)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('favoriteRamps')
-      if (stored) setFavoriteIds(JSON.parse(stored))
-      else setFavoriteIds([])
-    } catch {
-      setFavoriteIds([])
-    }
-  }, [])
-  const rampMarkers = useMemo(() => {
-    if (allRamps && favoriteIds && favoriteIds.length > 0) {
-      const favs = allRamps.filter((r) => favoriteIds.includes(r.id))
-      if (favs.length > 0) {
-        return favs.map((r) => ({
-          name: r.name.replace(/ (Ramp|Launch|Business Ramp|North Ramp|South Ramp)$/, ''),
-          elevation: r.min_safe_elevation || r.min_usable_elevation,
-        }))
-      }
-    }
-    return DEFAULT_RAMPS
-  }, [allRamps, favoriteIds])
-
-  const sorted = useMemo(
-    () => [...elevationStorageData].sort((a, b) => a.elevation - b.elevation),
-    [elevationStorageData]
-  )
-
-  const result = useMemo(() => {
-    let currentStorage = 0
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].elevation >= currentElevation) {
-        const frac =
-          (currentElevation - sorted[i - 1].elevation) /
-          (sorted[i].elevation - sorted[i - 1].elevation)
-        currentStorage =
-          sorted[i - 1].storage_at_elevation +
-          frac * (sorted[i].storage_at_elevation - sorted[i - 1].storage_at_elevation)
-        break
-      }
-    }
-
-    const targetStorage = currentStorage + addedMAF * 1_000_000
-    let newElevation = currentElevation
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].storage_at_elevation >= targetStorage) {
-        const frac =
-          (targetStorage - sorted[i - 1].storage_at_elevation) /
-          (sorted[i].storage_at_elevation - sorted[i - 1].storage_at_elevation)
-        newElevation =
-          sorted[i - 1].elevation + frac * (sorted[i].elevation - sorted[i - 1].elevation)
-        break
-      }
-    }
-    if (newElevation > 3700) newElevation = 3700
-
-    const newlyAccessible = rampMarkers.filter(
-      (r) => currentElevation < r.elevation && newElevation >= r.elevation
-    )
-    const stillBelow = rampMarkers.filter((r) => newElevation < r.elevation)
-    return {
-      newElevation,
-      rise: newElevation - currentElevation,
-      newlyAccessible,
-      stillBelow,
-    }
-  }, [currentElevation, addedMAF, sorted, rampMarkers])
-
-  return (
-    <div className="card p-4 sm:p-6 lg:p-8">
-      <h3 className="text-lg sm:text-xl font-light text-gray-900 mb-1">
-        What would that much water look like in the canyon?
-      </h3>
-
-      {/* Strong caveat — this is not a forecast */}
-      <div className="mt-3 mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <p className="font-medium mb-1">This is not a prediction.</p>
-        <p className="font-light leading-relaxed">
-          The lake will <em>not</em> actually rise by this much. Water flows out every day,
-          and the plan&apos;s water arrives slowly over many months. This chart only shows
-          how much water the plan adds — if you could somehow drop it all in at once. For
-          what really happens, see the projection up top.
-        </p>
-      </div>
-
-      <div className="mb-5">
-        <PresetPills presetId={presetId} setPresetId={setPresetId} />
-      </div>
-
-      <div className="bg-teal-50/60 rounded-xl p-4 sm:p-6 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
-              If {addedMAF.toFixed(2)} MAF landed at once
-            </div>
-            <div className="text-3xl sm:text-4xl font-light text-teal-800">
-              +{result.rise.toFixed(1)} ft
-            </div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wider text-teal-700/70 mb-1">
-              Lake would reach
-            </div>
-            <div className="text-3xl sm:text-4xl font-light text-teal-800">
-              {result.newElevation.toFixed(0)} ft
-            </div>
-          </div>
-          <div className="sm:ml-auto text-right">
-            <div className="text-xs uppercase tracking-wider text-gray-400 mb-1">
-              Today&rsquo;s level
-            </div>
-            <div className="text-lg font-light text-gray-600">
-              {currentElevation.toFixed(1)} ft
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <CanyonProfile
-        elevationStorageData={sorted}
-        currentElevation={currentElevation}
-        newElevation={result.newElevation}
-        addedMAF={addedMAF}
-        rampMarkers={rampMarkers}
-        newlyAccessible={result.newlyAccessible}
-      />
-
-      {result.newlyAccessible.length > 0 && (
-        <div className="bg-emerald-50/60 rounded-lg px-4 py-3 mb-4">
-          <p className="text-sm text-emerald-800 font-light">
-            <span className="font-medium">Ramps that would open at that level:</span>{' '}
-            {result.newlyAccessible.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
-          </p>
-        </div>
-      )}
-      {result.stillBelow.length > 0 && (
-        <p className="text-xs text-gray-400 font-light">
-          Still below: {result.stillBelow.map((r) => `${r.name} (${r.elevation.toLocaleString()} ft)`).join(', ')}
-        </p>
-      )}
-    </div>
-  )
-}
-
 // ─── Phase 1 Projection Chart ────────────────────────────────────
 
 function Phase1Chart({
   preset,
-  presetId,
-  setPresetId,
   announcement,
   currentElevation,
   currentContent,
@@ -621,8 +241,6 @@ function Phase1Chart({
   historical2022Measurements,
 }: {
   preset: PlanPreset
-  presetId: string
-  setPresetId: (id: string) => void
   announcement: FederalReleaseAnnouncement
   currentElevation: number
   currentContent: number
@@ -804,11 +422,6 @@ function Phase1Chart({
     const direction = endRise >= 0 ? 'rise' : 'drop'
     const endElev = phase1.intervention.ending.p50Elevation
     const baselineEndElev = phase1.baseline.ending.p50Elevation
-    const planName = preset.id === 'federal-plan'
-      ? 'April 2026 federal plan'
-      : preset.id === 'extended'
-      ? 'extended federal plan'
-      : 'release cuts'
 
     return (
       <div className="space-y-2">
@@ -819,26 +432,26 @@ function Phase1Chart({
           <li>
             <strong>In:</strong> ≈{totalInputMaf.toFixed(1)} MAF
             ({runoffMaf.toFixed(2)} MAF snowmelt
-            {preset.flamingGorgeMaf > 0 && ` + ${preset.flamingGorgeMaf} MAF FG`}
+            {preset.flamingGorgeMaf > 0 && ` + ${preset.flamingGorgeMaf} MAF from Flaming Gorge`}
             {' '}+ base flow)
           </li>
           <li>
             <strong>Out:</strong> ≈{totalOutputMaf.toFixed(1)} MAF released to
-            the Lower Basin — <strong>{outflowMultiple}×</strong> what the {planName} adds
+            the Lower Basin — <strong>{outflowMultiple}×</strong> what the plan adds
           </li>
           <li>
-            <strong>Evap:</strong> ≈{totalEvapMaf.toFixed(2)} MAF off the surface
+            <strong>Evaporation:</strong> ≈{totalEvapMaf.toFixed(2)} MAF off the surface
           </li>
         </ul>
         <p>
           Net: <strong>{netChangeMaf > 0 ? '+' : ''}{netChangeMaf.toFixed(2)} MAF</strong>.
-          At {currentElevation.toFixed(0)} ft, each foot of canyon holds ~
-          {(afPerFoot / 1000).toFixed(0)}K af → that&apos;s a{' '}
+          At {currentElevation.toFixed(0)} ft, each foot of canyon holds about{' '}
+          {(afPerFoot / 1000).toFixed(0)}K acre-feet &rarr; that means a{' '}
           <strong>{endRise.toFixed(0)}-ft {direction}</strong> to{' '}
           <strong>{endElev.toFixed(0)} ft</strong> by April 2027.
         </p>
         <p>
-          <strong>The {planName} saves {interventionGain.toFixed(0)} ft.</strong>{' '}
+          <strong>The plan saves {interventionGain.toFixed(0)} ft.</strong>{' '}
           Without it, Powell drops to {baselineEndElev.toFixed(0)} ft
           ({baselineEndRise.toFixed(0)} ft). Not a rise — a rescue.
         </p>
@@ -850,7 +463,7 @@ function Phase1Chart({
           >
             Run the long-term simulator &rarr;
           </a>{' '}
-          to see which post-2026 plan actually holds Powell up.
+          to see which plan actually holds Powell up past 2026.
         </p>
       </div>
     )
@@ -867,24 +480,19 @@ function Phase1Chart({
            (collapsed behind a disclosure on mobile, inline on desktop). */}
       <div className="bg-amber-50/60 border border-amber-100 rounded-lg px-4 py-3 mb-4 text-sm text-amber-900 font-light leading-relaxed">
         <p className="font-normal mb-1">
-          By April 2027, Powell drops to <strong>{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</strong>.
-          Without the plan it would have been <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
-          {' '}— a <strong>{Math.abs(baselineEndRise).toFixed(0)}-ft drop</strong>.
-          Instead it only drops <strong>{Math.abs(endRise).toFixed(0)} ft</strong>.
-          {preset.id === 'cuts-only'
-            ? ' The release cuts save '
-            : preset.id === 'extended'
-            ? ' The extended federal plan saves '
-            : ' The April 2026 federal plan saves '}
-          <strong>{interventionGain.toFixed(0)} ft</strong>.
+          With the plan, Powell drops to <strong>{phase1.intervention.ending.p50Elevation.toFixed(0)} ft</strong>
+          {' '}by April 2027. Without it, the lake would drop to{' '}
+          <strong>{phase1.baseline.ending.p50Elevation.toFixed(0)} ft</strong>
+          {' '}— that&rsquo;s <strong>{Math.abs(baselineEndRise).toFixed(0)} ft down</strong>.
+          The plan saves <strong>{interventionGain.toFixed(0)} ft</strong>.
           {announcement.planMinimumElevationFt !== undefined && (() => {
             const floor = announcement.planMinimumElevationFt
             const endElev = phase1.intervention.ending.p50Elevation
             const delta = Math.round(endElev - floor)
             if (delta >= 0) {
-              return ` That lands ${delta} ft above the plan's ${floor} ft floor.`
+              return ` That’s ${delta} ft above the plan’s ${floor} ft safety line.`
             }
-            return ` That is ${Math.abs(delta)} ft below the plan's ${floor} ft floor.`
+            return ` That is ${Math.abs(delta)} ft below the plan’s ${floor} ft safety line.`
           })()}
         </p>
         <details className="group mt-2">
@@ -933,14 +541,14 @@ function Phase1Chart({
           </div>
           <div className="bg-emerald-50/60 rounded-lg px-4 py-3">
             <div className="text-xs uppercase tracking-wider text-emerald-700/70 mb-1">
-              Federal plan benefit
+              What the plan saves
             </div>
             <div className="text-sm text-emerald-900 font-light">
               <span className="font-semibold text-lg">+{interventionGain.toFixed(0)} ft</span>
-              <span className="text-emerald-700 ml-2 text-xs">at Apr 2027</span>
+              <span className="text-emerald-700 ml-2 text-xs">by April 2027</span>
             </div>
             <div className="text-xs text-emerald-600 mt-1">
-              Prevents a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
+              Stops a {Math.abs(baselineEndRise).toFixed(0)}-ft drop
             </div>
           </div>
         </div>
@@ -993,7 +601,7 @@ function Phase1Chart({
         <div className="flex items-center gap-2">
           <span className="inline-block w-6 h-[3px] rounded-sm bg-[#1d4ed8]" />
           <span className="text-gray-700">
-            <strong className="font-medium text-[#1d4ed8]">With plan</strong> — release cuts + Flaming Gorge water
+            <strong className="font-medium text-[#1d4ed8]">With the plan</strong> — smaller releases + Flaming Gorge water
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -1005,7 +613,7 @@ function Phase1Chart({
             }}
           />
           <span className="text-gray-700">
-            <strong className="font-medium text-[#dc2626]">Without plan</strong> — normal 7.48 MAF releases, no Flaming Gorge transfer
+            <strong className="font-medium text-[#dc2626]">Without the plan</strong> — normal releases, no Flaming Gorge transfer
           </span>
         </div>
         {hist2022Values.length > 0 && (

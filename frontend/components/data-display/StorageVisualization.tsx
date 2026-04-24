@@ -94,7 +94,7 @@ export default function StorageVisualization({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <h3 className="text-lg sm:text-xl font-light text-gray-900">Lake Powell Storage Profile</h3>
+        <h3 className="text-lg sm:text-xl font-light text-gray-900">How the lake holds water at each elevation</h3>
         
         {/* Toggle Buttons */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg flex-shrink-0">
@@ -122,9 +122,9 @@ export default function StorageVisualization({
       </div>
       
       <p className="text-xs sm:text-sm text-gray-500 font-light mb-4 sm:mb-6">
-        {viewMode === '15ft' 
-          ? 'Each band shows 15 feet of elevation. Width indicates storage capacity—the lake is V-shaped, so higher elevations hold significantly more water per foot.'
-          : 'Each band shows 1 foot of elevation. This detailed view shows the exact storage capacity per foot across all elevations.'}
+        {viewMode === '15ft'
+          ? 'Each band is 15 feet tall. Wider bands hold more water. The canyon is V-shaped, so higher elevations hold a lot more water per foot than lower ones.'
+          : 'Each band is 1 foot tall. This is the detailed view of exactly how much water the lake holds at every foot.'}
       </p>
       
       {viewMode === '15ft' ? (

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useDeferredValue } from 'react'
 import { HistoricalChart, SnowpackProjection } from '@/components/data-display'
 import HistoricalDropsChart from '@/components/charts/HistoricalDropsChart'
 import HistoricalAnalysisExpandable from '@/components/data-display/HistoricalAnalysisExpandable'
+import SimulatorPromoCard from '@/components/articles/SimulatorPromoCard'
 import { formatDateString } from '@/lib/date-utils'
 import type { WaterMeasurement, Ramp } from '@/lib/db'
 import type { HistoricalDropToLow } from '@/lib/db'
@@ -259,7 +260,7 @@ export default function HomeChartsWithFavorites({
       <div id="chart" className="scroll-mt-24" />
       {/* 2. Historical Chart */}
       <div className="mt-8 lg:mt-12">
-        <HistoricalChart 
+        <HistoricalChart
           data={measurements}
           startDate={startDate}
           endDate={endDate}
@@ -268,6 +269,12 @@ export default function HomeChartsWithFavorites({
           formAction="/"
           ramps={favoriteRamps}
         />
+      </div>
+
+      {/* Simulator CTA — positioned right after the elevation trend so readers
+           can jump straight to the long-term view once they've seen the history */}
+      <div className="mt-8 lg:mt-12">
+        <SimulatorPromoCard />
       </div>
 
       {/* 3. Elevation Projection - only show when appropriate */}
@@ -282,10 +289,10 @@ export default function HomeChartsWithFavorites({
             {/* Projection Chart */}
             <div className="mb-4 lg:mb-6">
               <p className="text-xs lg:text-sm text-gray-500 mb-0 lg:mb-6 font-light">
-                Projected elevation from {formatDateString(today, { month: 'long', day: 'numeric' })} to {formatDateString(typicalLowDate, { month: 'long', day: 'numeric' })}. 
-                <span className="text-blue-600"> Historical Avg</span> shows the typical drop based on similar years.
+                Where the lake is likely to land between {formatDateString(today, { month: 'long', day: 'numeric' })} and {formatDateString(typicalLowDate, { month: 'long', day: 'numeric' })}.{' '}
+                <span className="text-blue-600">Historical Avg</span> is the typical drop in past years like this one.
                 {weeklyChange !== null && (
-                  <> <span className="text-[#d4a574]">Current Trend</span> shows what happens if the current weekly rate continues.</>
+                  <> <span className="text-[#d4a574]">Current Trend</span> is what happens if this week&rsquo;s pace keeps up.</>
                 )}
               </p>
               <HistoricalDropsChart
@@ -305,10 +312,10 @@ export default function HomeChartsWithFavorites({
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 gap-3">
                 <div>
                   <h3 className="text-lg lg:text-xl font-light text-gray-900">
-                    {seasonalStatus?.dropProjectionLabel || 'Projected Drop to Annual Low'}
+                    {seasonalStatus?.dropProjectionLabel || 'How far the lake should drop to its annual low'}
                   </h3>
                   <p className="text-xs lg:text-sm text-gray-500 font-light mt-1 lg:mt-2">
-                    Based on {historicalDrops.length} similar historical years starting near this elevation on {formatDateString(today, { month: 'long', day: 'numeric' })}
+                    Based on {historicalDrops.length} past years that started near this elevation on {formatDateString(today, { month: 'long', day: 'numeric' })}.
                   </p>
                 </div>
                 {projectedDrop > 0 && (
@@ -432,18 +439,16 @@ export default function HomeChartsWithFavorites({
         <div className="mt-8 lg:mt-12">
           <div className="card p-4 sm:p-6 lg:p-8">
             <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">
-              {seasonalStatus?.runoffProjectionLabel || 'Pure Projected Spring Runoff Gain'}
+              {seasonalStatus?.runoffProjectionLabel || 'Spring runoff: how much the lake should rise'}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 font-light">
-              Projection based on historical years with similar peak snowpack percentage.
-              Shows expected elevation gain during the runoff season (April-August).
+              Based on past years with similar peak snowpack. Shows how much the lake
+              is expected to rise during spring runoff (April–August).
             </p>
             <p className="text-xs sm:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-4 sm:mb-6 font-light">
-              <strong>Note:</strong> This projection assumes normal operations and is only useful
-              when no extra measures (like reduced releases or Flaming Gorge transfers) are changing
-              Powell&apos;s inflow/outflow. For WY2026, the federal plan&apos;s 1.48 MAF release cut
-              and Flaming Gorge additions fall outside this model — see the Water Addition Calculator
-              above for the relevant numbers.
+              <strong>Heads up:</strong> this only works when the lake is operating normally.
+              For 2026, the federal plan is cutting releases and moving water from Flaming
+              Gorge — see the projection chart above for the real numbers.
             </p>
             
             {/* Show current progress if we're actively tracking */}

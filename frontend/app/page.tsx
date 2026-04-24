@@ -102,7 +102,7 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 // The database query itself should be fast enough without caching
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
-import Phase1ProjectionSection, { VolumeImpactCard } from '@/components/data-display/WaterAdditionCalculator'
+import Phase1ProjectionSection from '@/components/data-display/WaterAdditionCalculator'
 import FeaturedArticlesStrip, { type FeaturedArticle } from '@/components/articles/FeaturedArticlesStrip'
 import SimulatorPromoCard from '@/components/articles/SimulatorPromoCard'
 
@@ -1076,27 +1076,21 @@ export default async function HomePage({
       {/* Featured articles — frame the federal plan and point to the deep dives */}
       <FeaturedArticlesStrip
         kicker="The bigger picture"
-        heading="What each federal long-term plan would look like"
+        heading="What would each long-term federal plan actually do?"
         articles={FEATURED_ARTICLES_PRIMARY}
       />
 
-      {/* Storage profile + volume-impact pair — the "how big is the lake,
-          and what does the plan's water look like at that scale" block. */}
+      {/* Storage profile — how big is the lake at each elevation. */}
       <Suspense fallback={
         <div className="mt-12 h-[400px] flex items-center justify-center">
           <div className="text-gray-400">Loading storage visualization...</div>
         </div>
       }>
-        <div className="mt-12 space-y-6 lg:space-y-8">
+        <div className="mt-12">
           <div id="storage" className="scroll-mt-24" />
           <StorageVisualization
             elevationStorageData={elevationStorageData}
             currentElevation={current.elevation}
-          />
-          <VolumeImpactCard
-            elevationStorageData={elevationStorageData}
-            currentElevation={current.elevation}
-            allRamps={allRamps}
           />
         </div>
       </Suspense>
@@ -1120,9 +1114,9 @@ export default async function HomePage({
           <div className="mt-8 lg:mt-12">
             <div id="snowpack" className="scroll-mt-24" />
             <div className="card p-4 lg:p-8">
-              <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snow Water Equivalent Trends</h2>
+              <h2 className="text-xl lg:text-2xl font-light mb-2 lg:mb-4 text-gray-900">Snowpack trends</h2>
               <p className="text-xs lg:text-sm text-gray-500 mb-4 lg:mb-6 font-light">
-                Historical SWE trends for Upper Colorado. Current year shown in black.
+                How this year&rsquo;s Upper Colorado snowpack compares to past years. This year is the black line.
               </p>
               <BasinPlotsChart
                 years={basinPlotsData.years}
