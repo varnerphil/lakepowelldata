@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Oswald } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import MobileNav from "@/components/layout/MobileNav";
 import BottomNav from "@/components/layout/BottomNav";
-import TourProvider from "@/components/tour/TourProvider";
 
 const oswald = Oswald({
   weight: ["300", "400"],
@@ -48,13 +46,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Suspense fallback={null}>
-          <TourProvider autoOfferPaths={["/"]}>
-            <MobileNav oswaldFont={oswald.className} />
-            <main className="bg-[#faf9f6] overflow-auto pb-[calc(4rem+max(env(safe-area-inset-bottom,0px),8px))] xl:pb-0" style={{ height: 'calc(100vh - 5rem)' }}>{children}</main>
-            <BottomNav />
-          </TourProvider>
-        </Suspense>
+        <MobileNav oswaldFont={oswald.className} />
+        <main className="bg-[#faf9f6] overflow-auto pb-[calc(4rem+max(env(safe-area-inset-bottom,0px),8px))] xl:pb-0" style={{ height: 'calc(100vh - 5rem)' }}>{children}</main>
+        <BottomNav />
         <Analytics />
       </body>
     </html>
