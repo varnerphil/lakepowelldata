@@ -1,8 +1,61 @@
-import { getAllRamps, getLatestWaterMeasurement, calculateRampStatus } from '@/lib/db'
+import { getAllRamps, getLatestWaterMeasurement, calculateRampStatus, type RampStatus } from '@/lib/db'
 import { formatDateString } from '@/lib/date-utils'
 import { unstable_cache } from 'next/cache'
 import RampStatusCard from '@/components/ramp-status/RampStatusCard'
 import ShareButton from '@/components/ui/ShareButton'
+
+/**
+ * Split a list of ramp-status rows into a "boat ramps" subgroup and a
+ * "cut-offs" subgroup, each with its own sub-heading. Headings are only
+ * rendered when both kinds are present in the list — if everything is one
+ * kind, we just show the cards without an extra layer of headers.
+ */
+function KindGroupedGrid({
+  ramps,
+  ramplikeHeading,
+  cutoffHeading,
+}: {
+  ramps: RampStatus[]
+  ramplikeHeading: string
+  cutoffHeading: string
+}) {
+  const boatRamps = ramps.filter(r => r.kind !== 'cut_off')
+  const cutoffs = ramps.filter(r => r.kind === 'cut_off')
+  const showSubheadings = boatRamps.length > 0 && cutoffs.length > 0
+
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      {boatRamps.length > 0 && (
+        <div>
+          {showSubheadings && (
+            <h3 className="text-base sm:text-lg font-light text-gray-700 mb-3 sm:mb-4">
+              {ramplikeHeading}
+            </h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {boatRamps.map(ramp => (
+              <RampStatusCard key={ramp.id} ramp={ramp} />
+            ))}
+          </div>
+        </div>
+      )}
+      {cutoffs.length > 0 && (
+        <div>
+          {showSubheadings && (
+            <h3 className="text-base sm:text-lg font-light text-gray-700 mb-3 sm:mb-4">
+              {cutoffHeading}
+            </h3>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {cutoffs.map(ramp => (
+              <RampStatusCard key={ramp.id} ramp={ramp} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Cache ramps for 1 hour
 const getCachedRamps = unstable_cache(
@@ -81,32 +134,32 @@ export default async function RampsPage() {
         </div>
       </div>
 
-      {/* Available now (above the waterline) */}
+      {/* Available now — split by kind so users immediately see "ramps you
+          can launch from" vs. "cut-offs your boat can still cross". */}
       {availableRamps.length > 0 && (
         <div className="mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
             Available now
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {availableRamps.map((ramp) => (
-              <RampStatusCard key={ramp.id} ramp={ramp} />
-            ))}
-          </div>
+          <KindGroupedGrid
+            ramps={availableRamps}
+            ramplikeHeading="Boat ramps you can launch from"
+            cutoffHeading="Cut-offs your boat can cross"
+          />
         </div>
       )}
 
-      {/* Above the waterline (left high and dry — ramp concrete or cut-off rocks
-          stick up above the current lake surface, so they're not usable). */}
+      {/* Out of reach (lake too low) — same split. */}
       {unusableRamps.length > 0 && (
         <div>
           <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
             Out of reach at this level
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {unusableRamps.map((ramp) => (
-              <RampStatusCard key={ramp.id} ramp={ramp} />
-            ))}
-          </div>
+          <KindGroupedGrid
+            ramps={unusableRamps}
+            ramplikeHeading="Boat ramps stranded above the water"
+            cutoffHeading="Cut-offs the lake won't reach"
+          />
         </div>
       )}
     </div>

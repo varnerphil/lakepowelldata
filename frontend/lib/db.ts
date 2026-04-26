@@ -119,6 +119,8 @@ export interface WaterMeasurement {
   outflow: number
 }
 
+export type RampKind = 'boat_ramp' | 'cut_off'
+
 export interface Ramp {
   id: number
   name: string
@@ -127,6 +129,22 @@ export interface Ramp {
   location: string | null
   latitude: number | null
   longitude: number | null
+  /**
+   * 'boat_ramp' for actual launch points, 'cut_off' for rocky lake passages
+   * that close as the water drops. Optional in the type because the column
+   * is added by add_ramps_kind.sql — until that migration runs, callers
+   * should fall back to deriving from name (see deriveRampKindFromName).
+   */
+  kind?: RampKind
+}
+
+/**
+ * Heuristic fallback for distinguishing cut-offs from boat ramps when the
+ * `kind` DB column is missing (older deployments). Cut-offs have "Cut-Off"
+ * or similar in the name; everything else is a boat ramp.
+ */
+export function deriveRampKindFromName(name: string): RampKind {
+  return /cut[-\s]?off/i.test(name) ? 'cut_off' : 'boat_ramp'
 }
 
 export interface RampStatus extends Ramp {
@@ -281,16 +299,37 @@ export async function getWaterMeasurementsByRangeSampled(
 }
 
 export async function getAllRamps(): Promise<Ramp[]> {
-  // Try to select with latitude/longitude, fallback to without if columns don't exist
+  // Newest schema: lat/long + kind. Two fallbacks let pre-migration deployments
+  // keep working — first drop kind, then drop lat/long.
   let result
   try {
     result = await query(
-      'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude FROM ramps ORDER BY name'
+      'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude, kind FROM ramps ORDER BY name'
     )
   } catch (error: any) {
-    // If latitude/longitude columns don't exist, select without them
-    if (error?.message?.includes('column "latitude" does not exist') || 
-        error?.message?.includes('column "longitude" does not exist')) {
+    const message = error?.message || ''
+    if (message.includes('column "kind" does not exist')) {
+      try {
+        result = await query(
+          'SELECT id, name, min_safe_elevation, min_usable_elevation, location, latitude, longitude FROM ramps ORDER BY name'
+        )
+      } catch (innerError: any) {
+        const innerMessage = innerError?.message || ''
+        if (
+          innerMessage.includes('column "latitude" does not exist') ||
+          innerMessage.includes('column "longitude" does not exist')
+        ) {
+          result = await query(
+            'SELECT id, name, min_safe_elevation, min_usable_elevation, location FROM ramps ORDER BY name'
+          )
+        } else {
+          throw innerError
+        }
+      }
+    } else if (
+      message.includes('column "latitude" does not exist') ||
+      message.includes('column "longitude" does not exist')
+    ) {
       result = await query(
         'SELECT id, name, min_safe_elevation, min_usable_elevation, location FROM ramps ORDER BY name'
       )
@@ -298,7 +337,7 @@ export async function getAllRamps(): Promise<Ramp[]> {
       throw error
     }
   }
-  
+
   return result.rows.map(row => ({
     id: row.id,
     name: row.name,
@@ -306,7 +345,8 @@ export async function getAllRamps(): Promise<Ramp[]> {
     min_usable_elevation: parseFloat(row.min_usable_elevation),
     location: row.location,
     latitude: row.latitude ? parseFloat(row.latitude) : null,
-    longitude: row.longitude ? parseFloat(row.longitude) : null
+    longitude: row.longitude ? parseFloat(row.longitude) : null,
+    kind: (row.kind as RampKind | undefined) ?? deriveRampKindFromName(row.name),
   }))
 }
 

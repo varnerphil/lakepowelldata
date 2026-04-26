@@ -1,6 +1,7 @@
 'use client'
 
-import { MapPin } from 'lucide-react'
+import { MapPin, Anchor, Waves } from 'lucide-react'
+import type { RampKind } from '@/lib/db'
 
 interface RampStatusCardProps {
   ramp: {
@@ -12,6 +13,7 @@ interface RampStatusCardProps {
     min_safe_elevation: number
     min_usable_elevation: number
     location: string | null
+    kind?: RampKind
   }
 }
 
@@ -72,8 +74,30 @@ export default function RampStatusCard({ ramp }: RampStatusCardProps) {
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <h3 className={`font-light text-lg ${colors.text} mb-1`}>{ramp.name}</h3>
-              <div className={`text-sm font-light ${colors.text}`}>{ramp.status}</div>
+              <div className="flex items-center gap-2 mb-1">
+                {ramp.kind === 'cut_off' ? (
+                  <Waves
+                    className={`w-4 h-4 ${colors.accent} flex-shrink-0`}
+                    strokeWidth={1.5}
+                    aria-label="Lake cut-off"
+                  />
+                ) : (
+                  <Anchor
+                    className={`w-4 h-4 ${colors.accent} flex-shrink-0`}
+                    strokeWidth={1.5}
+                    aria-label="Boat ramp"
+                  />
+                )}
+                <h3 className={`font-light text-lg ${colors.text}`}>{ramp.name}</h3>
+              </div>
+              <div className={`flex items-center gap-2 text-sm font-light ${colors.text}`}>
+                <span>{ramp.status}</span>
+                {ramp.kind === 'cut_off' && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider bg-white/60 text-gray-600 font-normal">
+                    Cut-off
+                  </span>
+                )}
+              </div>
             </div>
             <a
               href={getMapUrl()}
