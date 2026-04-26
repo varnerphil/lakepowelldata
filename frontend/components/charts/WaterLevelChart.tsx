@@ -22,6 +22,7 @@ interface WaterLevelChartProps {
 const RIVER_BOTTOM = 3200  // Approximate river bottom level
 const DEADPOOL = 3370      // Minimum pool elevation (deadpool)
 const NO_POWER = 3490      // Minimum power pool elevation (no power generation)
+const FULL_POOL = 3700     // Full pool — top of the gates at Glen Canyon Dam
 
 // Helper to parse YYYY-MM-DD as local date (not UTC) to avoid timezone issues
 const parseLocalDate = (dateStr: string): Date => {
@@ -274,13 +275,25 @@ export default function WaterLevelChart({ data, startDate, endDate, ramps = [] }
           label={isMobile ? undefined : { value: "Deadpool (3,370 ft)", position: "right", fill: "#ef4444", fontSize: 12, offset: 20 }}
         />
         {/* Reference line for No Power Generation */}
-        <ReferenceLine 
-          y={NO_POWER} 
-          stroke="#f59e0b" 
+        <ReferenceLine
+          y={NO_POWER}
+          stroke="#f59e0b"
           strokeWidth={2}
           strokeDasharray="5 5"
           label={isMobile ? undefined : { value: "No Power Generation (3,490 ft)", position: "right", fill: "#f59e0b", fontSize: 12, offset: 20 }}
         />
+        {/* Reference line for Full Pool — only render when the chart's y-range
+            actually reaches this elevation, otherwise it would just float off
+            the top and squish the visible data. */}
+        {FULL_POOL >= yAxisMin && FULL_POOL <= yAxisMax && (
+          <ReferenceLine
+            y={FULL_POOL}
+            stroke="#0d7377"
+            strokeWidth={2}
+            strokeDasharray="5 5"
+            label={isMobile ? undefined : { value: "Full Pool (3,700 ft)", position: "right", fill: "#0d7377", fontSize: 12, offset: 20 }}
+          />
+        )}
         {/* Ramp reference lines */}
         {ramps
           .filter(ramp => {
