@@ -147,7 +147,7 @@ const FEATURED_ARTICLES_PRIMARY: FeaturedArticle[] = [
     slug: 'max-operational-flexibility-plan',
     title: 'Max Operational Flexibility — strongest drawdown protection',
     subtitle: "Storage + flow-aware releases, with a run-of-river safeguard when Powell runs low.",
-    badge: 'Top pick · Safety',
+    badge: 'Top pick · Power & Storage',
     badgeColor: 'bg-emerald-100 text-emerald-800',
     gradient: 'from-emerald-500 via-teal-500 to-sky-500',
     imageUrl: '/lp-pictures/sunset-panorama.webp',
