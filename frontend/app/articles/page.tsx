@@ -18,8 +18,12 @@ const SERIES_SLUGS = [
 
 const SERIES_META: Record<string, { badge?: string; badgeColor?: string }> = {
   'real-problem-isnt-drought-its-math': { badge: 'Start here', badgeColor: 'bg-teal-100 text-teal-800' },
-  'max-operational-flexibility-plan': { badge: 'Our #1 pick', badgeColor: 'bg-emerald-100 text-emerald-800' },
-  'supply-driven-plan': { badge: '#2 pick', badgeColor: 'bg-blue-100 text-blue-700' },
+  // Two co-equal top picks, badged with the dimension each plan does best —
+  // we point at both and let readers decide which trade-off matters more for
+  // them rather than crowning a single winner. Same visual weight on both,
+  // and the wording matches what the homepage's featured-article cards use.
+  'max-operational-flexibility-plan': { badge: 'Top pick · Power & Storage', badgeColor: 'bg-emerald-100 text-emerald-800' },
+  'supply-driven-plan': { badge: 'Top pick · Best Recovery', badgeColor: 'bg-emerald-100 text-emerald-800' },
   'plans-head-to-head': { badge: 'The verdict', badgeColor: 'bg-gray-900 text-white' },
 }
 
