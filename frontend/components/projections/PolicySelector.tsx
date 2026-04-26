@@ -327,6 +327,62 @@ interface PolicySelectorProps {
 // handlers, and UI below remain wired up so it can be re-enabled in place.
 const ENABLE_CUSTOM_POLICIES = false
 
+type PolicyGrade = 'A' | 'B' | 'C' | 'D' | 'F'
+
+interface PolicyMeta {
+  grade: PolicyGrade
+  tagline: string
+}
+
+// Editorial grade + one-line "what this excels at" shown in the policy dropdown
+// so users can see at a glance which plans are strong vs. weak. Keys are the
+// exact `policy.name` values from POLICY_PRESETS / DEIS_PRESETS.
+const POLICY_META: Record<string, PolicyMeta> = {
+  'Current operations (2007 guidelines)': {
+    grade: 'D',
+    tagline: 'Tiered by lake level (8.23 \u2192 7.0 MAF)',
+  },
+  'Federal Plan: No Action': {
+    grade: 'D',
+    tagline: 'Flat 8.23 MAF at any lake level',
+  },
+  'Federal Plan: Basic Coordination': {
+    grade: 'C',
+    tagline: 'Adjusts by Powell level',
+  },
+  'Federal Plan: Enhanced Coordination': {
+    grade: 'B',
+    tagline: 'Balances Powell + Mead storage',
+  },
+  'Federal Plan: Max Operational Flexibility': {
+    grade: 'A',
+    tagline: 'Strongest drawdown protection',
+  },
+  'Federal Plan: Supply Driven': {
+    grade: 'A',
+    tagline: 'Best recovery potential',
+  },
+}
+
+const GRADE_STYLES: Record<PolicyGrade, string> = {
+  A: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  B: 'bg-teal-100 text-teal-800 border-teal-200',
+  C: 'bg-amber-100 text-amber-800 border-amber-200',
+  D: 'bg-orange-100 text-orange-800 border-orange-200',
+  F: 'bg-red-100 text-red-700 border-red-200',
+}
+
+function GradeBadge({ grade }: { grade: PolicyGrade }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full border flex-shrink-0 ${GRADE_STYLES[grade]}`}
+      aria-label={`Grade ${grade}`}
+    >
+      {grade}
+    </span>
+  )
+}
+
 export default function PolicySelector({ value, onChange }: PolicySelectorProps) {
   const [isCustom, setIsCustom] = useState(false)
   const [customType, setCustomType] = useState<'simple' | 'tiered'>('simple')
@@ -342,10 +398,28 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
   const [saveName, setSaveName] = useState('')
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [activeSavedName, setActiveSavedName] = useState<string | null>(null)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setSavedPolicies(loadSavedPolicies())
   }, [])
+
+  useEffect(() => {
+    if (!isDropdownOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (!dropdownRef.current?.contains(e.target as Node)) setIsDropdownOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isDropdownOpen])
 
   const [seedSource, setSeedSource] = useState<string | null>(null)
   const [renamingPolicy, setRenamingPolicy] = useState<string | null>(null)
@@ -556,62 +630,122 @@ export default function PolicySelector({ value, onChange }: PolicySelectorProps)
         Release Policy
       </label>
 
-      {/* Preset selector */}
-      <div className="relative">
-        <select
-          value={
-            allPresets.some((p) => p.name === value.name)
-              ? value.name
-              : activeSavedName
-                ? `__saved__:${activeSavedName}`
-                : '__custom__'
-          }
-          onChange={(e) => {
-            const val = e.target.value
-            if (val.startsWith('__saved__:')) {
-              const name = val.slice('__saved__:'.length)
-              const saved = savedPolicies.find((p) => p.name === name)
-              if (saved) loadSavedPolicy(saved)
-              return
-            }
-            handlePresetChange(val)
-          }}
-          className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2.5 pr-8 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-colors"
-        >
-          {/* Current operations first */}
-          <option key={POLICY_PRESETS[0].name} value={POLICY_PRESETS[0].name}>
-            {POLICY_PRESETS[0].name}
-          </option>
-          {/* Federal plans directly under current ops */}
-          <optgroup label="Federal Plan — Post-2026 Proposed Alternatives (Bureau of Reclamation)">
-            {DEIS_PRESETS.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name}
-              </option>
-            ))}
-          </optgroup>
-          {ENABLE_CUSTOM_POLICIES && (
-            <>
-              {POLICY_PRESETS.slice(1).map((p) => (
-                <option key={p.name} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-              <option value="__custom__">Custom Policy</option>
-              {savedPolicies.length > 0 && (
-                <optgroup label="Your saved policies">
-                  {savedPolicies.map((p) => (
-                    <option key={`saved-${p.name}`} value={`__saved__:${p.name}`}>
-                      {p.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </>
-          )}
-        </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-      </div>
+      {/* Preset selector — custom dropdown with quality grade + tagline per option */}
+      {(() => {
+        const selectedMeta = POLICY_META[value.name]
+        const formatName = (name: string) => name.replace(/^Federal Plan:\s*/, '')
+        const choose = (p: OutflowPolicy) => {
+          handlePresetChange(p.name)
+          setIsDropdownOpen(false)
+        }
+
+        const OptionRow = ({ policy }: { policy: OutflowPolicy }) => {
+          const meta = POLICY_META[policy.name]
+          const isActive = value.name === policy.name
+          return (
+            <button
+              type="button"
+              role="option"
+              aria-selected={isActive}
+              onClick={() => choose(policy)}
+              className={`w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors ${
+                isActive ? 'bg-teal-50' : 'hover:bg-gray-50'
+              }`}
+            >
+              {meta && <GradeBadge grade={meta.grade} />}
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm leading-snug ${isActive ? 'text-teal-900 font-medium' : 'text-gray-900'}`}>
+                  {formatName(policy.name)}
+                </div>
+                {meta && (
+                  <div className="text-xs text-gray-500 leading-snug mt-0.5">{meta.tagline}</div>
+                )}
+              </div>
+              {isActive && <Check className="w-4 h-4 text-teal-600 flex-shrink-0 mt-1.5" />}
+            </button>
+          )
+        }
+
+        return (
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((v) => !v)}
+              aria-haspopup="listbox"
+              aria-expanded={isDropdownOpen}
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 pr-8 text-left focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                {selectedMeta && <GradeBadge grade={selectedMeta.grade} />}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-gray-900 leading-snug">{formatName(value.name)}</div>
+                  {selectedMeta && (
+                    <div className="text-xs text-gray-500 leading-snug mt-0.5">{selectedMeta.tagline}</div>
+                  )}
+                </div>
+              </div>
+              <ChevronDown
+                className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-transform ${
+                  isDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isDropdownOpen && (
+              <div
+                role="listbox"
+                className="absolute top-full mt-1 inset-x-0 z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[28rem] overflow-auto"
+              >
+                <OptionRow policy={POLICY_PRESETS[0]} />
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 bg-gray-50 border-y border-gray-100">
+                  Federal Plan — Post-2026 Alternatives (Bureau of Reclamation)
+                </div>
+                {DEIS_PRESETS.map((p) => (
+                  <OptionRow key={p.name} policy={p} />
+                ))}
+                {ENABLE_CUSTOM_POLICIES && (
+                  <>
+                    {POLICY_PRESETS.slice(1).map((p) => (
+                      <OptionRow key={p.name} policy={p} />
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePresetChange('__custom__')
+                        setIsDropdownOpen(false)
+                      }}
+                      className="w-full px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                    >
+                      Custom Policy
+                    </button>
+                    {savedPolicies.length > 0 && (
+                      <>
+                        <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 bg-gray-50 border-y border-gray-100">
+                          Your saved policies
+                        </div>
+                        {savedPolicies.map((p) => (
+                          <button
+                            key={`saved-${p.name}`}
+                            type="button"
+                            onClick={() => {
+                              const saved = savedPolicies.find((sp) => sp.name === p.name)
+                              if (saved) loadSavedPolicy(saved)
+                              setIsDropdownOpen(false)
+                            }}
+                            className="w-full px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            {p.name}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Custom config */}
       {ENABLE_CUSTOM_POLICIES && isCustom && (
