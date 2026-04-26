@@ -51,15 +51,34 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
   
   const weeklyChange = measurement7DaysAgo ? current.elevation - measurement7DaysAgo.elevation : null
 
-  // Daily deltas for the last 7 days (walk back from current through recent)
-  const dailyDrops: Array<{ date: string; elevation: number; change: number }> = []
+  // Daily deltas for the last 7 days (walk back from current through recent).
+  // Flag days where the reported content change diverges from what inflow/outflow
+  // would have actually produced — USBR periodically updates bathymetry / resets
+  // sensors, which shows up as a one-day jump that the flows can't justify.
+  // Same threshold the outflow simulator uses to filter these out (calculations.ts).
+  const ANOMALY_AF_THRESHOLD = 50_000
+  const CFS_TO_AF_PER_DAY = 1.9835
+  const dailyDrops: Array<{
+    date: string
+    elevation: number
+    change: number
+    isAnomalous: boolean
+  }> = []
   for (let i = recent.length - 1; i > 0 && dailyDrops.length < 7; i--) {
+    const cur = recent[i]
+    const prev = recent[i - 1]
+    const reportedContentChange = (cur.content ?? 0) - (prev.content ?? 0)
+    const expectedFromFlows = ((cur.inflow ?? 0) - (cur.outflow ?? 0)) * CFS_TO_AF_PER_DAY
+    const isAnomalous =
+      Math.abs(reportedContentChange - expectedFromFlows) > ANOMALY_AF_THRESHOLD
     dailyDrops.push({
-      date: recent[i].date,
-      elevation: recent[i].elevation,
-      change: recent[i].elevation - recent[i - 1].elevation,
+      date: cur.date,
+      elevation: cur.elevation,
+      change: cur.elevation - prev.elevation,
+      isAnomalous,
     })
   }
+  const hasAnomaly = dailyDrops.some((d) => d.isAnomalous)
 
   return (
     <div className="card p-4 lg:p-6">
@@ -140,6 +159,14 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
                     }`}
                   >
                     {formatFeetInches(d.change)}
+                    {d.isAnomalous && (
+                      <abbr
+                        title="USBR data correction — not a real lake change. Inflow and outflow that day don't account for this jump, so it almost certainly came from a bathymetry update or sensor recalibration."
+                        className="ml-1 cursor-help text-amber-500 no-underline"
+                      >
+                        *
+                      </abbr>
+                    )}
                   </span>
                   <span className="text-gray-400 font-light tabular-nums py-1 px-2 rounded-r text-right">
                     {d.elevation.toFixed(2)}ft
@@ -147,6 +174,14 @@ export default function CurrentStatus({ current, recent, ramps }: CurrentStatusP
                 </div>
               ))}
             </div>
+            {hasAnomaly && (
+              <p className="mt-3 text-[11px] text-gray-500 font-light leading-relaxed">
+                <span className="text-amber-500">*</span>{' '}
+                Reporting correction, not a real lake change. The day&rsquo;s inflow and
+                outflow don&rsquo;t justify the jump, so the number almost certainly came
+                from a USBR bathymetry update or sensor recalibration.
+              </p>
+            )}
           </div>
         </details>
       )}
