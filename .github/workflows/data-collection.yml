@@ -56,6 +56,22 @@ jobs:
           python -m collectors.scheduler
           echo "✅ Water data collection complete"
 
+      # Tell the front-end caches that water-measurements changed (USBR
+      # often backfills/corrects past days, not just appends today's row).
+      # Without this, the homepage's "Last 7 Days" + weekly-change values
+      # can sit stale for up to an hour after the collector runs.
+      - name: Revalidate water caches
+        if: success()
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          echo "🔄 Flushing water-measurements caches…"
+          curl -fsS -X POST \
+            -H "x-revalidate-secret: $REVALIDATE_SECRET" \
+            "https://lakepowelldata.com/api/revalidate?tags=water-measurements,latest-measurement,latest-measurement-home,historical-averages,water-year-analysis" \
+            && echo "" \
+            || echo "⚠️ revalidate call failed (non-fatal — cache will TTL out)"
+
   # ============================================
   # Daily Snowpack Data (SNOTEL + Basin Plots)
   # ============================================
@@ -97,6 +113,18 @@ jobs:
           python -m migrations.import_basin_plots_data
           echo "✅ Basin Plots update complete"
 
+      - name: Revalidate snowpack caches
+        if: success()
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          echo "🔄 Flushing snowpack caches…"
+          curl -fsS -X POST \
+            -H "x-revalidate-secret: $REVALIDATE_SECRET" \
+            "https://lakepowelldata.com/api/revalidate?tags=snotel,basin-plots" \
+            && echo "" \
+            || echo "⚠️ revalidate call failed (non-fatal — cache will TTL out)"
+
   # ============================================
   # Basin Plots Only (manual trigger)
   # ============================================
@@ -128,6 +156,17 @@ jobs:
           echo "📈 Updating Basin Plots data..."
           python -m migrations.import_basin_plots_data
           echo "✅ Basin Plots update complete"
+
+      - name: Revalidate basin-plots cache
+        if: success()
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "x-revalidate-secret: $REVALIDATE_SECRET" \
+            "https://lakepowelldata.com/api/revalidate?tags=basin-plots" \
+            && echo "" \
+            || echo "⚠️ revalidate call failed (non-fatal — cache will TTL out)"
 
   # ============================================
   # Water Year Analysis (manual trigger only)
@@ -162,6 +201,17 @@ jobs:
           echo "This analyzes runoff patterns and creates snowpack-to-elevation correlations"
           python -m migrations.calculate_water_year_analysis
           echo "✅ Water year analysis complete"
+
+      - name: Revalidate water-year-analysis cache
+        if: success()
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          curl -fsS -X POST \
+            -H "x-revalidate-secret: $REVALIDATE_SECRET" \
+            "https://lakepowelldata.com/api/revalidate?tags=water-year-analysis" \
+            && echo "" \
+            || echo "⚠️ revalidate call failed (non-fatal — cache will TTL out)"
 
   # ============================================
   # Report Status
