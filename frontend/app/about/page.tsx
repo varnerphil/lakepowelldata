@@ -134,7 +134,13 @@ export default function AboutPage() {
             </section>
 
             <section className="card p-4 sm:p-8 lg:p-10">
-              <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">Ramp Status Definitions</h2>
+              <h2 className="text-xl sm:text-2xl font-light mb-4 sm:mb-6 text-gray-900">Lake access status definitions</h2>
+              <p className="text-sm text-gray-600 font-light mb-4 sm:mb-6 leading-relaxed">
+                The Lake Access list mixes two kinds of spots: <strong className="font-medium">boat ramps</strong>{' '}
+                where you launch, and <strong className="font-medium">lake cut-offs</strong> &mdash; rocky
+                passages that close as the lake drops. The same elevation rules apply to both: when the
+                water sits below their minimum elevation, they&rsquo;re out of reach.
+              </p>
               <ul className="space-y-6">
                 <li>
                   <div className="flex items-start">
@@ -144,7 +150,7 @@ export default function AboutPage() {
                     <div>
                       <h3 className="font-normal text-gray-900 mb-1">Open and Usable</h3>
                       <p className="text-gray-700 font-light leading-relaxed">
-                        Current elevation is at or above the ramp&apos;s minimum safe elevation.
+                        Current elevation is at or above the spot&rsquo;s minimum safe elevation.
                       </p>
                     </div>
                   </div>
@@ -170,7 +176,7 @@ export default function AboutPage() {
                     <div>
                       <h3 className="font-normal text-gray-900 mb-1">Unusable</h3>
                       <p className="text-gray-700 font-light leading-relaxed">
-                        Current elevation is below the ramp&apos;s minimum usable elevation.
+                        Current elevation is below the spot&rsquo;s minimum usable elevation.
                       </p>
                     </div>
                   </div>

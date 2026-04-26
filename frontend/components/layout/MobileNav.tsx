@@ -8,7 +8,7 @@ import { Menu, X, ChevronDown } from 'lucide-react'
 const mainNavLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/simulator', label: 'Simulator' },
-  { href: '/ramps', label: 'Ramps' },
+  { href: '/ramps', label: 'Lake access' },
   { href: '/articles', label: 'Articles' },
 ]
 

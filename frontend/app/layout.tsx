@@ -17,7 +17,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Lake Powell Data",
-  description: "Track and display Lake Powell water data, boat ramp accessibility, and historical trends",
+  description: "Track and display Lake Powell water data, lake access (boat ramps and cut-offs), and historical trends",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

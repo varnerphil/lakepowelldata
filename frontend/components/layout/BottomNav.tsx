@@ -17,7 +17,7 @@ const navItems = [
   },
   {
     href: '/ramps',
-    label: 'Ramps',
+    label: 'Lake access',
     icon: MapPin
   },
   {

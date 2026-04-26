@@ -340,7 +340,7 @@ export default function HomeChartsWithFavorites({
               {rampAccessTimeline.length > 0 && (
                 <div className="mt-4 mb-4 p-3 sm:p-4 bg-white rounded-lg border border-gray-200">
                   <h4 className="text-sm font-medium text-gray-900 mb-3">
-                    Favorite Ramp Access Timeline
+                    When your favorite spots open or close
                   </h4>
                   <div className="space-y-3">
                     {rampAccessTimeline.map(({ ramp, minSafe, isCurrentlyOpen, historicalAvgDate, currentTrendDate }) => {

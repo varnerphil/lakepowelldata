@@ -270,7 +270,7 @@ export default function CompactRampList({ ramps, currentElevation }: CompactRamp
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between text-base lg:text-lg font-light text-gray-700 hover:text-gray-900 transition-colors py-2"
       >
-        <span>Boat Ramp Status ({sortedRampsWithStatus.length})</span>
+        <span>Lake access status ({sortedRampsWithStatus.length})</span>
         {isExpanded ? (
           <ChevronUp className="w-5 h-5" strokeWidth={1.5} />
         ) : (

@@ -29,7 +29,7 @@ export default async function RampsPage() {
       <div className="container mx-auto px-6 lg:px-8 py-12 lg:py-16">
         <div className="text-center">
           <h1 className="text-5xl lg:text-6xl font-light tracking-tight text-gray-900 mb-4">
-            Boat Ramp Status
+            Lake access by elevation
           </h1>
           <p className="text-lg text-gray-500 font-light">No current water elevation data available.</p>
         </div>
@@ -61,10 +61,10 @@ export default async function RampsPage() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 lg:py-16">
       <div className="mb-8 sm:mb-12 text-center">
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-gray-900 mb-2 sm:mb-4">
-          Boat Ramp Status
+          Lake access by elevation
         </h1>
         <p className="text-sm sm:text-lg text-gray-500 font-light max-w-2xl mx-auto">
-          Check the accessibility of boat ramps based on current water levels
+          Boat ramps and key lake cut-offs &mdash; and where today&rsquo;s water level leaves each one.
         </p>
         <div className="mt-3">
           <ShareButton label="Share" />
@@ -81,11 +81,11 @@ export default async function RampsPage() {
         </div>
       </div>
 
-      {/* Available Ramps Section */}
+      {/* Available now (above the waterline) */}
       {availableRamps.length > 0 && (
         <div className="mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
-            Available Ramps
+            Available now
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {availableRamps.map((ramp) => (
@@ -95,11 +95,12 @@ export default async function RampsPage() {
         </div>
       )}
 
-      {/* Unusable Ramps Section */}
+      {/* Above the waterline (left high and dry — ramp concrete or cut-off rocks
+          stick up above the current lake surface, so they're not usable). */}
       {unusableRamps.length > 0 && (
         <div>
           <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">
-            Unusable Ramps
+            Out of reach at this level
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {unusableRamps.map((ramp) => (
