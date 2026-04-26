@@ -40,24 +40,40 @@ export default function BottomNav() {
       <div id="bottom-nav-slot" />
       <div className="flex items-center justify-around h-16 pb-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href
+          // Active when current pathname matches this nav item — exact for
+          // Dashboard, prefix for sections that have sub-pages (article slugs,
+          // ramp pages, etc.). /simulator also catches the /projections alias.
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : item.href === '/simulator'
+                ? pathname === '/simulator' || pathname === '/projections'
+                : pathname === item.href || pathname.startsWith(`${item.href}/`)
           const Icon = item.icon
-          
+
+          // Color matches the dark blue in the logo (also used for the
+          // "with plan" line on the projection chart) — visually consistent
+          // with the rest of the site's accents.
+          const activeColor = 'text-[#1d4ed8]'
+
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                isActive
-                  ? 'text-gray-900'
-                  : 'text-gray-500 active:text-gray-700'
+                isActive ? activeColor : 'text-gray-500 active:text-gray-700'
               }`}
             >
-              <Icon 
-                className={`w-6 h-6 mb-1.5 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
-                strokeWidth={1.5}
+              <Icon
+                className={`w-6 h-6 mb-1.5 ${isActive ? activeColor : 'text-gray-500'}`}
+                strokeWidth={isActive ? 2 : 1.5}
               />
-              <span className={`text-xs font-light ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+              <span
+                className={`text-xs ${
+                  isActive ? `${activeColor} font-medium` : 'text-gray-500 font-light'
+                }`}
+              >
                 {item.label}
               </span>
             </Link>
