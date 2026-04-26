@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-16T05:31:12.001Z",
+  "generatedAt": "2026-04-21T04:59:55.735Z",
   "startDate": "1996-01-01",
   "actualStart": {
     "date": "1996-01-01",
@@ -7,21 +7,21 @@
     "content": 21382100
   },
   "actualEnd": {
-    "date": "2026-04-14",
-    "elevation": 3526.52,
-    "content": 5632804
+    "date": "2026-04-19",
+    "elevation": 3526.08,
+    "content": 5607282
   },
   "scenarios": [
     {
       "label": "Actual (replay at 100%, sanity check)",
       "outflowPercent": 100,
-      "endingElevation": 3528.57,
-      "endingContent": 6225190,
-      "endingDate": "2026-04-14",
+      "endingElevation": 3528.18,
+      "endingContent": 6199573,
+      "endingDate": "2026-04-19",
       "differenceFromActualFt": 2.1,
-      "totalActualOutflowAF": 270449983,
-      "totalSimulatedOutflowAF": 270449983,
-      "totalEvaporationAF": 23753981,
+      "totalActualOutflowAF": 270528545,
+      "totalSimulatedOutflowAF": 270528545,
+      "totalEvaporationAF": 23760934,
       "dailyCurve": [
         {
           "date": "1996-01-01",
@@ -6346,19 +6346,23 @@
         {
           "date": "2026-04-14",
           "elevation": 3528.57
+        },
+        {
+          "date": "2026-04-19",
+          "elevation": 3528.18
         }
       ]
     },
     {
       "label": "If we had released 5% less",
       "outflowPercent": 95,
-      "endingElevation": 3623.77,
-      "endingContent": 14279995,
-      "endingDate": "2026-04-14",
-      "differenceFromActualFt": 97.3,
-      "totalActualOutflowAF": 270449983,
-      "totalSimulatedOutflowAF": 258265709,
-      "totalEvaporationAF": 27882191,
+      "endingElevation": 3623.54,
+      "endingContent": 14254124,
+      "endingDate": "2026-04-19",
+      "differenceFromActualFt": 97.5,
+      "totalActualOutflowAF": 270528545,
+      "totalSimulatedOutflowAF": 258340344,
+      "totalEvaporationAF": 27893329,
       "dailyCurve": [
         {
           "date": "1996-01-01",
@@ -12683,19 +12687,23 @@
         {
           "date": "2026-04-14",
           "elevation": 3623.77
+        },
+        {
+          "date": "2026-04-19",
+          "elevation": 3623.54
         }
       ]
     },
     {
       "label": "If we had released 7% less",
       "outflowPercent": 93,
-      "endingElevation": 3644.95,
-      "endingContent": 16726096,
-      "endingDate": "2026-04-14",
-      "differenceFromActualFt": 118.4,
-      "totalActualOutflowAF": 270449983,
-      "totalSimulatedOutflowAF": 254928509,
-      "totalEvaporationAF": 28772730,
+      "endingElevation": 3644.75,
+      "endingContent": 16700866,
+      "endingDate": "2026-04-19",
+      "differenceFromActualFt": 118.7,
+      "totalActualOutflowAF": 270528545,
+      "totalSimulatedOutflowAF": 255001572,
+      "totalEvaporationAF": 28784797,
       "dailyCurve": [
         {
           "date": "1996-01-01",
@@ -19020,19 +19028,23 @@
         {
           "date": "2026-04-14",
           "elevation": 3644.95
+        },
+        {
+          "date": "2026-04-19",
+          "elevation": 3644.75
         }
       ]
     },
     {
       "label": "If we had released 10% less",
       "outflowPercent": 90,
-      "endingElevation": 3663.24,
-      "endingContent": 19058846,
-      "endingDate": "2026-04-14",
-      "differenceFromActualFt": 136.7,
-      "totalActualOutflowAF": 270449983,
-      "totalSimulatedOutflowAF": 251772770,
-      "totalEvaporationAF": 29594804,
+      "endingElevation": 3663.07,
+      "endingContent": 19035168,
+      "endingDate": "2026-04-19",
+      "differenceFromActualFt": 137,
+      "totalActualOutflowAF": 270528545,
+      "totalSimulatedOutflowAF": 251843476,
+      "totalEvaporationAF": 29607676,
       "dailyCurve": [
         {
           "date": "1996-01-01",
@@ -25357,19 +25369,23 @@
         {
           "date": "2026-04-14",
           "elevation": 3663.24
+        },
+        {
+          "date": "2026-04-19",
+          "elevation": 3663.07
         }
       ]
     },
     {
       "label": "If we had released 15% less",
       "outflowPercent": 85,
-      "endingElevation": 3678.08,
-      "endingContent": 21161721,
-      "endingDate": "2026-04-14",
-      "differenceFromActualFt": 151.6,
-      "totalActualOutflowAF": 270449983,
-      "totalSimulatedOutflowAF": 248871522,
-      "totalEvaporationAF": 30391534,
+      "endingElevation": 3677.93,
+      "endingContent": 21141320,
+      "endingDate": "2026-04-19",
+      "differenceFromActualFt": 151.8,
+      "totalActualOutflowAF": 270528545,
+      "totalSimulatedOutflowAF": 248938300,
+      "totalEvaporationAF": 30405058,
       "dailyCurve": [
         {
           "date": "1996-01-01",
@@ -31694,6 +31710,10 @@
         {
           "date": "2026-04-14",
           "elevation": 3678.08
+        },
+        {
+          "date": "2026-04-19",
+          "elevation": 3677.93
         }
       ]
     }
@@ -31851,8 +31871,8 @@
     },
     {
       "waterYear": 2026,
-      "inflowAF": 2284000,
-      "outflowAF": 3223261
+      "inflowAF": 2336815,
+      "outflowAF": 3301823
     }
   ]
 }
