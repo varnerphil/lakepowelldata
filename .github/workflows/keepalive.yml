@@ -1,0 +1,30 @@
+name: Keepalive
+
+# GitHub disables scheduled workflows after 60 days without repository
+# activity (this is what silently stopped Data Collection in Sept 2026).
+# Re-enabling a workflow through the API resets that timer, so once a month
+# we re-enable every scheduled workflow here — including this one — without
+# needing a dummy commit.
+
+on:
+  schedule:
+    # 1st of every month, 3 PM UTC
+    - cron: '0 15 1 * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-enable scheduled workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in data-collection.yml annual-analysis.yml keepalive.yml; do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$wf/enable" \
+              && echo "✅ $wf enabled" \
+              || { echo "❌ failed to enable $wf"; exit 1; }
+          done
