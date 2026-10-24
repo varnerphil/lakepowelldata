@@ -103,111 +103,9 @@ const getCachedHistoricalWaterYearLows = unstable_cache(
 import { CurrentStatus, HistoricalAverages, StorageVisualization } from '@/components/data-display'
 import HomeChartsWithFavorites from '@/components/data-display/HomeChartsWithFavorites'
 import Phase1ProjectionSection from '@/components/data-display/WaterAdditionCalculator'
-import FeaturedArticlesStrip, { type FeaturedArticle } from '@/components/articles/FeaturedArticlesStrip'
+import LakePowellGallery from '@/components/data-display/LakePowellGallery'
 import SimulatorPromoCard from '@/components/articles/SimulatorPromoCard'
 
-// Hand-picked articles surfaced on the home page. Gradients evoke Lake Powell
-// (sandstone + water) — swap the backgrounds for real hero images later by
-// replacing the gradient div in FeaturedArticlesStrip.
-const FEATURED_ARTICLES_PRIMARY: FeaturedArticle[] = [
-  {
-    slug: 'real-problem-isnt-drought-its-math',
-    title: "The real problem isn't drought — it's math",
-    subtitle: "Why Powell keeps dropping even in normal years, and what has to change.",
-    badge: 'Start here',
-    badgeColor: 'bg-teal-100 text-teal-800',
-    gradient: 'from-amber-400 via-orange-400 to-rose-400',
-    imageUrl: '/lp-pictures/reflection-canyon-bathtub.jpg',
-    imageAlt: 'Reflection Canyon aerial showing drawdown bathtub rings',
-    readMinutes: 6,
-  },
-  {
-    slug: 'plans-head-to-head',
-    title: 'The five federal plans, head to head',
-    subtitle: 'Same drought, same inflows — which policy actually keeps Powell alive?',
-    badge: 'The verdict',
-    badgeColor: 'bg-gray-900 text-white',
-    gradient: 'from-indigo-500 via-sky-500 to-teal-400',
-    imageUrl: '/lp-pictures/lake-aerial-panorama.jpg',
-    imageAlt: 'Aerial panorama of Lake Powell',
-    readMinutes: 8,
-  },
-  {
-    slug: 'supply-driven-plan',
-    title: 'Supply Driven — best recovery potential',
-    subtitle: 'Releases tied to how much water the river is actually producing. Wet years pay off and the lake climbs.',
-    badge: 'Top pick · Recovery',
-    badgeColor: 'bg-emerald-100 text-emerald-800',
-    gradient: 'from-sky-500 via-cyan-400 to-teal-500',
-    imageUrl: '/lp-pictures/sunset-reflections.webp',
-    imageAlt: 'Sunset sandstone cliffs reflected in Lake Powell',
-    readMinutes: 5,
-  },
-  {
-    slug: 'max-operational-flexibility-plan',
-    title: 'Max Operational Flexibility — strongest drawdown protection',
-    subtitle: "Storage + flow-aware releases, with a run-of-river safeguard when Powell runs low.",
-    badge: 'Top pick · Power & Storage',
-    badgeColor: 'bg-emerald-100 text-emerald-800',
-    gradient: 'from-emerald-500 via-teal-500 to-sky-500',
-    imageUrl: '/lp-pictures/sunset-panorama.webp',
-    imageAlt: 'Lake Powell at sunset with blue water',
-    readMinutes: 5,
-  },
-]
-
-const FEATURED_ARTICLES_SECONDARY: FeaturedArticle[] = [
-  // Lead with the head-to-head so readers can jump straight to the verdict
-  // across all five plans. Then the worth-considering plans (Enhanced as the
-  // fallback behind SD and MOF, the Abundance Act as the long-run
-  // complement). Not-recommended plans (Basic, No Action) go at the end so
-  // readers don't hit the "fails fast" copy before the credible options.
-  {
-    slug: 'plans-head-to-head',
-    title: 'Head-to-head — every plan on the same chart',
-    subtitle: 'Side-by-side grades across recovery, floor, bad-case ending, and speed. The full verdict.',
-    gradient: 'from-indigo-500 via-sky-500 to-teal-400',
-    imageUrl: '/lp-pictures/lake-aerial-panorama.jpg',
-    imageAlt: 'Aerial panorama of Lake Powell',
-    readMinutes: 8,
-  },
-  {
-    slug: 'enhanced-coordination-plan',
-    title: 'Enhanced Coordination — balancing Powell and Mead',
-    subtitle: 'A middle-ground plan that coordinates the two biggest reservoirs on the river.',
-    gradient: 'from-teal-400 via-sky-400 to-indigo-400',
-    imageUrl: '/lp-pictures/butte-landscape.jpg',
-    imageAlt: 'Lake Powell butte landscape',
-    readMinutes: 5,
-  },
-  {
-    slug: 'colorado-river-abundance-act',
-    title: 'The Abundance Act — what if we added new water?',
-    subtitle: 'Desalination at scale. How much it would cost, and how much it would actually help.',
-    gradient: 'from-emerald-400 via-cyan-400 to-blue-500',
-    imageUrl: '/lp-pictures/reflection-canyon-sunrise.webp',
-    imageAlt: 'Sunrise over Reflection Canyon',
-    readMinutes: 7,
-  },
-  {
-    slug: 'basic-coordination-plan',
-    title: 'Basic Coordination — elevation-based cuts',
-    subtitle: 'Better than No Action, but still not enough to recover from a deep drawdown.',
-    gradient: 'from-amber-400 via-orange-300 to-yellow-300',
-    imageUrl: '/lp-pictures/sandstone-shore.jpg',
-    imageAlt: 'Sandstone shoreline meeting clear Lake Powell water',
-    readMinutes: 4,
-  },
-  {
-    slug: 'no-action-plan',
-    title: 'No Action — the post-2026 default if nothing changes',
-    subtitle: 'Full 8.23 MAF out the door every year, drought or not. Why it fails fast.',
-    gradient: 'from-red-400 via-orange-400 to-amber-400',
-    imageUrl: '/lp-pictures/bathtub-rings-aerial.jpg',
-    imageAlt: 'Aerial view of deeply drawn-down Lake Powell side canyons',
-    readMinutes: 4,
-  },
-]
 import QuickJumpHeader from '@/components/layout/QuickJumpHeader'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
@@ -1028,17 +926,8 @@ export default async function HomePage({
         ]}
       />
 
-      {/* Featured articles first — the federal-plan framing sets context
-          before readers hit the elevation trend and projection charts. */}
-      <div className="mt-6 lg:mt-8">
-        <FeaturedArticlesStrip
-          kicker="The bigger picture"
-          heading="What would each long-term federal plan actually do?"
-          articles={FEATURED_ARTICLES_PRIMARY}
-        />
-      </div>
-
       {/* 2. Historical Chart + 3. Elevation Projection + 4. Snowpack Projection - with favorite ramps */}
+      <div className="mt-6 lg:mt-8" />
       <HomeChartsWithFavorites
         measurements={measurements}
         startDate={startDate}
@@ -1077,12 +966,6 @@ export default async function HomePage({
         />
       </div>
 
-      {/* Simulator CTA — after the Phase 1 projection, so readers who want
-          to go past April 2027 can jump straight into the long-term tool. */}
-      <div className="mt-8 lg:mt-12">
-        <SimulatorPromoCard />
-      </div>
-
       {/* Storage profile — how big is the lake at each elevation. */}
       <Suspense fallback={
         <div className="mt-12 h-[400px] flex items-center justify-center">
@@ -1097,13 +980,6 @@ export default async function HomePage({
           />
         </div>
       </Suspense>
-
-      {/* More articles — the specific plan breakdowns */}
-      <FeaturedArticlesStrip
-        kicker="Compare the plans"
-        heading="Which plan actually holds the lake up?"
-        articles={FEATURED_ARTICLES_SECONDARY}
-      />
 
       {/* 6. Snowpack Chart - Lazy loaded */}
       {basinPlotsData && (
@@ -1153,6 +1029,16 @@ export default async function HomePage({
           </div>
         </Suspense>
       )}
+
+      {/* Photo gallery — just pictures of the lake, no article links. */}
+      <div className="mt-12 lg:mt-16">
+        <LakePowellGallery />
+      </div>
+
+      {/* Simulator CTA — the deep-dive tool for going past April 2027. */}
+      <div className="mt-8 lg:mt-12">
+        <SimulatorPromoCard />
+      </div>
 
     </div>
   )

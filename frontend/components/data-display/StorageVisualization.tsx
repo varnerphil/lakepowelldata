@@ -94,7 +94,7 @@ export default function StorageVisualization({
   return (
     <div className="card p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <h3 className="text-lg sm:text-xl font-light text-gray-900">How the lake holds water at each elevation</h3>
+        <h3 className="text-lg sm:text-xl font-light text-gray-900">Shape of the lake</h3>
         
         {/* Toggle Buttons */}
         <div className="flex gap-1 bg-gray-100 p-1 rounded-lg flex-shrink-0">
